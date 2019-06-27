@@ -9,6 +9,9 @@ ARG     SSH2_VERSION=${SSH2_VERSION:-1.1.2}
 
 ENV     COMPOSER_ALLOW_SUPERUSER=1
 
+COPY    conf/php.ini /usr/local/etc/php/
+COPY    conf/*.conf /usr/local/etc/
+
 RUN     apk add --no-cache \
             icu-dev freetype-dev libzip-dev libpng-dev libxml2-dev libedit-dev readline-dev \
             gettext-dev libxslt-dev libssh2-dev rabbitmq-c-dev libjpeg-turbo-dev libmcrypt-dev \
@@ -23,6 +26,8 @@ RUN     apk add --no-cache \
             xdebug-${XDEBUG_VERSION} redis-${PHPREDIS_VERSION} \
             amqp-${AMQP_VERSION} ssh2-${SSH2_VERSION} \
         && docker-php-ext-enable xdebug igbinary redis amqp ssh2 \
+        && cp /usr/local/etc/php/php.ini /usr/local/etc/php/php-cli.ini \
+        && cat /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini >> /usr/local/etc/php/php.ini \
         && sed -i -e 's/^zend_extension/\;zend_extension/g' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
         && apk del .build-deps \
         && curl -sS https://getcomposer.org/installer | \
@@ -40,9 +45,6 @@ RUN     apk add --no-cache \
         && printf '* *\t* * *\troot\t%s/usr/local/bin/php /var/www/html/update/cron.php\n' >> /etc/crontab \
         && printf '* *\t* * *\troot\t%s/usr/local/bin/php /var/www/html/bin/magento cron:run\n' >> /etc/crontab \
         && printf '* *\t* * *\troot\t%s/usr/local/bin/php /var/www/html/bin/magento setup:cron:run\n#\n' >> /etc/crontab
-
-COPY    conf/php.ini /usr/local/etc/php/
-COPY    conf/*.conf /usr/local/etc/
 
 WORKDIR /var/www/html
 
