@@ -1,6 +1,6 @@
 FROM    nginx:1.10-alpine
 
-LABEL   maintainer="Mage2click"
+LABEL   maintainer="Mage2click, Dmitry Shkoliar @shkoliar"
 
 COPY    conf/* /etc/nginx/
 
