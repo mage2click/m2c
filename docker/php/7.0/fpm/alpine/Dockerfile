@@ -38,13 +38,13 @@ RUN     apk add --no-cache \
         && adduser -u 1000 -S app -G app -h /var/www/html -s /bin/bash \
         && echo 'export PS1="\w $ "' > /var/www/.bashrc \
         && mkdir -p /var/www/.config /var/www/.npm /sock /usr/local/var/log \
-        && touch /usr/local/var/log/php-fpm.log \
+        && touch /usr/local/var/log/php-fpm.log /var/spool/cron/crontabs/app \
         && chown -R app:app /var/www/html /var/www/.bashrc /var/www/.config \
             /var/www/.npm /usr/local/etc/php/conf.d /sock /usr/local/var/log/php-fpm.log \
         && ln -s /var/www/html/node_modules/grunt/bin/grunt /usr/bin/grunt \
-        && printf '* *\t* * *\troot\t%s/usr/local/bin/php /var/www/html/update/cron.php\n' >> /etc/crontab \
-        && printf '* *\t* * *\troot\t%s/usr/local/bin/php /var/www/html/bin/magento cron:run\n' >> /etc/crontab \
-        && printf '* *\t* * *\troot\t%s/usr/local/bin/php /var/www/html/bin/magento setup:cron:run\n#\n' >> /etc/crontab
+        && printf '*\t*\t*\t*\t*\t/usr/local/bin/php /var/www/html/update/cron.php\n' >> /var/spool/cron/crontabs/app \
+        && printf '*\t*\t*\t*\t*\t/usr/local/bin/php /var/www/html/bin/magento cron:run\n' >> /var/spool/cron/crontabs/app \
+        && printf '*\t*\t*\t*\t*\t/usr/local/bin/php /var/www/html/bin/magento setup:cron:run\n\n' >> /var/spool/cron/crontabs/app
 
 WORKDIR /var/www/html
 
