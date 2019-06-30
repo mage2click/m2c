@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+VERSIONS=("1.8" "1.9" "1.10" "1.11" "1.12" \
+          "1.13" "1.14" "1.15" "1.16" "1.17")
+
+for i in "${!VERSIONS[@]}"
+do
+    docker build --build-arg NGINX_VERSION="${VERSIONS[$i]}" --pull --force-rm --squash \
+            -t "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" "${HOME}/" & pid=$!
+
+    wait ${pid}
+
+    docker tag "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" \
+        "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" & pid=$!
+
+    wait ${pid}
+done
+
+rm -rf "${HOME}/.docker"
+
+exit
+
+sleep 2
+
+for i in "${!VERSIONS[@]}"
+do
+    docker push "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" & pid=$!
+
+    wait ${pid}
+
+    docker rmi -f "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" & pid=$!
+
+    wait ${pid}
+done

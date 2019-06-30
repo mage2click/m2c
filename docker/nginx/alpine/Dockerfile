@@ -1,4 +1,6 @@
-FROM    nginx:1.13-alpine
+ARG     NGINX_VERSION=${NGINX_VERSION:-1.17}
+
+FROM    nginx:${NGINX_VERSION}-alpine
 
 LABEL   maintainer="Mage2click, Dmitry Shkoliar @shkoliar"
 
