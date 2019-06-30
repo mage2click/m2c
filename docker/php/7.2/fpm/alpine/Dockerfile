@@ -12,7 +12,7 @@ ENV     COMPOSER_ALLOW_SUPERUSER=1
 COPY    conf/php.ini /usr/local/etc/php/
 COPY    conf/*.conf /usr/local/etc/
 
-RUN     apk add --no-cache \
+RUN     apk add --no-cache busybox-suid \
             icu-dev freetype-dev libzip-dev libpng-dev libxml2-dev libedit-dev readline-dev \
             gettext-dev libxslt-dev libssh2-dev rabbitmq-c-dev libjpeg-turbo-dev \
             composer bash lsof npm supervisor \
@@ -39,10 +39,7 @@ RUN     apk add --no-cache \
         && touch /usr/local/var/log/php-fpm.log /var/spool/cron/crontabs/app \
         && chown -R app:app /var/www/html /var/www/.bashrc /var/www/.config \
             /var/www/.npm /usr/local/etc/php/conf.d /sock /usr/local/var/log/php-fpm.log \
-        && ln -s /var/www/html/node_modules/grunt/bin/grunt /usr/bin/grunt \
-        && printf '*\t*\t*\t*\t*\t/usr/local/bin/php /var/www/html/update/cron.php\n' >> /var/spool/cron/crontabs/app \
-        && printf '*\t*\t*\t*\t*\t/usr/local/bin/php /var/www/html/bin/magento cron:run\n' >> /var/spool/cron/crontabs/app \
-        && printf '*\t*\t*\t*\t*\t/usr/local/bin/php /var/www/html/bin/magento setup:cron:run\n\n' >> /var/spool/cron/crontabs/app
+        && ln -s /var/www/html/node_modules/grunt/bin/grunt /usr/bin/grunt
 
 WORKDIR /var/www/html
 
