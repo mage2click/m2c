@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if [[ -z "$M2C_GLOBAL_DIR" ]]
+then
+    echo -e "\033[1;31mThis script intended to be sourced and should not be executed directly!\033[0m"
+    exit 1
+fi
+
+m2c_save_project_env()
+{
+    local project_env="$M2C_PROJECT_DIR/.m2c/project.env"
+
+    [[ -f "$project_env" ]] && set | grep '^M2C_CFG_' > "$project_env"
+}
+
+m2c_load_project_env() {
+    local project_env="$M2C_PROJECT_DIR/.m2c/project.env"
+
+    [[ -f "$project_env" ]] && . "$project_env"
+}
+
+m2c_load_project_defaults_env() {
+    local defaults_env="$M2C_GLOBAL_DIR/docker/project/project.env"
+
+    [[ -f "$defaults_env" ]] && . "$defaults_env"
+}
