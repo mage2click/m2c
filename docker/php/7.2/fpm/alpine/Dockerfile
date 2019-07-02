@@ -14,20 +14,18 @@ COPY    conf/*.conf /usr/local/etc/
 
 RUN     apk add --no-cache busybox-suid \
             icu-dev freetype-dev libzip-dev libpng-dev libxml2-dev libedit-dev readline-dev \
-            gettext-dev libxslt-dev libssh2-dev rabbitmq-c-dev libjpeg-turbo-dev \
+            gettext-dev libxslt-dev libssh2-dev rabbitmq-c-dev libjpeg-turbo-dev libsodium-dev \
             composer bash lsof npm supervisor \
         && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
         && docker-php-ext-configure zip --with-libzip \
         && docker-php-ext-install \
-            bcmath gd intl mbstring opcache readline gettext \
+            bcmath gd intl mbstring opcache readline gettext sodium \
             calendar pdo_mysql mysqli soap xsl zip \
         && apk add --no-cache --virtual .build-deps ${PHPIZE_DEPS} \
-        && yes '' | pecl install --onlyreqdeps igbinary \
+        && yes '' | pecl install --onlyreqdeps igbinary mcrypt-1.0.2\
             xdebug-${XDEBUG_VERSION} redis-${PHPREDIS_VERSION} \
             amqp-${AMQP_VERSION} ssh2-${SSH2_VERSION} \
-        && docker-php-ext-enable xdebug igbinary redis amqp ssh2 \
-        && cp /usr/local/etc/php/php.ini /usr/local/etc/php/php-cli.ini \
-        && cat /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini >> /usr/local/etc/php/php.ini \
+        && docker-php-ext-enable xdebug igbinary mcrypt redis amqp ssh2 \
         && sed -i -e 's/^zend_extension/\;zend_extension/g' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
         && apk del .build-deps \
         && rm -rf /var/cache/apk/* \

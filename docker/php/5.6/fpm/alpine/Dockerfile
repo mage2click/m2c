@@ -26,8 +26,6 @@ RUN     apk add --no-cache busybox-suid \
             xdebug-${XDEBUG_VERSION} redis-${PHPREDIS_VERSION} \
             amqp-${AMQP_VERSION} ssh2-${SSH2_VERSION} \
         && docker-php-ext-enable xdebug redis amqp ssh2 \
-        && cp /usr/local/etc/php/php.ini /usr/local/etc/php/php-cli.ini \
-        && cat /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini >> /usr/local/etc/php/php.ini \
         && sed -i -e 's/^zend_extension/\;zend_extension/g' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
         && apk del .build-deps \
         && curl -sS https://getcomposer.org/installer | \
