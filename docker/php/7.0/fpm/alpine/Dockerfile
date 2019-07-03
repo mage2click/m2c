@@ -11,6 +11,7 @@ ENV     COMPOSER_ALLOW_SUPERUSER=1
 
 COPY    conf/php.ini /usr/local/etc/php/
 COPY    conf/*.conf /usr/local/etc/
+COPY    docker-host /usr/local/bin/
 
 RUN     apk add --no-cache busybox-suid \
             icu-dev freetype-dev libzip-dev libpng-dev libxml2-dev libedit-dev readline-dev \
@@ -43,4 +44,4 @@ RUN     apk add --no-cache busybox-suid \
 
 WORKDIR /var/www/html
 
-CMD     ["supervisord", "-c", "/usr/local/etc/supervisor.conf"]
+CMD     docker-host; supervisord -c /usr/local/etc/supervisor.conf
