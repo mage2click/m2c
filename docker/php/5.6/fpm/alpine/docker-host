@@ -1,0 +1,7 @@
+#!/bin/bash
+
+ping -q -c1 "host.docker.internal" > /dev/null 2>&1
+if [[ $? -ne 0 ]]
+then
+  echo -e "$(ip route | awk 'NR==1 {print $3}')\thost.docker.internal" >> /etc/hosts
+fi
