@@ -16,7 +16,7 @@ COPY    docker-host /usr/local/bin/
 RUN     apk add --no-cache busybox-suid \
             icu-dev freetype-dev libzip-dev libpng-dev libxml2-dev libedit-dev readline-dev \
             gettext-dev libxslt-dev libssh2-dev rabbitmq-c-dev libjpeg-turbo-dev libsodium-dev \
-            composer bash lsof npm supervisor \
+            libmcrypt-dev composer bash lsof npm supervisor \
         && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
         && docker-php-ext-configure zip --with-libzip \
         && docker-php-ext-install \
@@ -28,16 +28,21 @@ RUN     apk add --no-cache busybox-suid \
             amqp-${AMQP_VERSION} ssh2-${SSH2_VERSION} \
         && docker-php-ext-enable xdebug igbinary mcrypt redis amqp ssh2 \
         && sed -i -e 's/^zend_extension/\;zend_extension/g' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+        && set -ex && cd /tmp \
+        && curl -O https://files.magerun.net/n98-magerun2.phar \
+        && mv n98-magerun2.phar /usr/local/bin/ \
+        && chmod +x /usr/local/bin/n98-magerun2.phar \
         && apk del .build-deps \
         && rm -rf /var/cache/apk/* \
         && rm -rf /tmp/* \
         && addgroup -g 1000 -S app \
-        && adduser -u 1000 -S app -G app -h /var/www/html -s /bin/bash \
+        && adduser -u 1000 -S app -G app -h /var/www -s /bin/bash \
         && echo 'export PS1="\w $ "' > /var/www/.bashrc \
         && mkdir -p /var/www/.config /var/www/.npm /sock /usr/local/var/log \
         && touch /usr/local/var/log/php-fpm.log /var/spool/cron/crontabs/app \
         && chown -R app:app /var/www/html /var/www/.bashrc /var/www/.config \
             /var/www/.npm /usr/local/etc/php/conf.d /sock /usr/local/var/log/php-fpm.log \
+            /usr/local/bin/n98-magerun2.phar \
         && ln -s /var/www/html/node_modules/grunt/bin/grunt /usr/bin/grunt
 
 WORKDIR /var/www/html
