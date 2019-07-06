@@ -2,7 +2,7 @@ FROM    alpine:3.7
 
 LABEL   maintainer="Mage2click, Dmitry Shkoliar @shkoliar"
 
-ENV     VARNISH_CACHE_SIZE=${VARNISH_PORT:-'256M'} \
+ENV     VARNISH_CACHE_SIZE=${VARNISH_CACHE_SIZE:-'256M'} \
         VARNISHD_OPTS=${VARNISHD_OPTS:-'-p default_ttl=3600 -p default_grace=3600 -p feature=+esi_ignore_https -p feature=+esi_disable_xml_check'} \
         VARNISH_VCL=${VARNISH_VCL:-'/etc/varnish/default.vcl'}
 
