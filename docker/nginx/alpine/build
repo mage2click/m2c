@@ -7,30 +7,22 @@ VERSIONS=("1.8" "1.9" "1.10" "1.11" "1.12" \
 
 for i in "${!VERSIONS[@]}"
 do
-    docker build --build-arg NGINX_VERSION="${VERSIONS[$i]}" --pull --force-rm --squash \
-            -t "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" "${HOME}/" & pid=$!
-
-    wait ${pid}
+    docker build --build-arg NGINX_VERSION="${VERSIONS[$i]}" \
+            -t "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" "${HOME}/"
 
     docker tag "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" \
-        "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" & pid=$!
-
-    wait ${pid}
+        "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine"
 done
 
 rm -rf "${HOME}/.docker"
 
-exit
-
-sleep 2
+# Due to docker error "denied: requested access to the resource is denied",
+# echoing commands to run them manually instead of running directly
+echo
 
 for i in "${!VERSIONS[@]}"
 do
-    docker push "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" & pid=$!
+    echo "docker push \"mage2click/m2c:nginx-${VERSIONS[$i]}-alpine\""
 
-    wait ${pid}
-
-    docker rmi -f "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" & pid=$!
-
-    wait ${pid}
+    echo "docker rmi -f \"mage2click/m2c:nginx-${VERSIONS[$i]}-alpine\""
 done

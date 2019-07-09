@@ -4,7 +4,8 @@ FROM    nginx:${NGINX_VERSION}-alpine
 
 LABEL   maintainer="Mage2click, Dmitry Shkoliar @shkoliar"
 
-COPY    conf/* /etc/nginx/
+COPY    conf/nginx.conf /etc/nginx/nginx.conf
+COPY    conf/conf.d/default.conf /etc/nginx/conf.d/default.conf
 
 RUN     addgroup -S -g 1000 app && \
         adduser -S -g 1000 -u 1000 -h /var/www -s /bin/ash app && \
