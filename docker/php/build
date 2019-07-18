@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+VERSIONS=("5.6" "7.0" "7.1" "7.2")
+
+for i in "${!VERSIONS[@]}"
+do
+    docker build -t "mage2click/m2c:php-fpm-${VERSIONS[$i]}-alpine" \
+        "${HOME}/${VERSIONS[$i]}/fpm/alpine/"
+
+    docker tag "mage2click/m2c:php-fpm-${VERSIONS[$i]}-alpine" \
+        "mage2click/m2c:php-fpm-${VERSIONS[$i]}-alpine"
+done
+
+rm -rf "${HOME}/.docker"
+
+# Due to docker error "denied: requested access to the resource is denied",
+# echoing commands to run them manually instead of running directly
+echo
+
+for i in "${!VERSIONS[@]}"
+do
+    echo "docker push \"mage2click/m2c:php-fpm-${VERSIONS[$i]}-alpine\""
+    echo "docker rmi -f \"mage2click/m2c:php-fpm-${VERSIONS[$i]}-alpine\""
+done
