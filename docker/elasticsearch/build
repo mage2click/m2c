@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+VERSIONS=("2.0.2" "2.1.2" "2.2.2" "2.3.5" "2.4.6" \
+          "5.0.2" "5.1.2" "5.2.2" "5.3.3" "5.4.3" "5.5.3" "5.6.16" \
+          "6.0.1" "6.1.4" "6.2.4" "oss-6.3.2" "oss-6.4.3" "oss-6.5.4" "oss-6.6.2" "oss-6.7.1" "oss-6.8.1")
+
+for i in "${!VERSIONS[@]}"
+do
+    version=${VERSIONS[$i]/oss-/}
+    version=${version%.*}
+
+    if (( i < 5 ))
+    then
+        url="https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/${VERSIONS[$i]}/elasticsearch-${VERSIONS[$i]}.tar.gz"
+    else
+        url="https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${VERSIONS[$i]}.tar.gz"
+    fi
+
+    docker build --build-arg ELASTICSEARCH_VERSION="${VERSIONS[$i]}" --build-arg ELASTICSEARCH_URL="${url}" \
+            -t "mage2click/m2c:elasticsearch-${version}-alpine" "${HOME}/alpine/"
+
+    docker tag "mage2click/m2c:elasticsearch-${version}-alpine" \
+        "mage2click/m2c:elasticsearch-${version}-alpine"
+done
+
+rm -rf "${HOME}/.docker"
+
+# Due to docker error "denied: requested access to the resource is denied",
+# echoing commands to run them manually instead of running directly
+echo
+
+for i in "${!VERSIONS[@]}"
+do
+    version=${VERSIONS[$i]/oss-/}
+    version=${version%.*}
+
+    echo "docker push \"mage2click/m2c:elasticsearch-${version}-alpine\""
+    echo "docker rmi -f \"mage2click/m2c:elasticsearch-${version}-alpine\""
+done
