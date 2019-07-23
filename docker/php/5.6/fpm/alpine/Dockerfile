@@ -44,6 +44,7 @@ RUN     apk add --no-cache busybox-suid \
         touch /usr/local/var/log/php-fpm.log /var/spool/cron/crontabs/app && \
         chown -R app:app /var/www /usr/local/etc/php/conf.d /sock \
             /usr/local/var/log/php-fpm.log /usr/local/bin/n98-magerun.phar && \
+        chmod +x /usr/local/bin/docker-host && \
         ln -sf /var/www/html/node_modules/grunt/bin/grunt /usr/bin/grunt \
         ln -sf /usr/local/bin/n98-magerun.phar /usr/local/bin/n98-magerun
 
