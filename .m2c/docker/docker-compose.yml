@@ -1,0 +1,81 @@
+version: "3.5"
+
+services:
+
+  mage2click:
+    container_name: m2c.test__mage2click
+    image: nginx:alpine
+    volumes:
+      - ~/.m2c/www/default.conf:/etc/nginx/conf.d/default.conf
+      - ~/.m2c/www/html/index.html:/usr/share/nginx/html/index.html
+    labels:
+      - traefik.passHostHeader=true
+      - traefik.enable=true
+      - traefik.frontend.rule=Host:m2c.test
+      - traefik.port=8080
+
+  traefik:
+    container_name: m2c.test__traefik
+    image: traefik
+    command:
+      - --api
+      - --docker
+      - --docker.domain=test
+      - --docker.network=m2c
+      - --docker.exposedByDefault=false
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ~/.m2c/traefik/tmp:/etc/traefik/tmp
+      - ~/.m2c/traefik/traefik.toml:/etc/traefik/traefik.toml
+      - ~/.m2c/ssl/certs/m2c.crt:/etc/ssl/certs/m2c.crt
+      - ~/.m2c/ssl/private/m2c.key:/etc/ssl/private/m2c.key
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - traefik.enable=true
+      - traefik.frontend.rule=Host:traefik.m2c.test
+      - traefik.port=8080
+    restart: always
+
+  portainer:
+    container_name: m2c.test__portainer
+    image: portainer/portainer
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer:/data
+    labels:
+      - traefik.enable=true
+      - traefik.frontend.rule=Host:portainer.m2c.test
+      - traefik.port=9000
+    restart: always
+
+  mailhog:
+    container_name: m2c.test__mailhog
+    hostname: mailhog
+    image: mailhog/mailhog:v1.0.0
+    labels:
+      - traefik.enable=true
+      - traefik.frontend.rule=Host:mailhog.m2c.test
+      - traefik.port=8025
+    restart: always
+
+  dnsmasq:
+    container_name: m2c.test__dnsmasq
+    image: jpillora/dnsmasq
+    ports:
+      - 53:53/udp
+    volumes:
+      - ~/.m2c/dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf
+    labels:
+      - traefik.enable=true
+      - traefik.frontend.rule=Host:dnsmasq.m2c.test
+      - traefik.port=8080
+    restart: always
+
+volumes:
+  portainer:
+
+networks:
+  default:
+    name: m2c
