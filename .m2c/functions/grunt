@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+if [[ -z ${m2c_global_dir} ]]
+then
+    echo -e "\033[1;31mThis script intended to be sourced and should not be executed directly!\033[0m"
+    exit 1
+fi
+
+if [[ "$1" == "notty" ]]
+then
+    m2c_tty=
+    shift
+else
+    m2c_tty=1
+fi
+
+docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" grunt "$@"
