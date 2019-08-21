@@ -7,4 +7,5 @@ then
 fi
 
 export MUTAGEN_DATA_DIRECTORY="$m2c_global_dir"/mutagen
+"$MUTAGEN_DATA_DIRECTORY"/mutagen daemon start
 "$MUTAGEN_DATA_DIRECTORY"/mutagen $@
