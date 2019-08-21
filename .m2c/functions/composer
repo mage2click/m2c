@@ -16,4 +16,8 @@ else
     m2c_tty=1
 fi
 
+m2c sync pause >/dev/null 2>&1
 docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" composer "$@"
+m2c sync resume >/dev/null 2>&1
+m2c mutagen sync flush vendor
+#TODO: fix sync of all active vendor sessions, https://spectrum.chat/mutagen/support/orchestrating-and-embedding-mutagen~a7abc8d0-18ee-4efc-9a8a-db16311813dc?m=MTU2NjMxNjMxNDY4Nw==
