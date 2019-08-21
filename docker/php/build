@@ -6,10 +6,10 @@ VERSIONS=("5.6" "7.0" "7.1" "7.2")
 
 for i in "${!VERSIONS[@]}"
 do
-    docker build -t "mage2click/m2c:php-fpm-${VERSIONS[$i]}-alpine" \
+    docker build -t "mage2click-m2c-php-fpm-${VERSIONS[$i]}-alpine" \
         "${HOME}/${VERSIONS[$i]}/fpm/alpine/"
 
-    docker tag "mage2click/m2c:php-fpm-${VERSIONS[$i]}-alpine" \
+    docker tag "mage2click-m2c-php-fpm-${VERSIONS[$i]}-alpine" \
         "mage2click/m2c:php-fpm-${VERSIONS[$i]}-alpine"
 done
 
