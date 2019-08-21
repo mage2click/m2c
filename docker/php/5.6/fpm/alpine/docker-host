@@ -5,3 +5,10 @@ if [[ $? -ne 0 ]]
 then
   echo -e "$(ip route | awk 'NR==1 {print $3}')\thost.docker.internal" >> /etc/hosts
 fi
+
+if [[ -f /usr/share/ca-certificates/m2c/rootCA.crt ]]
+then
+ 	ln -sf /usr/share/ca-certificates/m2c/rootCA.crt /etc/ssl/certs/ca-cert-Mage2click_Root_CA.pem
+ 	update-ca-certificates
+ 	cat /etc/ssl/certs/ca-cert-Mage2click_Root_CA.pem >> /etc/ssl/certs/ca-certificates.crt
+fi
