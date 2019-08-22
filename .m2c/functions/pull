@@ -8,7 +8,7 @@ fi
 
 m2c_pull() {
     local project_dir="${m2c_project_dir}" \
-          sub_dir=${M2C_CFG_MAGENTO_SUB_DIR:-} \
+          sub_dir=${M2C_CFG_MAGENTO_SRC:-} \
           container_id="${M2C_CFG_DOMAIN_NAME}__php" \
           source_path error res
 
@@ -20,7 +20,9 @@ m2c_pull() {
         then
             m2c_msg "Pulling files from php docker container................................  "
             m2c_loading
-            docker cp "$container_id":/var/www/html/. "$project_dir${sub_dir:+/${sub_dir}}/" >"$m2c_log" 2>&1
+            m2c sync pause >/dev/null 2>&1 && \
+            docker cp "$container_id":/var/www/html/. "$project_dir${sub_dir:+/${sub_dir}}/" >"$m2c_log" 2>&1 && \
+            m2c sync resume >/dev/null 2>&1
             res=$?
             m2c_result ${res}
             return ${res}
@@ -33,7 +35,9 @@ m2c_pull() {
                 m2c_info "$source_path\n"
                 m2c_msg "Pulling directory from php docker container............................  "
                 m2c_loading
-                docker cp "$container_id":/var/www/html/"$source_path"/. "$dest_path" >"$m2c_log" 2>&1
+                m2c sync pause >/dev/null 2>&1 && \
+                docker cp "$container_id":/var/www/html/"$source_path"/. "$dest_path" >"$m2c_log" 2>&1 && \
+                m2c sync resume >/dev/null 2>&1
                 res=$?
                 m2c_result ${res}
                 return ${res}
@@ -42,7 +46,9 @@ m2c_pull() {
                 m2c_info "$source_path\n"
                 m2c_msg "Pulling file from php docker container.................................  "
                 m2c_loading
-                docker cp "$container_id":/var/www/html/"$source_path" "$(dirname "$dest_path")" >"$m2c_log" 2>&1
+                m2c sync pause >/dev/null 2>&1 && \
+                docker cp "$container_id":/var/www/html/"$source_path" "$(dirname "$dest_path")" >"$m2c_log" 2>&1 && \
+                m2c sync resume >/dev/null 2>&1
                 res=$?
                 m2c_result ${res}
                 return ${res}
@@ -73,9 +79,9 @@ m2c_pull_help() {
   paths must be relative to container's /var/www/html directory.
 
 \033[1;33mUsage:\033[0m
-  m2c pull [path1 [path2...]] [option]
+  m2c pull [<path1> [<path2>...]] [flags...]
 
-\033[1;33mOptions:\033[0m
+\033[1;33mFlags:\033[0m
   --all     Pull all files from php docker container to magento src root.
   --help    Display this information.
 "
