@@ -95,10 +95,9 @@ m2c_share_help() {
 
 if (("$#"))
 then
+    m2c_in_array "--help" $@ && m2c_init_help
+
     case "$@" in
-        --help)
-            m2c_share_help
-        ;;
         us|eu|ap|au|sa|jp|in)
             m2c_share $1
         ;;
