@@ -8,7 +8,7 @@ fi
 
 m2c_push() {
     local project_dir="${m2c_project_dir}" \
-          sub_dir=${M2C_CFG_MAGENTO_SUB_DIR:-} \
+          sub_dir=${M2C_CFG_MAGENTO_SRC:-} \
           container="${M2C_CFG_DOMAIN_NAME}__php" \
           source_path error res
 
@@ -20,10 +20,12 @@ m2c_push() {
         then
             m2c_msg "Pushing all files to php docker container..............................  "
             m2c_loading
+            m2c sync pause >/dev/null 2>&1 && \
             docker cp "$project_dir${sub_dir:+/${sub_dir}}"/. "$container":/var/www/html/ >"$m2c_log" 2>&1 && \
             docker exec "$container" chown -R app:app /var/www/ >"$m2c_log" 2>&1 && \
             docker exec "$container" chmod u+x ./bin/magento >"$m2c_log" 2>&1 && \
-            docker exec "$container" chmod u+w -R ./var ./vendor ./pub/static ./pub/media ./app/etc >"$m2c_log" 2>&1
+            docker exec "$container" chmod u+w -R ./var ./vendor ./pub/static ./pub/media ./app/etc >"$m2c_log" 2>&1 && \
+            m2c sync resume >/dev/null 2>&1
             res=$?
             m2c_result ${res}
             return ${res}
@@ -39,6 +41,7 @@ m2c_push() {
                 then
                     m2c_msg "Pushing directory to php docker container..............................  "
                     m2c_loading
+                    m2c sync pause >/dev/null 2>&1 && \
                     docker cp "$source_path"/. "$container":/var/www/html/"$dest_path" >"$m2c_log" 2>&1 && \
                     docker exec "$container" chown -R app:app "$dest_path" >"$m2c_log" 2>&1 && \
                     case "$dest_path" in
@@ -48,10 +51,12 @@ m2c_push() {
                         *)
                             true
                         ;;
-                    esac
+                    esac && \
+                    m2c sync resume >/dev/null 2>&1
                 else
                     m2c_msg "Pushing file to php docker container....................................  "
                     m2c_loading
+                    m2c sync pause >/dev/null 2>&1 && \
                     docker cp "$source_path" "$container":/var/www/html/"$(dirname "$dest_path")" >"$m2c_log" 2>&1 && \
                     docker exec "$container" chown -R app:app "$dest_path" >"$m2c_log" 2>&1 && \
                     case "$dest_path" in
@@ -64,7 +69,8 @@ m2c_push() {
                         *)
                             true
                         ;;
-                    esac
+                    esac && \
+                    m2c sync resume >/dev/null 2>&1
                 fi
 
                 res=$?
@@ -97,9 +103,9 @@ m2c_push_help() {
   Specified paths must be relative to Magento src root directory.
 
 \033[1;33mUsage:\033[0m
-  m2c push [path1 [path2...]] [option]
+  m2c push [<path1> [<path2>...]] [flags...]
 
-\033[1;33mOptions:\033[0m
+\033[1;33mFlags:\033[0m
   --all     Push all files from magento src root to php docker container.
   --help    Display this information.
 "
