@@ -15,8 +15,9 @@ sync:
         defaultGroup: app
     ignore:
       paths:
-        - /.idea
-        - /.vscode
+        - .idea
+        - .vscode
+        - .m2c
         - /bin
         - /generated
         - /pub/media
