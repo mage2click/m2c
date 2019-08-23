@@ -8,8 +8,8 @@ fi
 
 if [[ "$m2c_os" != "darwin" ]]
 then
-    echo -e "\033[1;31mMutagen sync functionality is only for macOS!\033[0m"
-    exit 1
+    m2c --help
+    exit 0
 fi
 
 export MUTAGEN_DATA_DIRECTORY="$m2c_global_dir"/mutagen

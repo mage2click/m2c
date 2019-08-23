@@ -6,6 +6,12 @@ then
     exit 1
 fi
 
+if [[ "$m2c_os" != "darwin" ]]
+then
+    m2c --help
+    exit 0
+fi
+
 m2c_push() {
     local project_dir="${m2c_project_dir}" \
           sub_dir=${M2C_CFG_MAGENTO_SRC:-} \
