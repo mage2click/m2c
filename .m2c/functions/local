@@ -1,0 +1,177 @@
+#!/bin/bash
+
+if [[ -z "$m2c_global_dir" ]]
+then
+    echo -e "\033[1;31mThis script intended to be sourced and should not be executed directly!\033[0m"
+    exit 1
+fi
+
+m2c_local_services=("db" "php" "nginx" "redis" "varnish" "elasticsearch" "phpmyadmin" "rabbitmq")
+m2c_local_service=()
+m2c_local_command=
+
+m2c_local_error() {
+    m2c_error "Unknown argument $1. Run \`m2c$([[ -n ${m2c_local_command} ]] && \
+        echo " $m2c_local_command") --help\` for usage information.\n"
+    exit 1
+}
+
+m2c_print_service() {
+    case "$1" in
+        nginx)
+            m2c_msg "Nginx..................................................................  "
+        ;;
+        php)
+            m2c_msg "PHP....................................................................  "
+        ;;
+        db)
+            m2c_msg "Db.....................................................................  "
+        ;;
+        redis)
+            m2c_msg "Redis..................................................................  "
+        ;;
+        varnish)
+            m2c_msg "Varnish................................................................  "
+        ;;
+        elasticsearch)
+            m2c_msg "Elasticsearch..........................................................  "
+        ;;
+        phpmyadmin)
+            m2c_msg "phpMyAdmin.............................................................  "
+        ;;
+        rabbitmq)
+            m2c_msg "RabbitMQ...............................................................  "
+        ;;
+    esac
+}
+
+m2c_local_up() {
+    local service=("$@")
+
+    m2c_info_bold "\n[Creating docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+
+    for i in "${!service[@]}"
+    do
+        m2c_print_service "${service[$i]}"
+        m2c_loading
+        m2c_local_container_up "${service[$i]}"
+        m2c_result $?
+    done
+}
+
+m2c_local_start() {
+    local service=("$@")
+
+    m2c_info_bold "\n[Starting docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+
+    for i in "${!service[@]}"
+    do
+        m2c_print_service "${service[$i]}"
+        m2c_loading
+        m2c_local_container_start "${service[$i]}"
+        m2c_result $?
+    done
+}
+
+m2c_local_restart() {
+    local service=("$@")
+
+    m2c_info_bold "\n[Restarting docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+
+    for i in "${!service[@]}"
+    do
+        m2c_print_service "${service[$i]}"
+        m2c_loading
+        m2c_local_container_restart "${service[$i]}"
+        m2c_result $?
+    done
+}
+
+m2c_local_stop() {
+    local service=("$@")
+
+    m2c_info_bold "\n[Stopping docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+
+    for i in "${!service[@]}"
+    do
+        m2c_print_service "${service[$i]}"
+        m2c_loading
+        m2c_local_container_stop "${service[$i]}"
+        m2c_result $?
+    done
+}
+
+m2c_local_remove() {
+    local service=("$@")
+
+    m2c_info_bold "\n[Removing docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+
+    for i in "${!service[@]}"
+    do
+        m2c_print_service "${service[$i]}"
+        m2c_loading
+        m2c_local_container_remove "${service[$i]}"
+        m2c_result $?
+    done
+}
+
+m2c_load_project_env
+
+while (("$#")); do
+    case "$1" in
+        up|start|restart|stop|remove)
+            m2c_local_command="$1"
+            shift
+        ;;
+        nginx|php|db|redis|varnish|elasticsearch|phpmyadmin|rabbitmq)
+            if [[ "$m2c_local_command" == "remove" ]] || ! [[ \
+                    "$1" == "varnish" && -z ${M2C_CFG_VARNISH} || \
+                    "$1" == "elasticsearch" && -z ${M2C_CFG_ELASTICSEARCH} || \
+                    "$1" == "phpmyadmin" && -z ${M2C_CFG_PHPMYADMIN} || \
+                    "$1" == "rabbitmq" && -z ${M2C_CFG_RABBITMQ} ]]
+            then
+                m2c_local_service+=("$1")
+            fi
+            shift
+        ;;
+        --help)
+            m2c_help
+        ;;
+        *)
+            m2c_local_error "$1"
+        ;;
+    esac
+done
+
+if ! (("${#m2c_local_service[@]}"))
+then
+    for i in "${!m2c_local_services[@]}"
+    do
+        if [[ "$m2c_local_command" == "remove" ]] || ! [[ \
+                "${m2c_local_services[$i]}" == "varnish" && -z ${M2C_CFG_VARNISH} || \
+                "${m2c_local_services[$i]}" == "elasticsearch" && -z ${M2C_CFG_ELASTICSEARCH} || \
+                "${m2c_local_services[$i]}" == "phpmyadmin" && -z ${M2C_CFG_PHPMYADMIN} || \
+                "${m2c_local_services[$i]}" == "rabbitmq" && -z ${M2C_CFG_RABBITMQ} ]]
+        then
+            m2c_local_service+=("${m2c_local_services[$i]}")
+        fi
+    done
+fi
+
+case ${m2c_local_command} in
+    up)
+        m2c_local_up "${m2c_local_service[@]}"
+    ;;
+    start)
+        m2c_local_start "${m2c_local_service[@]}"
+    ;;
+    restart)
+        m2c_local_restart "${m2c_local_service[@]}"
+    ;;
+    stop)
+        m2c_local_stop "${m2c_local_service[@]}"
+    ;;
+    remove)
+        m2c_local_remove "${m2c_local_service[@]}"
+    ;;
+esac
