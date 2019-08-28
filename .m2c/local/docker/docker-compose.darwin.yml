@@ -10,7 +10,7 @@ services:
     volumes:
       - ~/.composer:/var/www/.composer:delegated
       - ~/.m2c/ssl/certs:/usr/share/ca-certificates/m2c:ro
-      - ./../../${M2C_CFG_MAGENTO_SRC}/pub/media:/var/www/html/pub/media:delegated
+#      - ./../../${M2C_CFG_MAGENTO_SRC}/pub/media:/var/www/html/pub/media:delegated
       - src_data:/var/www/html
 
 volumes:
