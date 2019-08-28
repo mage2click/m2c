@@ -6,14 +6,15 @@ then
     exit 1
 fi
 
+m2c_ssl_dir="$m2c_global_dir"/ssl
 m2c_domains=($@)
 m2c_alt_names=
-m2c_dns_index=$(echo "$(cat ${m2c_global_dir}/ssl/config/v3_ext.conf | grep 'DNS.*' | awk 'END { print NR }')")
+m2c_dns_index=$(echo "$(cat "$m2c_ssl_dir"/config/v3_ext.conf | grep 'DNS.*' | awk 'END { print NR }')")
 m2c_dns_index=${m2c_dns_index:-0}
 
 for i in "${!m2c_domains[@]}"
 do
-    if grep -q "*.${m2c_domains[$i]}" ${m2c_global_dir}/ssl/config/v3_ext.conf
+    if grep -q "*.${m2c_domains[$i]}" "$m2c_ssl_dir"/config/v3_ext.conf
     then
         continue
     fi
@@ -34,32 +35,32 @@ then
     m2c_loading
     m2c_result 0
 else
-    echo "$(cat ${m2c_global_dir}/ssl/config/v3_ext.conf)$m2c_alt_names" > ${m2c_global_dir}/ssl/config/v3_ext.conf
+    echo "$(cat "$m2c_ssl_dir"/config/v3_ext.conf)$m2c_alt_names" > "$m2c_ssl_dir"/config/v3_ext.conf
 
     m2c_msg "Generating private key for SSL certificate.............................  "
     m2c_loading
-    [[ -f ${m2c_global_dir}/ssl/private/m2c.key ]] && rm ${m2c_global_dir}/ssl/private/m2c.key
-    openssl genrsa -out ${m2c_global_dir}/ssl/private/m2c.key 2048 >"$m2c_log" 2>&1
+    [[ -f "$m2c_ssl_dir"/private/m2c.key ]] && rm "$m2c_ssl_dir"/private/m2c.key
+    openssl genrsa -out "$m2c_ssl_dir"/private/m2c.key 2048 >"$m2c_log" 2>&1
     m2c_result $?
 
     m2c_msg "Creating signing request for SSL certificate...........................  "
     m2c_loading
     openssl req -new -sha256 \
-        -key ${m2c_global_dir}/ssl/private/m2c.key \
-        -out ${m2c_global_dir}/ssl/certs/m2c.csr \
-        -config ${m2c_global_dir}/ssl/config/openssl.conf \
+        -key "$m2c_ssl_dir"/private/m2c.key \
+        -out "$m2c_ssl_dir"/certs/m2c.csr \
+        -config "$m2c_ssl_dir"/config/openssl.conf \
         -subj "/O=Mage2click/OU=IT/CN=${m2c_domains[0]}" >"$m2c_log" 2>&1
     m2c_result $?
 
     m2c_msg "Signing SSL certificate................................................  "
     m2c_loading
     openssl x509 -req -days 3650 -sha256 -extensions v3_req \
-        -CA ${m2c_global_dir}/ssl/certs/rootCA.crt \
-        -CAkey ${m2c_global_dir}/ssl/private/rootCA.key \
+        -CA "$m2c_ssl_dir"/certs/rootCA.crt \
+        -CAkey "$m2c_ssl_dir"/private/rootCA.key \
         -CAcreateserial -passin pass:m2c \
-        -in ${m2c_global_dir}/ssl/certs/m2c.csr \
-        -out ${m2c_global_dir}/ssl/certs/m2c.crt \
-        -extfile ${m2c_global_dir}/ssl/config/v3_ext.conf >"$m2c_log" 2>&1
+        -in "$m2c_ssl_dir"/certs/m2c.csr \
+        -out "$m2c_ssl_dir"/certs/m2c.crt \
+        -extfile "$m2c_ssl_dir"/config/v3_ext.conf >"$m2c_log" 2>&1
     m2c_result $?
 
     if [[ -n "$(docker-compose --project-name m2c --file "$m2c_global_dir"/docker/docker-compose.yml ps --quiet traefik)" ]]
