@@ -63,7 +63,10 @@ else
         -extfile "$m2c_ssl_dir"/config/v3_ext.conf >"$m2c_log" 2>&1
     m2c_result $?
 
-    if [[ -n "$(docker-compose --project-name m2c --file "$m2c_global_dir"/docker/docker-compose.yml ps --quiet traefik)" ]]
+    if [[ -n "$(docker ps \
+                    --filter "label=com.docker.compose.project=m2c" \
+                    --filter "label=com.docker.compose.service=traefik" \
+                    -q)" ]]
     then
         m2c global restart traefik
     fi
