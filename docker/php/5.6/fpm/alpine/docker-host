@@ -8,7 +8,6 @@ fi
 
 if [[ -f /usr/share/ca-certificates/m2c/rootCA.crt ]]
 then
- 	ln -sf /usr/share/ca-certificates/m2c/rootCA.crt /etc/ssl/certs/ca-cert-Mage2click_Root_CA.pem
- 	update-ca-certificates
- 	cat /etc/ssl/certs/ca-cert-Mage2click_Root_CA.pem >> /etc/ssl/certs/ca-certificates.crt
+ 	cat /usr/share/ca-certificates/m2c/rootCA.crt >> /etc/ssl/cert.pem
+ 	cat /usr/share/ca-certificates/m2c/rootCA.crt >> /etc/ssl/certs/ca-certificates.crt
 fi
