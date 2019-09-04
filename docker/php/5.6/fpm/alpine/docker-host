@@ -8,6 +8,13 @@ fi
 
 if [[ -f /usr/share/ca-certificates/m2c/rootCA.crt ]]
 then
- 	cat /usr/share/ca-certificates/m2c/rootCA.crt >> /etc/ssl/cert.pem
- 	cat /usr/share/ca-certificates/m2c/rootCA.crt >> /etc/ssl/certs/ca-certificates.crt
+    if ! grep -q -f /usr/share/ca-certificates/m2c/rootCA.crt /etc/ssl/cert.pem
+    then
+        cat /usr/share/ca-certificates/m2c/rootCA.crt >> /etc/ssl/cert.pem
+    fi
+
+    if ! grep -q -f /usr/share/ca-certificates/m2c/rootCA.crt /etc/ssl/certs/ca-certificates.crt
+    then
+        cat /usr/share/ca-certificates/m2c/rootCA.crt >> /etc/ssl/certs/ca-certificates.crt
+    fi
 fi
