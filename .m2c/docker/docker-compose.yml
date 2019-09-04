@@ -27,7 +27,6 @@ services:
       - 80:80
       - 443:443
     volumes:
-      - ~/.m2c/traefik/tmp:/etc/traefik/tmp
       - ~/.m2c/traefik/traefik.toml:/etc/traefik/traefik.toml
       - ~/.m2c/ssl/certs/m2c.crt:/etc/ssl/certs/m2c.crt
       - ~/.m2c/ssl/private/m2c.key:/etc/ssl/private/m2c.key

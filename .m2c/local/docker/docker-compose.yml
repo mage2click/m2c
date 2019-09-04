@@ -12,6 +12,8 @@ services:
       - PHP_IDE_CONFIG=${M2C_CFG_DOMAIN_NAME}
     depends_on:
       - db
+    labels:
+      - m2c.project.path=${M2C_PROJECT_PATH}
     networks:
       - default
       - m2c
