@@ -20,7 +20,7 @@ sync:
         - .m2c
         - /bin
         - /generated
-        - /pub/media
+        - /pub/media/catalog/product
         - /pub/static
         - /var
         - /vendor
