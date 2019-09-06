@@ -13,6 +13,7 @@ services:
       - traefik.enable=true
       - traefik.frontend.rule=Host:m2c.test
       - traefik.port=8080
+    restart: always
 
   traefik:
     container_name: m2c.test__traefik
