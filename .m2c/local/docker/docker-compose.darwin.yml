@@ -5,6 +5,7 @@ services:
   nginx:
     volumes:
       - src_data:/var/www/html
+      - sock_data:/sock
 
   php:
     volumes:
@@ -12,6 +13,8 @@ services:
       - ~/.m2c/ssl/certs:/usr/share/ca-certificates/m2c:ro
 #      - ./../../${M2C_CFG_MAGENTO_SRC}/pub/media:/var/www/html/pub/media:delegated
       - src_data:/var/www/html
+      - sock_data:/sock
 
 volumes:
   src_data:
+  sock_data:
