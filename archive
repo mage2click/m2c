@@ -1,0 +1,14 @@
+#!/bin/bash
+
+sed -n '/^__ARCHIVED__/q;p' ./.m2c/bin/m2c > ./m2c
+
+echo '
+
+exit 0
+
+__ARCHIVED__' >> ./m2c
+
+tar cf ./m2c.tar .m2c && gzip ./m2c.tar
+cat ./m2c.tar.gz >> ./m2c
+
+rm -rf m2c.tar m2c.tar.gz
