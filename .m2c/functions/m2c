@@ -595,7 +595,6 @@ m2c_help() {
   update        Update docker configuration to latest version.
   urn           Generate URN for PHPStorm and remap paths for the host.
   varnish       Run varnish specific commands.
-  xdebug        Control xdebug on the project.
 
 \033[1;33mFlags:\033[0m
   --help        Display this information. To get information about the specific
@@ -634,7 +633,6 @@ m2c_help() {
   update        Update docker configuration to latest version.
   urn           Generate URN for PHPStorm and remap paths for the host.
   varnish       Run varnish specific commands.
-  xdebug        Control xdebug on the project.
 
 \033[1;33mFlags:\033[0m
   --help        Display this information. To get information about the specific
@@ -2504,79 +2502,4 @@ m2c_varnish_reset() {
     ) >"$m2c_log" 2>&1
 
     return $?
-}
-
-m2c_xdebug() {
-    if (("$#"))
-    then
-        m2c_in_array "--help" $@ && m2c_xdebug_help
-
-        m2c_info_bold "\n[Xdebug]\n\n"
-
-        case "$@" in
-            enable)
-                m2c_msg "Enabling Xdebug and restarting php container...........................  "
-                m2c_loading
-                (
-                    m2c_cli sed -i -e 's/^\;zend_extension/zend_extension/g' \
-                        /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-                    m2c_local_container_restart php
-                ) >"$m2c_log" 2>&1
-                m2c_result $?
-            ;;
-            disable)
-                m2c_msg "Disabling Xdebug and restarting php container..........................  "
-                m2c_loading
-                (
-                    m2c_cli sed -i -e 's/^\zend_extension/;zend_extension/g' \
-                        /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-                    m2c_local_container_restart php
-                ) >"$m2c_log" 2>&1
-                m2c_result $?
-            ;;
-            status)
-                m2c_loading
-                m2c_cli php -v | grep 'Xdebug' >/dev/null 2>&1
-                m2c_res=$?
-                m2c_result 0
-                m2c_erase_prev_lines 1
-                if [[ "$m2c_res" == "0" ]]
-                then
-                    m2c_msg "Xdebug is enabled\n"
-                else
-                    m2c_msg "Xdebug is disabled\n"
-                fi
-            ;;
-            *)
-                m2c_xdebug_error $@
-            ;;
-        esac
-    else
-        m2c_xdebug_help
-    fi
-}
-
-m2c_xdebug_error() {
-    m2c_error "Unknown argument \`$@\`. Run \`m2c xdebug --help\` for usage information.\n"
-    exit 1
-}
-
-m2c_xdebug_help() {
-    echo -e "
-\033[1;33mInformation:\033[0m
-  Activate/Deactivate xdebug on php docker service or read current
-  xdebug status.
-
-\033[1;33mUsage:\033[0m
-  m2c xdebug [command] [--help]
-
-\033[1;33mCommands:\033[0m
-  enable    Enable xdebug.
-  disable   Disable xdebug.
-  status    Show current xdebug status.
-
-\033[1;33mFlags:\033[0m
-  --help    Display this information.
-"
-    exit 0
 }
