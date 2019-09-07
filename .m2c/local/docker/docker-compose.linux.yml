@@ -4,7 +4,7 @@ services:
 
   nginx:
     volumes:
-      - ./../../${M2C_CFG_MAGENTO_SRC}/:/var/www/html
+      - ./../../${M2C_CFG_MAGENTO_SRC}/:/var/www/html:ro
       - sock_data:/sock
 
   php:
