@@ -4,7 +4,7 @@ services:
 
   nginx:
     volumes:
-      - src_data:/var/www/html
+      - src_data:/var/www/html:ro
       - sock_data:/sock
 
   php:
