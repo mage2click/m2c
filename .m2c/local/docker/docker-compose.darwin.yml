@@ -14,6 +14,13 @@ services:
       - src_data:/var/www/html
       - sock_data:/sock
 
+  xdebug:
+    volumes:
+      - ~/.composer:/var/www/.composer:delegated
+      - ~/.m2c/ssl/certs:/usr/share/ca-certificates/m2c:ro
+      - src_data:/var/www/html
+      - sock_data:/sock
+
 volumes:
   src_data:
   sock_data:

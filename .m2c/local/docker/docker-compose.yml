@@ -8,12 +8,24 @@ services:
     image: mage2click/m2c:php-fpm-${M2C_CFG_PHP:-7.2}-alpine
     extra_hosts:
       - ${M2C_CFG_DOMAIN_NAME}:${M2C_TRAEFIK_IP:-0.0.0.0}
-    environment:
-      - PHP_IDE_CONFIG=serverName=${M2C_CFG_DOMAIN_NAME}
     depends_on:
       - db
     labels:
       - m2c.project.path=${M2C_PROJECT_PATH}
+    networks:
+      - default
+      - m2c
+
+  xdebug:
+    container_name: ${M2C_CFG_DOMAIN_NAME}__xdebug
+    hostname: ${M2C_CFG_DOMAIN_NAME}__xdebug
+    image: mage2click/m2c:php-fpm-${M2C_CFG_PHP:-7.2}-xdebug-alpine
+    extra_hosts:
+      - ${M2C_CFG_DOMAIN_NAME}:${M2C_TRAEFIK_IP:-0.0.0.0}
+    environment:
+      - PHP_IDE_CONFIG=serverName=${M2C_CFG_DOMAIN_NAME}
+    depends_on:
+      - db
     networks:
       - default
       - m2c

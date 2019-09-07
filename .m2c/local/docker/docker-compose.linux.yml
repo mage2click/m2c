@@ -14,5 +14,12 @@ services:
       - ./../../${M2C_CFG_MAGENTO_SRC}/:/var/www/html
       - sock_data:/sock
 
+  xdebug:
+    volumes:
+      - ~/.composer:/var/www/.composer
+      - ~/.m2c/ssl/certs:/usr/share/ca-certificates/m2c:ro
+      - ./../../${M2C_CFG_MAGENTO_SRC}/:/var/www/html
+      - sock_data:/sock
+
 volumes:
   sock_data:
