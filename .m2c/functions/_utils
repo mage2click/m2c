@@ -472,8 +472,51 @@ m2c_global_update() {
 }
 
 m2c_global_uninstall() {
-    #TODO: uninstall script
-    true
+    m2c_info_bold "\n[Uninstall]\n\n"
+    m2c_msg "Attention!\n\n"
+    m2c_msg "All projects docker containers and its volumes will be removed!\n\n"
+    m2c_msg "Projects files on the host will not be touched. Make sure that\n"
+    m2c_msg "you backed up projects databases.\n\n"
+
+    m2c_ask_bool "Uninstall Mage2click toolset from your system?"
+
+    if [[ -n ${m2c_res} ]]
+    then
+        local projects="$(docker ps --filter "label=m2c.project.path" -qa | \
+            xargs docker inspect --format='{{index .Config.Labels "com.docker.compose.project"}}' | \
+            uniq) m2c"
+
+        projects=(${projects})
+
+        m2c_mutagen daemon stop >/dev/null 2>&1
+
+        for i in "${!projects[@]}"
+        do
+            if [[ "${projects[$i]}" == "m2c" ]]
+            then
+                m2c_info "\nMage2click: "
+            else
+                m2c_info "\nProject: "
+            fi
+            m2c_info_bold "$(echo "${projects[$i]}" | sed 's/.*/https:\/\/&.test/')\n"
+            m2c_msg "Uninstalling...........................................................  "
+            m2c_loading
+            true
+            docker rm -vf $(docker ps \
+                --filter "label=com.docker.compose.project=${projects[$i]}" \
+                -qa) >"$m2c_log" 2>&1 && \
+            docker network rm $(docker network ls \
+                --filter "label=com.docker.compose.project=${projects[$i]}" \
+                -q) >"$m2c_log" 2>&1
+            m2c_result $?
+        done
+
+        rm -rf "$m2c_global_dir" >/dev/null 2>&1
+        rm -rf /usr/local/bin/m2c
+        rm -rf /usr/local/etc/bash_completion.d/m2c
+    fi
+
+    exit 0
 }
 
 m2c_global_help() {
