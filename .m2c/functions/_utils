@@ -448,8 +448,27 @@ m2c_global_info() {
 }
 
 m2c_global_update() {
-    #TODO: update check and update script
-    true
+    local version="$(cat "$m2c_global_dir"/version)" \
+          remote_version
+
+    m2c_info_bold "\n[Update]\n\n"
+    m2c_msg "Checking for update....................................................  "
+    m2c_loading
+    remote_version="$(curl -Ls https://raw.githubusercontent.com/mage2click/m2c/master/.m2c/version)"
+
+    if [[ "$remote_version" -gt "$version" ]]
+    then
+        curl -Ls -o m2c.run raw.githubusercontent.com/mage2click/m2c/master/m2c && \
+            m2c_result 0 && \
+            chmod 755 m2c.run && \
+            ./m2c.run
+    else
+        m2c_result 0
+        m2c_logo
+        m2c_msg "You’re up-to-date! v$m2c_version is currently the newest version available."
+    fi
+
+    exit 0
 }
 
 m2c_global_uninstall() {
