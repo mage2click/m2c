@@ -1,0 +1,2582 @@
+#!/bin/bash
+
+if [[ -z "$m2c_global_dir" ]]
+then
+    echo -e "\033[1;31mThis script intended to be sourced and should not be executed directly!\033[0m"
+    exit 1
+fi
+
+declare -r m2c_varnish_versions=("5.2" "4.1")
+declare -r m2c_elasticsearch_versions=("6.8" "6.7" "6.6" "6.5" "6.4" "6.3" "6.2" "6.1" "6.0" \
+                                       "5.6" "5.5" "5.4" "5.3" "5.2" "5.1" "5.0" \
+                                       "2.4" "2.3" "2.2" "2.1" "2.0")
+declare -r m2c_rabbitmq_versions=("3.7" "3.6" "3.5" "3.4" "3.3" "3.2" "3.1" "3.0" \
+                                  "2.8" "2.7" "2.6" "2.5" "2.4" "2.3" "2.2" "2.1" "2.0")
+
+m2c_get_project_dir() {
+    local current_dir="$(pwd)"
+
+    while [[ ! -f "$current_dir/.m2c/docker/.env" ]] && [[ "$current_dir" != ~ ]] && [[ "$current_dir" != "/" ]]
+    do
+        current_dir="$(cd "$current_dir"/.. >/dev/null 2>&1 && pwd)"
+    done
+
+    [[ "$current_dir" != ~ ]] && [[ "$current_dir" != "/" ]] && echo "$current_dir" || echo "$(pwd)"
+}
+
+m2c_save_project_env() {
+    local config_env="$m2c_project_dir/.m2c/docker/.env"
+
+    [[ -f "$config_env" ]] || mkdir -p "$(dirname "$config_env")" && touch "$config_env"
+
+    set | grep '^M2C_CFG_' > "$config_env"
+}
+
+m2c_load_project_env() {
+    local config_env="$m2c_project_dir/.m2c/docker/.env"
+
+    if [[ -f "$config_env" ]]
+    then
+        set -a
+        . "$config_env"
+        set +a
+    fi
+
+    export M2C_TRAEFIK_IP="$(docker ps \
+        --filter "label=com.docker.compose.project=m2c" \
+        --filter "label=com.docker.compose.service=traefik" \
+        -qa | xargs docker inspect \
+        --format="{{index .NetworkSettings.Networks.m2c.IPAddress}}")"
+}
+
+m2c_load_project_defaults_env() {
+    local config_env="$m2c_global_dir/local/docker/.env"
+
+    [[ -f "$config_env" ]] && . "$config_env"
+}
+
+m2c_validate_domain() {
+    local domain=$1
+
+    if [[ -n ${domain} && -n $(echo "$domain" | grep -E \
+        '(^(?:[a-zA-Z0-9](?:(?:[a-zA-Z0-9\-]){0,61}[a-zA-Z0-9])?\.)+test$)') ]]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+m2c_validate_in_array() {
+    local values=() value="$1"
+    shift
+    values+=("$@")
+
+    [[ -n ${value} ]] && m2c_in_array "$value" ${values[@]} && return 0 || return 1
+}
+
+m2c_validate_file() {
+    local value=$1
+
+    [[ -n ${value} && -f "$value" ]] && return 0 || return 1
+}
+
+m2c_validate_url_path() {
+    local value=$1
+
+    [[ -n ${value} && -n $(echo "$value" | grep -E \
+        '(^(?:[a-zA-Z0-9](?:(?:[a-zA-Z0-9\-\_])[a-zA-Z0-9])?)+$)') ]] && return 0 || return 1
+}
+
+m2c_validate_not_empty() {
+    local value=$1
+
+    [[ -n ${value} ]] && return 0 || return 1
+}
+
+m2c_elasticsearch_configure() {
+    local version=${M2C_CFG_ELASTICSEARCH:0:1}
+
+    (
+        m2c_magento notty config:set --scope=default --scope-code=0 catalog/search/engine \
+            elasticsearch${version/2/} && \
+        m2c_magento notty config:set --scope=default --scope-code=0 \
+            catalog/search/elasticsearch${version/2/}_server_hostname \
+            ${M2C_CFG_DOMAIN_NAME}__elasticsearch
+    ) >"$m2c_log" 2>&1
+
+    return $?
+}
+
+m2c_elasticsearch_reset() {
+    local version=${M2C_CFG_ELASTICSEARCH:0:1}
+
+    (
+        m2c_magento notty config:set --scope=default --scope-code=0 catalog/search/engine mysql && \
+        m2c_magento notty config:set --scope=default --scope-code=0 \
+            catalog/search/elasticsearch${version/2/}_server_hostname ""
+    ) >"$m2c_log" 2>&1
+
+    return $?
+}
+
+m2c_set_opt_version() {
+    local name=$1 versions=() default
+
+    shift
+
+    versions=("$@")
+    default=${versions[0]}
+    error="Invalid $name version, supported versions:\n"
+    error_info="$(
+        for i in "${!versions[@]}"
+        do
+            echo -en "${versions[$i]}\t\t"
+            (( ($i + 1) % 5 == 0 )) && echo -en "\n"
+        done)\n"
+
+    m2c_ask_text "Set $name version for your project:" \
+                 "$default" \
+                 "$error" \
+                 "$error_info" \
+                 m2c_validate_in_array "${versions[@]}"
+
+    case "$name" in
+        "Magento")
+            M2C_CFG_MAGENTO="$m2c_res"
+        ;;
+        "Nginx")
+            M2C_CFG_NGINX="$m2c_res"
+        ;;
+        "PHP")
+            M2C_CFG_PHP="$m2c_res"
+        ;;
+        "MariaDB")
+            M2C_CFG_MARIADB="$m2c_res"
+        ;;
+        "Redis")
+            M2C_CFG_REDIS="$m2c_res"
+        ;;
+        "Varnish")
+            M2C_CFG_VARNISH="$m2c_res"
+        ;;
+        "Elasticsearch")
+            M2C_CFG_ELASTICSEARCH="$m2c_res"
+        ;;
+        "RabbitMQ")
+            M2C_CFG_RABBITMQ="$m2c_res"
+        ;;
+    esac
+
+    m2c_res=
+}
+
+m2c_cli() {
+    if [[ "$1" == "notty" ]]
+    then
+        m2c_tty=
+        shift
+    else
+        m2c_tty=1
+    fi
+
+    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" "$@"
+}
+
+m2c_bash() {
+    if [[ "$1" == "notty" ]]
+    then
+        m2c_tty=
+        shift
+    else
+        m2c_tty=1
+    fi
+
+    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" bash "$@"
+}
+
+m2c_composer() {
+    if [[ "$1" == "notty" ]]
+    then
+        m2c_tty=
+        shift
+    else
+        m2c_tty=1
+    fi
+
+    if [[ "$m2c_os" != "darwin" ]]
+    then
+        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" composer "$@"
+    else
+        m2c_sync pause >/dev/null 2>&1
+        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" composer "$@"
+        m2c_pull vendor
+    fi
+}
+
+m2c_global() {
+    m2c_in_array "--help" $@ && m2c_global_help
+
+    case "$1" in
+        info|status)
+            m2c_global_info
+        ;;
+        projects)
+            m2c_global_projects
+        ;;
+        uninstall)
+            m2c_global_uninstall
+        ;;
+        update)
+            m2c_global_update
+        ;;
+        *)
+            local m2c_global_services=("portainer" "mailhog" "dnsmasq" "traefik" "mage2click")
+            local m2c_global_service=()
+            local m2c_global_command=
+
+            while (("$#")); do
+                case "$1" in
+                    up|start|restart|stop)
+                        m2c_global_command="$1"
+                        shift
+                    ;;
+                    portainer|mailhog|dnsmasq|traefik|mage2click)
+                        m2c_global_service+=($1)
+                        shift
+                    ;;
+                    *)
+                        m2c_global_error "$1"
+                    ;;
+                esac
+            done
+
+            (("${#m2c_global_service[@]}")) || m2c_global_service+=${m2c_global_services[@]}
+
+            case ${m2c_global_command} in
+                up)
+                    m2c_global_up "${m2c_global_service[@]}"
+                ;;
+                start)
+                    m2c_global_start "${m2c_global_service[@]}"
+                ;;
+                restart)
+                    m2c_global_restart "${m2c_global_service[@]}"
+                ;;
+                stop)
+                    m2c_global_stop "${m2c_global_service[@]}"
+                ;;
+                *)
+                    m2c_global_help
+                ;;
+            esac
+        ;;
+    esac
+
+}
+
+m2c_global_error() {
+    m2c_error "Unknown argument \`$1\`. Run \`m2c global --help\` for usage information.\n"
+    exit 1
+}
+
+m2c_global_print_service() {
+    case "$1" in
+        portainer)
+            m2c_msg "Portainer..............................................................  "
+        ;;
+        mailhog)
+            m2c_msg "Mailhog................................................................  "
+        ;;
+        dnsmasq)
+            m2c_msg "Dnsmasq................................................................  "
+        ;;
+        traefik)
+            m2c_msg "Traefik................................................................  "
+        ;;
+        mage2click)
+            m2c_msg "Mage2click.............................................................  "
+        ;;
+    esac
+}
+
+m2c_global_up() {
+    local service=($1)
+
+    m2c_info_bold "\n[Creating docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+
+    for i in "${!service[@]}"
+    do
+        m2c_global_print_service ${service[$i]}
+        m2c_loading
+        docker-compose --project-name m2c \
+            --file "$m2c_global_dir/docker/docker-compose.yml" up \
+            -d --force-recreate ${service[$i]} >"$m2c_log" 2>&1
+        m2c_result $?
+    done
+}
+
+m2c_global_start() {
+    local service=($1)
+
+    m2c_info_bold "\n[Starting docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+
+    for i in "${!service[@]}"
+    do
+        m2c_global_print_service ${service[$i]}
+        m2c_loading
+        docker start $(docker ps \
+            --filter "label=com.docker.compose.project=m2c" \
+            --filter "label=com.docker.compose.service=${service[$i]}" \
+            -qa) >"$m2c_log" 2>&1
+        m2c_result $?
+    done
+}
+
+m2c_global_restart() {
+    local service=($1)
+
+    m2c_info_bold "\n[Restarting docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+
+    for i in "${!service[@]}"
+    do
+        m2c_global_print_service ${service[$i]}
+        m2c_loading
+        docker restart $(docker ps \
+            --filter "label=com.docker.compose.project=m2c" \
+            --filter "label=com.docker.compose.service=${service[$i]}" \
+            -qa) >"$m2c_log" 2>&1
+        m2c_result $?
+    done
+}
+
+m2c_global_stop() {
+    local service=($1)
+
+    m2c_info_bold "\n[Stopping docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+
+    for i in "${!service[@]}"
+    do
+        m2c_global_print_service ${service[$i]}
+        m2c_loading
+        docker stop $(docker ps \
+            --filter "label=com.docker.compose.project=m2c" \
+            --filter "label=com.docker.compose.service=${service[$i]}" \
+            -qa) >"$m2c_log" 2>&1
+        m2c_result $?
+    done
+}
+
+m2c_global_projects() {
+    m2c_logo
+
+    local projects="$(docker ps --filter "label=m2c.project.path" -qa | \
+        xargs docker inspect --format='{{index .Config.Labels "com.docker.compose.project"}}' | \
+        uniq)"
+    local spaces containers
+
+    projects=(${projects})
+
+    for i in "${!projects[@]}"
+    do
+        spaces="$(printf "%-${#projects[$i]}s" " ")"
+        containers="$(docker ps \
+            --filter "label=com.docker.compose.project=${projects[$i]}" \
+            --format 'table {{.ID}}  {{.Names}}\t{{.Image}}\t{{.Status}}' -a | \
+            sed "s/${projects[$i]}.test__//; s/${spaces}       IMAGE/IMAGE/")\n\n"
+
+        m2c_msg "=========================================================================\n\n"
+        m2c_info "Project: "
+        m2c_info_bold "$(echo "${projects[$i]}" | sed 's/.*/https:\/\/&.test/')\n"
+        if echo "$containers" | grep -q "phpmyadmin"
+        then
+            m2c_info "phpMyAdmin: "
+            m2c_info_bold "$(echo "${projects[$i]}" | sed 's/.*/https:\/\/pma.&.test/')\n"
+        fi
+        if echo "$containers" | grep -q "elasticsearch"
+        then
+            m2c_info "Elasticsearch: "
+            m2c_info_bold "$(echo "${projects[$i]}" | sed 's/.*/https:\/\/elasticsearch.&.test/')\n"
+        fi
+        if echo "$containers" | grep -q "rabbitmq"
+        then
+            m2c_info "RabbitMQ: "
+            m2c_info_bold "$(echo "${projects[$i]}" | sed 's/.*/https:\/\/rabbitmq.&.test/')\n"
+        fi
+        m2c_info "Path: "
+        m2c_info_bold "$(docker inspect --format='{{index .Config.Labels "m2c.project.path"}}' \
+            "${projects[$i]}.test__php")\n\n"
+        m2c_msg "$containers"
+    done
+
+    m2c_msg "=========================================================================\n"
+    exit 0
+}
+
+m2c_global_info() {
+    local project="m2c"
+    local spaces="$(printf "%-${#project}s" " ")"
+    local containers="$(docker ps \
+            --filter "label=com.docker.compose.project=${project}" \
+            --format 'table {{.ID}}  {{.Names}}\t{{.Image}}\t{{.Status}}' -a | \
+            sed "s/${project}.test__//; s/${spaces}       IMAGE/IMAGE/")\n"
+
+    m2c_info "\nMage2click: "
+    m2c_info_bold "$(echo "${project}" | sed 's/.*/https:\/\/&.test/')\n"
+    if echo "$containers" | grep -q "traefik"
+    then
+        m2c_info "Traefik: "
+        m2c_info_bold "$(echo "${project}" | sed 's/.*/https:\/\/traefik.&.test/')\n"
+    fi
+    if echo "$containers" | grep -q "portainer"
+    then
+        m2c_info "Portainer: "
+        m2c_info_bold "$(echo "${project}" | sed 's/.*/https:\/\/portainer.&.test/')\n"
+    fi
+    if echo "$containers" | grep -q "mailhog"
+    then
+        m2c_info "Mailhog: "
+        m2c_info_bold "$(echo "${project}" | sed 's/.*/https:\/\/mailhog.&.test/')\n"
+    fi
+    if echo "$containers" | grep -q "dnsmasq"
+    then
+        m2c_info "Dnsmasq: "
+        m2c_info_bold "$(echo "${project}" | sed 's/.*/https:\/\/dnsmasq.&.test/')\n"
+    fi
+    m2c_msg "\n$containers"
+    exit 0
+}
+
+m2c_global_update() {
+    local version="$(cat "$m2c_global_dir"/version)" \
+          remote_version
+
+    m2c_info_bold "\n[Update]\n\n"
+    m2c_msg "Checking for update....................................................  "
+    m2c_loading
+    remote_version="$(curl -Ls https://raw.githubusercontent.com/mage2click/m2c/master/.m2c/version)"
+
+    if [[ "$remote_version" -gt "$version" ]]
+    then
+        curl -Ls -o m2c.run raw.githubusercontent.com/mage2click/m2c/master/m2c && \
+            m2c_result 0 && \
+            chmod 755 m2c.run && \
+            ./m2c.run
+    else
+        m2c_result 0
+        m2c_logo
+        m2c_msg "You’re up-to-date! v$m2c_version is currently the newest version available."
+    fi
+
+    exit 0
+}
+
+m2c_global_uninstall() {
+    m2c_info_bold "\n[Uninstall]\n\n"
+    m2c_msg "Attention!\n\n"
+    m2c_msg "All projects docker containers and its volumes will be removed!\n\n"
+    m2c_msg "Projects files on the host will not be touched. Make sure that\n"
+    m2c_msg "you backed up projects databases.\n\n"
+
+    m2c_ask_bool "Uninstall Mage2click toolset from your system?"
+
+    if [[ -n ${m2c_res} ]]
+    then
+        local projects="$(docker ps --filter "label=m2c.project.path" -qa | \
+            xargs docker inspect --format='{{index .Config.Labels "com.docker.compose.project"}}' | \
+            uniq) m2c"
+
+        projects=(${projects})
+
+        m2c_mutagen daemon stop >/dev/null 2>&1
+
+        for i in "${!projects[@]}"
+        do
+            if [[ "${projects[$i]}" == "m2c" ]]
+            then
+                m2c_info "\nMage2click: "
+            else
+                m2c_info "\nProject: "
+            fi
+            m2c_info_bold "$(echo "${projects[$i]}" | sed 's/.*/https:\/\/&.test/')\n"
+            m2c_msg "Uninstalling...........................................................  "
+            m2c_loading
+            true
+            docker rm -vf $(docker ps \
+                --filter "label=com.docker.compose.project=${projects[$i]}" \
+                -qa) >"$m2c_log" 2>&1 && \
+            docker network rm $(docker network ls \
+                --filter "label=com.docker.compose.project=${projects[$i]}" \
+                -q) >"$m2c_log" 2>&1
+            m2c_result $?
+        done
+
+        rm -rf "$m2c_global_dir" >/dev/null 2>&1
+        rm -rf /usr/local/bin/m2c
+        rm -rf /usr/local/etc/bash_completion.d/m2c
+    fi
+
+    exit 0
+}
+
+m2c_global_help() {
+    echo -e "
+\033[1;33mInformation:\033[0m
+  Control Mage2click toolset installation and its docker services.
+
+\033[1;33mUsage:\033[0m
+  m2c global <command> [service...] [--help]
+
+\033[1;33mCommands:\033[0m
+  projects      Show existing Mage2click-backed projects.
+  restart       Restart Mage2click toolset docker services.
+  start         Start stopped Mage2click toolset docker services.
+  stop          Stop running Mage2click toolset docker services.
+  up            Create and start Mage2click toolset docker containers,
+                networks and services.
+  update        Check Mage2click toolset for updates.
+  uninstall     Uninstall Mage2click toolset from system.
+
+\033[1;33mServices:\033[0m
+  dnsmasq       Dnsmasq service.
+  mage2click    Mage2click service.
+  mailhog       Mailhog service.
+  portainer     Portainer service.
+  traefik       Traefik service.
+
+\033[1;33mFlags:\033[0m
+  --help        Display this information.
+"
+    exit 0
+}
+
+m2c_grunt() {
+    if [[ "$1" == "notty" ]]
+    then
+        m2c_tty=
+        shift
+    else
+        m2c_tty=1
+    fi
+
+    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" grunt "$@"
+}
+
+m2c_help() {
+    m2c_logo
+
+    if [[ "$m2c_os" != "darwin" ]]
+    then
+    echo -e "
+\033[1;33mUsage:\033[0m
+  m2c <command> [arguments...] [--help]
+
+\033[1;33mCommands:\033[0m
+  add           Add optional service to project.
+  bash          Open the bash prompt on project php docker service.
+  cli           Run any cli command without going into the bash prompt.
+  composer      Run composer specific commands.
+  db            Database related commands.
+  grunt         Run grunt specific commands.
+  info          Print project info and status.
+  init          Initialize project in the current directory.
+  magento, m    Run bin/magento specific commands.
+  magerun, mr   Run n98-magerun specific commands.
+  node          Run node specific commands.
+  npm           Run npm specific commands.
+  redis         Run redis specific commands.
+  remove        Remove optional service from project.
+  restart       Restart running docker services and starts all stopped ones.
+  share         Start sharing session over secure ngrok tunnels.
+  sign          Sign specified domain name with ssl certificate.
+  start         Start all stopped docker services.
+  status        Print project info and status.
+  stop          Stop all running docker services.
+  update        Update docker configuration to latest version.
+  urn           Generate URN for PHPStorm and remap paths for the host.
+  varnish       Run varnish specific commands.
+  xdebug        Control xdebug on the project.
+
+\033[1;33mFlags:\033[0m
+  --help        Display this information. To get information about the specific
+                command, use with corresponding command name.
+"
+    else
+    echo -e "
+\033[1;33mUsage:\033[0m
+  m2c <command> [args...] [--help]
+
+\033[1;33mCommands:\033[0m
+  add           Add optional service to project.
+  bash          Open the bash prompt on project php docker service.
+  cli           Run any cli command without going into the bash prompt.
+  composer      Run composer specific commands.
+  db            Database related commands.
+  grunt         Run grunt specific commands.
+  info          Print project info and status.
+  init          Initialize project in the current directory.
+  magento, m    Run bin/magento specific commands.
+  magerun, mr   Run n98-magerun specific commands.
+  mutagen       Run mutagen.io sync related commands.
+  node          Run node specific commands.
+  npm           Run npm specific commands.
+  push          Push specified file or directory to docker container.
+  pull          Pull specified file or directory from docker container.
+  redis         Run redis specific commands.
+  remove        Remove optional service from project.
+  restart       Restart running docker services and starts all stopped ones.
+  share         Start sharing session over secure ngrok tunnels.
+  sign          Sign specified domain name with ssl certificate.
+  start         Start all stopped docker services.
+  status        Print project info and status.
+  stop          Stop all running docker services.
+  sync          Control mutagen.io files sync with docker containers.
+  update        Update docker configuration to latest version.
+  urn           Generate URN for PHPStorm and remap paths for the host.
+  varnish       Run varnish specific commands.
+  xdebug        Control xdebug on the project.
+
+\033[1;33mFlags:\033[0m
+  --help        Display this information. To get information about the specific
+                command, use with corresponding command name.
+"
+    fi
+
+    exit 0
+}
+
+m2c_init() {
+    local m2c_nginx_versions=("1.17" "1.16" "1.15" "1.14" "1.13" "1.12" "1.11" "1.10" "1.9" "1.8")
+    local m2c_php_versions=("7.2" "7.1" "7.0" "5.6")
+    local m2c_mariadb_versions=("10.3" "10.2" "10.1" "10.0")
+    local m2c_redis_versions=("5.0" "4.0" "3.2")
+    local m2c_magento_versions=("2.3.2" "2.3.1" "2.3.0" \
+            "2.2.9" "2.2.8" "2.2.7" "2.2.6" "2.2.5" "2.2.4" "2.2.3" "2.2.2" "2.2.1" "2.2.0" \
+            "2.1.18" "2.1.17" "2.1.16" "2.1.15" "2.1.14" "2.1.13" "2.1.12" "2.1.11" "2.1.10" \
+            "2.1.9" "2.1.8" "2.1.7" "2.1.6" "2.1.5" "2.1.4" "2.1.3" "2.1.2" "2.1.1" "2.1.0" \
+            "2.0.18" "2.0.17" "2.0.16" "2.0.15" "2.0.14" "2.0.13" "2.0.12" "2.0.11" "2.0.10" \
+            "2.0.9" "2.0.8" "2.0.7" "2.0.6" "2.0.5" "2.0.4" "2.0.3" "2.0.2" "2.0.1" "2.0.0" \
+            "1.9.4.2" "1.9.4.1" "1.9.4.0" \
+            "1.9.3.10" "1.9.3.9" "1.9.3.8" "1.9.3.7" "1.9.3.6" "1.9.3.4" "1.9.3.3" "1.9.3.2" \
+            "1.9.3.1" "1.9.3.0" \
+            "1.9.2.4" "1.9.2.3" "1.9.2.2" "1.9.2.1" "1.9.2.0" \
+            "1.9.1.1" "1.9.1.0" \
+            "1.9.0.1" "1.9.0.0" \
+            "1.8.1.0" "1.8.0.0" \
+            "1.7.0.2" "1.7.0.1" "1.7.0.0")
+    local m2c_init_params=("--domain" "--nginx-version" "--php-version" "--mariadb-version" "--redis-version" \
+            "--varnish-version" "--elasticsearch-version" "--rabbitmq-version" "--magento-version" \
+            "--magento-admin-url" "--magento-import-db" "--elasticsearch"  "--phpmyadmin" \
+            "--rabbitmq" "--varnish" "--magento-sample-data" "--magento-sub-dir")
+    local m2c_magento_exists=
+    local m2c_magento_db_import=
+    local m2c_magento_sample_data=
+
+    if (("$#"))
+    then
+        m2c_load_project_defaults_env
+
+        m2c_in_array "--help" $@ && m2c_init_help
+
+        while (("$#"))
+        do
+            case "$1" in
+                --*)
+                    param=$1
+
+                    if ! m2c_in_array "$param" ${m2c_init_params[@]}
+                    then
+                        m2c_init_error "$param"
+                    fi
+
+                    case "$param" in
+                        --domain|--domain=*)
+                            if [[ "$param" == "--domain" ]]
+                            then
+                                shift
+                                value="$1"
+                            else
+                                value="${param#*=}"
+                            fi
+
+                            if ! m2c_validate_domain "$value"
+                            then
+                                m2c_error_bold \
+                                    "Invalid domain name $value!\nOnly valid domain names with .test tld are supported!\n"
+                                exit 1
+                            fi
+
+                            M2C_CFG_DOMAIN_NAME="$value"
+                        ;;
+                        --magento-admin-url|--magento-admin-url=*)
+                            if [[ "$param" == "--magento-admin-url" ]]
+                            then
+                                shift
+                                value="$1"
+                            else
+                                value="${param#*=}"
+                            fi
+
+                            if ! m2c_validate_url_path "$value"
+                            then
+                                m2c_error_bold "Invalid admin url path $value!\n"
+                                exit 1
+                            fi
+
+                            M2C_CFG_ADMIN_URL="$value"
+                        ;;
+                        --magento-sub-dir|--magento-sub-dir=*)
+                            if [[ "$param" == "--magento-sub-dir" ]]
+                            then
+                                shift
+                                value="$1"
+                            else
+                                value="${param#*=}"
+                            fi
+
+                            if ! m2c_validate_url_path "$value"
+                            then
+                                m2c_error_bold "Invalid sub-directory name $value!\n"
+                                exit 1
+                            fi
+
+                            M2C_CFG_MAGENTO_SRC="$value"
+                        ;;
+                        --nginx-version|--nginx-version=*)
+                            if [[ "$param" == "--nginx-version" ]]
+                            then
+                                shift
+                                value="$1"
+                            else
+                                value="${param#*=}"
+                            fi
+
+                            m2c_init_check_version "Nginx" "$value" "${m2c_nginx_versions[@]}"
+
+                            M2C_CFG_NGINX="$value"
+                        ;;
+                        --php-version|--php-version=*)
+                            if [[ "$param" == "--php-version" ]]
+                            then
+                                shift
+                                value="$1"
+                            else
+                                value="${param#*=}"
+                            fi
+
+                            m2c_init_check_version "PHP" "$value" "${m2c_php_versions[@]}"
+
+                            M2C_CFG_PHP="$value"
+                        ;;
+                        --mariadb-version|--mariadb-version=*)
+                            if [[ "$param" == "--mariadb-version" ]]
+                            then
+                                shift
+                                value="$1"
+                            else
+                                value="${param#*=}"
+                            fi
+
+                            m2c_init_check_version "MariaDB" "$value" "${m2c_mariadb_versions[@]}"
+
+                            M2C_CFG_MARIADB="$value"
+                        ;;
+                        --redis-version|--redis-version=*)
+                            if [[ "$param" == "--redis-version" ]]
+                            then
+                                shift
+                                value="$1"
+                            else
+                                value="${param#*=}"
+                            fi
+
+                            m2c_init_check_version "Redis" "$value" "${m2c_redis_versions[@]}"
+
+                            M2C_CFG_REDIS="$value"
+                        ;;
+                        --varnish-version|--varnish-version=*)
+                            if [[ "$param" == "--varnish-version" ]]
+                            then
+                                shift
+                                value="$1"
+                            else
+                                value="${param#*=}"
+                            fi
+
+                            m2c_init_check_version "Varnish" "$value" "${m2c_varnish_versions[@]}"
+
+                            M2C_CFG_VARNISH="$value"
+                        ;;
+                        --elasticsearch-version|--elasticsearch-version=*)
+                            if [[ "$param" == "--elasticsearch-version" ]]
+                            then
+                                shift
+                                value="$1"
+                            else
+                                value="${param#*=}"
+                            fi
+
+                            m2c_init_check_version "Elasticsearch" "$value" "${m2c_elasticsearch_versions[@]}"
+
+                            M2C_CFG_ELASTICSEARCH="$value"
+                        ;;
+                        --rabbitmq-version|--rabbitmq-version=*)
+                            if [[ "$param" == "--rabbitmq-version" ]]
+                            then
+                                shift
+                                value="$1"
+                            else
+                                value="${param#*=}"
+                            fi
+
+                            m2c_init_check_version "RabbitMQ" "$value" "${m2c_rabbitmq_versions[@]}"
+
+                            M2C_CFG_RABBITMQ="$value"
+                        ;;
+                        --magento-version|--magento-version=*)
+                            if [[ "$param" == "--magento-version" ]]
+                            then
+                                shift
+                                value="$1"
+                            else
+                                value="${param#*=}"
+                            fi
+
+                            m2c_init_check_version "Magento" "$value" "${m2c_magento_versions[@]}"
+
+                            M2C_CFG_MAGENTO="$value"
+                        ;;
+                        --magento-import-db|--magento-import-db=*)
+                            if [[ "$param" == "--magento-import-db" ]]
+                            then
+                                shift
+                                value="$1"
+                            else
+                                value="${param#*=}"
+                            fi
+
+                            if ! m2c_validate_file "$value"
+                            then
+                                m2c_error_bold \
+                                    "Cannot locate database dump file at specified path $value!\n"
+                                exit 1
+                            fi
+
+                            m2c_magento_db_import="$value"
+                        ;;
+                        --phpmyadmin)
+                            M2C_CFG_PHPMYADMIN=1
+                        ;;
+                        --magento-sample-data)
+                            m2c_magento_sample_data=1
+                        ;;
+                    esac
+
+                    shift
+                ;;
+                *)
+                    m2c_init_error "$1"
+                ;;
+            esac
+        done
+
+        m2c_save_project_env
+        m2c_logo
+    else
+        m2c_logo
+        m2c_info_bold "\n[Initializing project]\n\n"
+
+        m2c_msg "Scanning current directory.............................................  "
+        m2c_loading && m2c_result 0
+
+        if [[ ! -f "$m2c_project_dir/.m2c/docker/.env" ]]
+        then
+            m2c_load_project_defaults_env
+
+            m2c_msg "Project .env file is not found, starting interactive setup.............  "
+            m2c_loading && m2c_result 0
+
+            m2c_info_bold "\n[Configure project]\n\n"
+
+            m2c_ask_text "Set the domain name for your project:" \
+                         "$(basename "$m2c_project_dir").test" \
+                         "Invalid domain name %s!\nOnly valid domain names with .test tld are supported!\n" \
+                         "" \
+                         m2c_validate_domain
+
+            M2C_CFG_DOMAIN_NAME="$m2c_res"
+
+            m2c_set_opt_version "Nginx" "${m2c_nginx_versions[@]}"
+
+            m2c_set_opt_version "PHP" "${m2c_php_versions[@]}"
+
+            m2c_set_opt_version "MariaDB" "${m2c_mariadb_versions[@]}"
+
+            m2c_set_opt_version "Redis" "${m2c_redis_versions[@]}"
+
+            m2c_info_bold "\n[Configure project extras]\n\n"
+
+            m2c_ask_bool "Include Varnish service?"
+            M2C_CFG_VARNISH=${m2c_res}
+
+            if [[ -n ${M2C_CFG_VARNISH} ]]
+            then
+                m2c_set_opt_version "Varnish" "${m2c_varnish_versions[@]}"
+            fi
+
+            m2c_ask_bool "Include Elasticsearch service?"
+            M2C_CFG_ELASTICSEARCH=${m2c_res}
+
+            if [[ -n ${M2C_CFG_ELASTICSEARCH} ]]
+            then
+                m2c_set_opt_version "Elasticsearch" "${m2c_elasticsearch_versions[@]}"
+            fi
+
+            m2c_ask_bool "Include RabbitMQ service?"
+            M2C_CFG_RABBITMQ=${m2c_res}
+
+            if [[ -n ${M2C_CFG_RABBITMQ} ]]
+            then
+                m2c_set_opt_version "RabbitMQ" "${m2c_rabbitmq_versions[@]}"
+            fi
+
+            m2c_ask_bool "Include phpMyAdmin service?"
+            M2C_CFG_PHPMYADMIN=${m2c_res}
+
+            m2c_info_bold "\n[Configure Magento installation]\n\n"
+
+            m2c_ask_bool "Use sub-directory for Magento installation?"
+            M2C_CFG_MAGENTO_SRC=${m2c_res}
+
+            if [[ -n ${M2C_CFG_MAGENTO_SRC} ]]
+            then
+                m2c_ask_text "Set the sub-directory name:" \
+                     "src" \
+                     "Invalid sub-directory name %s!\n" \
+                     "" \
+                     m2c_validate_url_path
+
+                M2C_CFG_MAGENTO_SRC="$m2c_res"
+            fi
+
+            if m2c_init_detect_magento
+            then
+                m2c_magento_exists=1
+            fi
+
+            if [[ -z ${M2C_CFG_MAGENTO} ]]
+            then
+                m2c_set_opt_version "Magento" "${m2c_magento_versions[@]}"
+            fi
+
+            if [[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]]
+            then
+                m2c_ask_bool "Include Magento sample data?"
+                m2c_magento_sample_data=${m2c_res}
+            fi
+
+            m2c_ask_text "Set the Magento admin url path:" \
+                         "admin" \
+                         "Invalid admin url path %s!\n" \
+                         "" \
+                         m2c_validate_url_path
+
+            M2C_CFG_ADMIN_URL="$m2c_res"
+
+            m2c_save_project_env
+        else
+            m2c_load_project_env
+
+            m2c_msg "Project .env file is found, proceeding with setup......................  "
+            m2c_loading && m2c_result 0
+
+            if m2c_init_detect_magento
+            then
+                m2c_magento_exists=1
+            fi
+
+            m2c_save_project_env
+        fi
+
+        m2c_init_composer_auth
+
+        if [[ -n ${m2c_magento_exists} && -z ${m2c_magento_db_import} ]]
+        then
+            m2c_info_bold "\n[Configure Database]\n\n"
+
+            m2c_ask_bool "Import existing database?"
+            m2c_magento_db_import=${m2c_res}
+
+            if [[ -n ${m2c_magento_db_import} ]]
+            then
+                m2c_magento_db_import=
+
+                m2c_msg "\nSpecify full path to plain sql or gzipped database dump file to import.\n\n"
+
+                m2c_ask_text "Set the database dump file path:" \
+                             "" \
+                             "Cannot locate database dump file at specified path %s!\n" \
+                             "" \
+                             m2c_validate_file
+
+                m2c_magento_db_import="$m2c_res"
+            fi
+        fi
+    fi
+
+    local url
+
+    mkdir -p "$m2c_project_dir"/.m2c/mutagen
+    yes | cp -rf "$m2c_global_dir"/local/docker/* "$m2c_project_dir"/.m2c/docker/
+    yes | cp -rf "$m2c_global_dir"/local/mutagen/mutagen.yml "$m2c_project_dir"/.m2c/mutagen/mutagen.yml
+    rm -rf "$m2c_project_dir"/.m2c/mutagen/mutagen.yml.lock >/dev/null 2>&1
+
+    if [[ -z ${m2c_magento_exists} ]]
+    then
+        m2c_info_bold "\n[Downloading magento sources]\n\n"
+
+        url="http://pubfiles.nexcess.net/magento/ce-packages/magento$([[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && \
+            echo "2")$([[ -n ${m2c_magento_sample_data} && "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && \
+            echo "-with-samples")-$M2C_CFG_MAGENTO.tar.gz"
+
+        if [[ -n ${M2C_CFG_MAGENTO_SRC} ]]
+        then
+            mkdir -p "$m2c_project_dir/$M2C_CFG_MAGENTO_SRC"
+            curl -L "$url" | tar xzf - -o -C "$m2c_project_dir/$M2C_CFG_MAGENTO_SRC"
+        else
+            curl -L "$url" | tar xzf - -o -C "$m2c_project_dir"
+        fi
+    fi
+
+    m2c_info_bold "\n[Cleanup]\n\n"
+    m2c_msg "Cleanup before creating containers.....................................  "
+    m2c_loading
+    m2c_local_project_down >/dev/null 2>&1
+    m2c_result 0
+
+    m2c_local up
+    m2c_push --all
+
+    if [[ -f "$m2c_magento_db_import" ]]
+    then
+        m2c_info_bold "\n[Importing database]\n\n"
+
+        if file --mime-type "$m2c_magento_db_import" | grep -q gzip$; then
+            m2c_msg "Unpacking and importing database dump file.............................  "
+            m2c_loading
+            (
+                gunzip -c "$m2c_magento_db_import" | \
+                    m2c_cli notty LANG=C LC_CTYPE=C LC_ALL=C \
+                    sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | \
+                    mysql -hdb -u"$M2C_CFG_MYSQL_USER" -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE"
+            ) >"$m2c_log" 2>&1
+            m2c_result $?
+        else
+            m2c_msg "Importing database dump file...........................................  "
+            m2c_loading
+            (
+                cat "$m2c_magento_db_import" | \
+                    m2c_cli notty LANG=C LC_CTYPE=C LC_ALL=C \
+                    sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | \
+                    mysql -hdb -u"$M2C_CFG_MYSQL_USER" -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE"
+            ) >"$m2c_log" 2>&1
+            m2c_result $?
+        fi
+
+        m2c_msg "Setting the project domain name........................................  "
+        m2c_magento notty config:set web/secure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1 && \
+        m2c_magento notty config:set web/unsecure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1
+        m2c_result $?
+
+        m2c_info_bold "\n[Installing Magento]\n\n"
+    else
+        m2c_info_bold "\n[Installing Magento]\n\n"
+
+        m2c_msg "Started magento installation, it may take a while......................  "
+        m2c_loading
+
+        m2c_magento notty setup:install \
+                --db-host=db \
+                --db-name=${M2C_CFG_MYSQL_DATABASE} \
+                --db-user=${M2C_CFG_MYSQL_USER} \
+                --db-password=${M2C_CFG_MYSQL_PASSWORD} \
+                --base-url=https://${M2C_CFG_DOMAIN_NAME}/ \
+                --admin-firstname=${M2C_CFG_ADMIN_FIRSTNAME} \
+                --admin-lastname=${M2C_CFG_ADMIN_LASTNAME} \
+                --admin-email=${M2C_CFG_ADMIN_EMAIL} \
+                --admin-user=${M2C_CFG_ADMIN_USERNAME} \
+                --admin-password=${M2C_CFG_ADMIN_PASSWORD} \
+                --backend-frontname=${M2C_CFG_ADMIN_URL} \
+                --language=${M2C_CFG_LOCALE} \
+                --currency=${M2C_CFG_CURRENCY} \
+                --timezone=${M2C_CFG_TIMEZONE} \
+                --use-rewrites=1 >"$m2c_log" 2>&1 && \
+        m2c_magento notty config:set trans_email/ident_general/email \
+            "owner@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
+        m2c_magento notty config:set trans_email/ident_sales/email \
+            "sales@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
+        m2c_magento notty config:set trans_email/ident_support/email \
+            "support@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
+        m2c_magento notty config:set trans_email/ident_custom1/email \
+            "custom1@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
+        m2c_magento notty config:set trans_email/ident_custom2/email \
+            "custom2@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
+        m2c_magento notty config:set contact/email/recipient_email \
+            "hello@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1
+        m2c_result $?
+    fi
+
+    if [[ -n "$m2c_composer_public_key" && -n "$m2c_composer_private_key" ]]
+    then
+        m2c_msg "Configuring composer authentication for Docker container...............  "
+        m2c_loading
+        m2c_cli notty composer config http-basic.repo.magento.com \
+            "$m2c_composer_public_key" "$m2c_composer_private_key" >"$m2c_log" 2>&1
+        m2c_result $?
+    fi
+
+    m2c_msg "Turning on developer mode..............................................  "
+    m2c_loading
+    m2c_magento notty deploy:mode:set developer >"$m2c_log" 2>&1
+    m2c_result $?
+
+    m2c_msg "Configuring Nginx......................................................  "
+    m2c_loading
+    (
+        sed -e 's/fastcgi_backend/$fastcgi_backend/g' \
+            "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf.sample" > \
+            "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf" && \
+        m2c_push nginx.conf >/dev/null 2>&1 && \
+        m2c_local_container_restart nginx
+    ) >"$m2c_log" 2>&1
+    m2c_result $?
+
+    m2c_msg "Configuring Redis for caching..........................................  "
+    m2c_loading
+    m2c_redis_configure
+    m2c_result $?
+
+    if [[ -n "$M2C_CFG_ELASTICSEARCH" ]]
+    then
+        m2c_msg "Configuring Elasticsearch..............................................  "
+        m2c_loading
+        m2c_elasticsearch_configure
+        m2c_result $?
+    fi
+
+    if [[ -n "$M2C_CFG_VARNISH" ]]
+    then
+        m2c_msg "Configuring Varnish....................................................  "
+        m2c_loading
+        m2c_varnish_configure
+        m2c_result $?
+    fi
+
+    m2c_msg "Forcing deploy of static content.......................................  "
+    m2c_loading
+    m2c_magento notty setup:static-content:deploy -f >"$m2c_log" 2>&1
+    m2c_result $?
+
+    m2c_msg "Clearing the cache for good measure....................................  "
+    m2c_loading
+    m2c_magento notty cache:flush >"$m2c_log" 2>&1 && \
+    m2c_magento notty cache:enable >"$m2c_log" 2>&1
+    m2c_result $?
+
+    m2c_sign ${M2C_CFG_DOMAIN_NAME}
+    m2c_sync start
+}
+
+m2c_init_check_version() {
+    local name=$1 value=$2 versions=()
+
+    shift
+    shift
+
+    versions+=("$@")
+
+    if ! m2c_in_array ${value} ${versions[@]}
+    then
+        m2c_error_bold "Invalid $name version, supported versions:\n"
+        m2c_error "$(
+            for i in "${!versions[@]}"
+            do
+                echo -en "${versions[$i]}\t\t"
+                (( ($i + 1) % 5 == 0 )) && echo -en "\n"
+            done)\n"
+        exit 1
+    fi
+}
+
+m2c_init_detect_magento() {
+    local exists=
+
+    if [[ -f "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/pub/index.php" && -f "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" ]]
+    then
+        m2c_msg "Checking magento source files..........................................  "
+        m2c_loading && m2c_result 0
+
+        version=$(echo $(grep version "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" | cut -c 17- | rev | cut -c 3- | rev 2>/dev/null))
+
+        if [[ -n "$version" ]]
+        then
+            m2c_msg "Detected Magento v$version................................................  "
+            M2C_CFG_MAGENTO="$version"
+            m2c_loading && m2c_result 0
+            return 0
+        else
+            m2c_msg "Magento version is not detected, proceeding configuration.................  "
+            m2c_loading && m2c_result 0
+        fi
+    fi
+
+    return 1
+}
+
+m2c_init_composer_auth() {
+    if [[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]]
+    then
+        m2c_info_bold "\n[Configure Composer auth]\n\n"
+
+        m2c_loading
+
+        if hash composer >/dev/null 2>&1
+        then
+            m2c_composer_public_key="$(composer config -ng http-basic.repo.magento.com.username 2>/dev/null || true)"
+            m2c_composer_private_key="$(composer config -ng http-basic.repo.magento.com.password 2>/dev/null || true)"
+        fi
+
+        m2c_result 0
+        m2c_erase_prev_lines 1
+        m2c_msg "Authentication is required for Composer repository repo.magento.com\n\n"
+
+        if [[ -n "$m2c_composer_public_key" && -n "$m2c_composer_private_key" ]]
+        then
+            m2c_ask_bool "Use authentication information from the current composer config?"
+        else
+            m2c_res=
+        fi
+
+        if [[ -z ${m2c_res} || -z "$m2c_composer_public_key" || -z "$m2c_composer_private_key" ]]
+        then
+            m2c_ask_text "Public key:" \
+                     "" \
+                     "Public key cannot be empty!\n" \
+                     "" \
+                     m2c_validate_not_empty
+
+            m2c_composer_public_key="$m2c_res"
+
+            m2c_ask_text "Private key:" \
+                     "" \
+                     "Private key cannot be empty!\n" \
+                     "" \
+                     m2c_validate_not_empty
+
+            m2c_composer_private_key="$m2c_res"
+
+            if [[ -z ${m2c_res} ]] && hash composer >/dev/null 2>&1
+            then
+                m2c_ask_bool "Update the current composer config with provided authentication information?"
+
+                [[ -n ${m2c_res} ]] && composer global config http-basic.repo.magento.com \
+                    "$m2c_composer_public_key" "$m2c_composer_private_key" >/dev/null 2>&1
+            fi
+        fi
+    fi
+}
+
+m2c_init_error() {
+    m2c_error_bold "Unknown argument \`$1\`. Run \`m2c init --help\` for usage information.\n"
+    exit 1
+}
+
+m2c_init_help() {
+    m2c_logo
+
+    echo -e "
+\033[1;33mInformation:\033[0m
+  Initializes Docker Magento project in the current directory. If no arguments
+  provided, interactive setup mode will be started. If at least one parameter
+  or option is provided, automated setup will be started, for all missing
+  parameters default values will be used.
+
+\033[1;33mUsage:\033[0m
+  m2c init [parameters...] [flags...]
+
+\033[1;33mParameters:\033[0m
+  --domain <magento.test>           Set domain name with .test tld to use.
+  --nginx-version <1.17>            Set Nginx version.
+  --php-version <7.2>               Set PHP version.
+  --mariadb-version <10.3>          Set MariaDB version.
+  --redis-version <5.0>             Set Redis version.
+  --varnish-version <5.2>           Set Varnish version, applicable only when
+                                    --varnish option is present.
+  --elasticsearch-version <6.8>     Set Elasticsearch version. Applicable only
+                                    when --elasticsearch option is present.
+  --rabbitmq-version <3.7>          Set RabbitMQ version. Applicable only when
+                                    --rabbitmq option is present.
+  --magento-version <2.3.2>         Set Magento version to install. Applicable
+                                    only for clean installs.
+  --magento-admin-url <admin>       Set Magento admin url path. Applicable only
+                                    for clean installs.
+  --magento-sub-dir <admin>         Set sub-directory name to use for Magento
+                                    installation. Applicable only for clean
+                                    installs.
+  --magento-import-db <file>        Set path to plain sql or gzipped database
+                                    dump file. Applicable only when running
+                                    command within existing Magento project
+                                    directory.
+
+\033[1;33mFlags:\033[0m
+  --elasticsearch                   Use Elasticsearch search engine.
+  --phpmyadmin                      Use phpMyAdmin database manager.
+  --rabbitmq                        Use RabbitMQ message-broker.
+  --varnish                         Use Varnish cache.
+  --magento-sample-data             Install magento with sample data included,
+                                    applicable only for clean installs.
+  --help                            Display this information.
+"
+    exit 0
+}
+
+m2c_local() {
+    m2c_in_array "--help" $@ && m2c_help
+
+    case "$1" in
+        add)
+            shift
+            m2c_local_add "$@"
+        ;;
+        down)
+            shift
+            m2c_local_down
+        ;;
+        info|status)
+            m2c_local_info
+        ;;
+        remove)
+            shift
+            m2c_local_remove "$@"
+        ;;
+        *)
+            local m2c_local_command=
+            local m2c_local_service=()
+            local m2c_local_services=("db" "php" "xdebug" "nginx" "redis" "varnish" \
+                                      "elasticsearch" "phpmyadmin" "rabbitmq")
+
+            while (("$#"))
+            do
+                case "$1" in
+                    up|start|restart|stop)
+                        m2c_local_command="$1"
+                        shift
+                    ;;
+                    nginx|php|xdebug|db|redis|varnish|elasticsearch|phpmyadmin|rabbitmq)
+                        if ! [[ \
+                                "$1" == "varnish" && -z ${M2C_CFG_VARNISH} || \
+                                "$1" == "elasticsearch" && -z ${M2C_CFG_ELASTICSEARCH} || \
+                                "$1" == "phpmyadmin" && -z ${M2C_CFG_PHPMYADMIN} || \
+                                "$1" == "rabbitmq" && -z ${M2C_CFG_RABBITMQ} ]]
+                        then
+                            m2c_local_service+=("$1")
+                        fi
+                        shift
+                    ;;
+                    *)
+                        m2c_local_error "$1" "$m2c_local_command"
+                    ;;
+                esac
+            done
+
+            if [[ -n ${m2c_local_command} ]]
+            then
+                if ! (("${#m2c_local_service[@]}"))
+                then
+                    for i in "${!m2c_local_services[@]}"
+                    do
+                        if [[ "$m2c_local_command" == "remove" ]] || ! [[ \
+                                "${m2c_local_services[$i]}" == "varnish" && -z ${M2C_CFG_VARNISH} || \
+                                "${m2c_local_services[$i]}" == "elasticsearch" && -z ${M2C_CFG_ELASTICSEARCH} || \
+                                "${m2c_local_services[$i]}" == "phpmyadmin" && -z ${M2C_CFG_PHPMYADMIN} || \
+                                "${m2c_local_services[$i]}" == "rabbitmq" && -z ${M2C_CFG_RABBITMQ} ]]
+                        then
+                            m2c_local_service+=("${m2c_local_services[$i]}")
+                        fi
+                    done
+                fi
+
+                case ${m2c_local_command} in
+                    up)
+                        m2c_local_up "${m2c_local_service[@]}"
+                    ;;
+                    start)
+                        m2c_local_start "${m2c_local_service[@]}"
+                    ;;
+                    restart)
+                        m2c_local_restart "${m2c_local_service[@]}"
+                    ;;
+                    stop)
+                        m2c_local_stop "${m2c_local_service[@]}"
+                    ;;
+                esac
+            fi
+        ;;
+    esac
+}
+
+m2c_local_add() {
+    case "$@" in
+        varnish)
+            m2c_ask_bool "Add Varnish service?"
+            M2C_CFG_VARNISH=${m2c_res}
+
+            if [[ -n ${M2C_CFG_VARNISH} ]]
+            then
+                m2c_set_opt_version "Varnish" "${m2c_varnish_versions[@]}"
+
+                m2c_save_project_env
+
+                m2c_local up
+
+                m2c_info_bold "\n[Configuring services]\n\n"
+
+                m2c_msg "Configuring Varnish....................................................  "
+                m2c_loading
+                m2c_varnish_configure
+                m2c_result $?
+            fi
+        ;;
+        elasticsearch)
+            m2c_ask_bool "Add Elasticsearch service?"
+            M2C_CFG_ELASTICSEARCH=${m2c_res}
+
+            if [[ -n ${M2C_CFG_ELASTICSEARCH} ]]
+            then
+                m2c_set_opt_version "Elasticsearch" "${m2c_elasticsearch_versions[@]}"
+
+                m2c_save_project_env
+
+                m2c_local up
+
+                m2c_info_bold "\n[Configuring services]\n\n"
+
+                m2c_msg "Configuring Elasticsearch..............................................  "
+                m2c_loading
+                m2c_elasticsearch_configure
+                m2c_result $?
+            fi
+        ;;
+        rabbitmq)
+            m2c_ask_bool "Add RabbitMQ service?"
+            M2C_CFG_RABBITMQ=${m2c_res}
+
+            if [[ -n ${M2C_CFG_RABBITMQ} ]]
+            then
+                m2c_set_opt_version "RabbitMQ" "${m2c_rabbitmq_versions[@]}"
+
+                m2c_save_project_env
+
+                m2c_local up
+            fi
+        ;;
+        phpmyadmin)
+            m2c_ask_bool "Add phpMyAdmin service?"
+            M2C_CFG_PHPMYADMIN=${m2c_res}
+
+            if [[ -n ${M2C_CFG_PHPMYADMIN} ]]
+            then
+                m2c_save_project_env
+                m2c_local up
+            fi
+        ;;
+        *)
+            m2c_local_error "$@" "add"
+        ;;
+    esac
+}
+
+m2c_local_remove() {
+    local service=
+
+    case "$@" in
+        varnish)
+            service="varnish"
+            m2c_ask_bool "Remove Varnish service?"
+
+            if [[ "$m2c_res" == "1" ]]
+            then
+                m2c_info_bold "\n[Configuring services]\n\n"
+
+                m2c_msg "Resetting Varnish configuration........................................  "
+                m2c_loading
+                m2c_varnish_reset
+                m2c_result $?
+
+                M2C_CFG_VARNISH=
+            fi
+        ;;
+        elasticsearch)
+            service="elasticsearch"
+            m2c_ask_bool "Remove Elasticsearch service?"
+
+            if [[ "$m2c_res" == "1" ]]
+            then
+                m2c_info_bold "\n[Configuring services]\n\n"
+
+                m2c_msg "Resetting Elasticsearch configuration..................................  "
+                m2c_loading
+                m2c_elasticsearch_reset
+                m2c_result $?
+
+                M2C_CFG_ELASTICSEARCH=
+            fi
+        ;;
+        rabbitmq)
+            service="rabbitmq"
+            m2c_ask_bool "Remove RabbitMQ service?"
+
+            if [[ "$m2c_res" == "1" ]]
+            then
+                M2C_CFG_RABBITMQ=
+            fi
+        ;;
+        phpmyadmin)
+            service="phpmyadmin"
+            m2c_ask_bool "Remove phpMyAdmin service?"
+
+            if [[ "$m2c_res" == "1" ]]
+            then
+                M2C_CFG_PHPMYADMIN=
+            fi
+        ;;
+        *)
+            m2c_local_error "$@" "remove"
+        ;;
+    esac
+
+    if [[ -n ${service} ]]
+    then
+        m2c_info_bold "\n[Removing docker container]\n\n"
+        m2c_local_print_service "$service"
+        m2c_loading
+        m2c_local_container_remove "$service"
+        m2c_result $?
+
+        m2c_save_project_env
+        m2c_local up
+    fi
+}
+
+m2c_local_container_id() {
+    local service="$1"
+
+    echo "$(docker ps \
+            --filter "label=com.docker.compose.project=${M2C_CFG_DOMAIN_NAME/.test/}" \
+            --filter "label=com.docker.compose.service=$service" \
+            -qa)"
+}
+
+m2c_local_active_container_id() {
+    local service="$1"
+
+    echo "$(docker ps \
+            --filter "label=com.docker.compose.project=${M2C_CFG_DOMAIN_NAME/.test/}" \
+            --filter "label=com.docker.compose.service=$service" \
+            -q)"
+}
+
+m2c_local_container_start() {
+    local service="$1"
+
+    if [[ -n ${service} ]]
+    then
+        docker start $(docker ps \
+            --filter "label=com.docker.compose.project=${M2C_CFG_DOMAIN_NAME/.test/}" \
+            --filter "label=com.docker.compose.service=$service" \
+            -qa) >"$m2c_log" 2>&1
+
+        return $?
+    fi
+
+    return 1
+}
+
+m2c_local_container_restart() {
+    local service="$1"
+
+    if [[ -n ${service} ]]
+    then
+        docker restart $(docker ps \
+            --filter "label=com.docker.compose.project=${M2C_CFG_DOMAIN_NAME/.test/}" \
+            --filter "label=com.docker.compose.service=$service" \
+            -qa) >"$m2c_log" 2>&1
+
+        return $?
+    fi
+
+    return 1
+}
+
+m2c_local_container_stop() {
+    local service="$1"
+
+    if [[ -n ${service} ]]
+    then
+        docker stop $(docker ps \
+            --filter "label=com.docker.compose.project=${M2C_CFG_DOMAIN_NAME/.test/}" \
+            --filter "label=com.docker.compose.service=$service" \
+            -qa) >"$m2c_log" 2>&1
+
+        return $?
+    fi
+
+    return 1
+}
+
+m2c_local_container_remove() {
+    local service="$1"
+
+    if [[ -n ${service} ]]
+    then
+        docker rm -vf $(docker ps \
+            --filter "label=com.docker.compose.project=${M2C_CFG_DOMAIN_NAME/.test/}" \
+            --filter "label=com.docker.compose.service=$service" \
+            -qa) >"$m2c_log" 2>&1
+
+        return $?
+    fi
+
+    return 1
+}
+
+m2c_local_info() {
+    local project="${M2C_CFG_DOMAIN_NAME/.test/}"
+    local spaces="$(printf "%-${#project}s" " ")"
+    local containers="$(docker ps \
+            --filter "label=com.docker.compose.project=${project}" \
+            --format 'table {{.ID}}  {{.Names}}\t{{.Image}}\t{{.Status}}' -a | \
+            sed "s/${project}.test__//; s/${spaces}       IMAGE/IMAGE/")\n"
+
+    m2c_info "\nProject: "
+    m2c_info_bold "$(echo "${project}" | sed 's/.*/https:\/\/&.test/')\n"
+    if echo "$containers" | grep -q "phpmyadmin"
+    then
+        m2c_info "phpMyAdmin: "
+        m2c_info_bold "$(echo "${project}" | sed 's/.*/https:\/\/pma.&.test/')\n"
+    fi
+    if echo "$containers" | grep -q "elasticsearch"
+    then
+        m2c_info "Elasticsearch: "
+        m2c_info_bold "$(echo "${project}" | sed 's/.*/https:\/\/elasticsearch.&.test/')\n"
+    fi
+    if echo "$containers" | grep -q "rabbitmq"
+    then
+        m2c_info "RabbitMQ: "
+        m2c_info_bold "$(echo "${project}" | sed 's/.*/https:\/\/rabbitmq.&.test/')\n"
+    fi
+    m2c_info "Path: "
+    m2c_info_bold "$(docker inspect --format='{{index .Config.Labels "m2c.project.path"}}' \
+        "${project}.test__php")\n\n"
+    m2c_msg "$containers"
+
+    exit 0
+}
+
+m2c_local_project_up() {
+    local service="$1"
+
+    if [[ -n ${service} ]]
+    then
+        cd "$m2c_project_dir/.m2c/docker/"
+
+        export M2C_PROJECT_PATH="$m2c_project_dir"
+
+        docker-compose --project-name "${M2C_CFG_DOMAIN_NAME/.test/}" \
+            --file docker-compose.yml \
+            --file docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml \
+            ${M2C_CFG_PHPMYADMIN:+--file docker-compose.phpmyadmin.yml} \
+            ${M2C_CFG_ELASTICSEARCH:+--file docker-compose.elasticsearch.yml} \
+            ${M2C_CFG_RABBITMQ:+--file docker-compose.rabbitmq.yml} \
+            --file docker-compose.${m2c_os}.yml \
+            up --detach --force-recreate --no-color "$service" >"$m2c_log" 2>&1
+
+        return $?
+    fi
+
+    return 1
+}
+
+m2c_local_project_down() {
+    docker rm -vf $(docker ps \
+        --filter "label=com.docker.compose.project=${M2C_CFG_DOMAIN_NAME/.test/}" \
+        -qa) >"$m2c_log" 2>&1 && \
+    docker network rm $(docker network ls \
+        --filter "label=com.docker.compose.project=${M2C_CFG_DOMAIN_NAME/.test/}" \
+        -q) >"$m2c_log" 2>&1
+
+    return $?
+}
+
+m2c_local_project_check_dir() {
+    if [[ ! -f "$m2c_project_dir/.m2c/docker/.env" ]]
+    then
+        m2c_error "This command intended to be used within the project directory!\nChange the current working directory to project root or to any project's sub-directory.\n"
+        exit 1
+    fi
+}
+
+m2c_local_project_check() {
+    m2c_local_project_check_dir
+    m2c_loading
+
+    if [[ -z "$(m2c_local_container_id php)" ]]
+    then
+        m2c_result 0
+        m2c_erase_prev_lines 1
+        m2c_error "This command intended to be used with the initialized projects only!\nTo initialize a new project in the current directory, run \`m2c init\` command.\n"
+        exit 1
+    fi
+
+    m2c_result 0
+    m2c_erase_prev_lines 1
+}
+
+m2c_local_active_project_check() {
+    m2c_local_project_check
+    m2c_loading
+
+    if [[ -z "$(m2c_local_active_container_id php)" ]]
+    then
+        m2c_result 0
+        m2c_erase_prev_lines 1
+        m2c_local start
+    fi
+
+    m2c_result 0
+    m2c_erase_prev_lines 1
+}
+
+m2c_local_error() {
+    m2c_error "Unknown argument \`$1\`. Run \`m2c$([[ "$2" != "" ]] && \
+        echo " $2") --help\` for usage information.\n"
+    exit 1
+}
+
+m2c_local_print_service() {
+    case "$1" in
+        nginx)
+            m2c_msg "Nginx..................................................................  "
+        ;;
+        php)
+            m2c_msg "PHP....................................................................  "
+        ;;
+        xdebug)
+            m2c_msg "Xdebug.................................................................  "
+        ;;
+        db)
+            m2c_msg "Db.....................................................................  "
+        ;;
+        redis)
+            m2c_msg "Redis..................................................................  "
+        ;;
+        varnish)
+            m2c_msg "Varnish................................................................  "
+        ;;
+        elasticsearch)
+            m2c_msg "Elasticsearch..........................................................  "
+        ;;
+        phpmyadmin)
+            m2c_msg "phpMyAdmin.............................................................  "
+        ;;
+        rabbitmq)
+            m2c_msg "RabbitMQ...............................................................  "
+        ;;
+    esac
+}
+
+m2c_local_start() {
+    local service=("$@")
+
+    m2c_info_bold "\n[Starting docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+
+    for i in "${!service[@]}"
+    do
+        m2c_local_print_service "${service[$i]}"
+        m2c_loading
+        m2c_local_container_start "${service[$i]}"
+        m2c_result $?
+    done
+}
+
+m2c_local_restart() {
+    local service=("$@")
+
+    m2c_info_bold "\n[Restarting docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+
+    for i in "${!service[@]}"
+    do
+        m2c_local_print_service "${service[$i]}"
+        m2c_loading
+        m2c_local_container_restart "${service[$i]}"
+        m2c_result $?
+    done
+}
+
+m2c_local_stop() {
+    local service=("$@")
+
+    m2c_info_bold "\n[Stopping docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+
+    for i in "${!service[@]}"
+    do
+        m2c_local_print_service "${service[$i]}"
+        m2c_loading
+        m2c_local_container_stop "${service[$i]}"
+        m2c_result $?
+    done
+}
+
+m2c_local_up() {
+    local service=("$@")
+
+    m2c_info_bold "\n[Creating docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+
+    for i in "${!service[@]}"
+    do
+        m2c_local_print_service "${service[$i]}"
+        m2c_loading
+        m2c_local_project_up "${service[$i]}"
+        m2c_result $?
+    done
+}
+
+m2c_local_down() {
+    m2c_info_bold "\n[Uninstalling]\n\n"
+    m2c_ask_bool "Remove project docker containers and persistent volumes?"
+
+    if [[ -z ${m2c_res} ]]
+    then
+        exit 0
+    fi
+
+    m2c_msg "\nRemoving project docker containers, volumes and network................  "
+    m2c_loading
+    m2c_local_project_down
+    m2c_result $?
+}
+
+m2c_magento() {
+    if [[ "$1" == "notty" ]]
+    then
+        m2c_tty=
+        shift
+    else
+        m2c_tty=1
+    fi
+
+    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" bin/magento "$@"
+}
+
+m2c_magerun() {
+    if [[ "$1" == "notty" ]]
+    then
+        m2c_tty=
+        shift
+    else
+        m2c_tty=1
+    fi
+
+    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" \
+        "n98-magerun$([[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && echo "2")" "$@"
+}
+
+m2c_mutagen() {
+    if [[ "$m2c_os" != "darwin" ]]
+    then
+        m2c_help
+    fi
+
+    export MUTAGEN_DATA_DIRECTORY="$m2c_global_dir"/mutagen
+    "$MUTAGEN_DATA_DIRECTORY"/mutagen daemon start
+    "$MUTAGEN_DATA_DIRECTORY"/mutagen $@
+}
+
+m2c_pull_exec() {
+    local project_dir="${m2c_project_dir}" \
+          sub_dir=${M2C_CFG_MAGENTO_SRC:-} \
+          container="${M2C_CFG_DOMAIN_NAME}__php" \
+          source_path error res
+
+    m2c_info_bold "\n[Pull]\n\n"
+
+    if [[ -z "$1" ]]
+    then
+        m2c_msg "Pulling files from php docker container................................  "
+        m2c_loading
+        m2c_sync pause >/dev/null 2>&1 && \
+        docker cp "$container":/var/www/html/. "$project_dir${sub_dir:+/${sub_dir}}/" >"$m2c_log" 2>&1 && \
+        m2c_sync resume >/dev/null 2>&1
+        res=$?
+        m2c_result ${res}
+        return ${res}
+    else
+        source_path="${1%%+(/)}"
+        dest_path="$project_dir${sub_dir:+/${sub_dir}}/$source_path"
+        m2c_info "$dest_path "
+        m2c_info_bold "←\n\n"
+
+        if m2c_bash notty -c "[[ -d "/var/www/html/${source_path}" ]]" >"$m2c_log" 2>&1
+        then
+            m2c_msg "Pulling directory from php docker container............................  "
+            m2c_loading
+            m2c_sync pause >/dev/null 2>&1 && \
+            docker cp "$container":/var/www/html/"$source_path"/. "$dest_path" >"$m2c_log" 2>&1 && \
+            m2c_sync resume >/dev/null 2>&1
+            res=$?
+            m2c_result ${res}
+            return ${res}
+        elif m2c_bash notty -c "[[ -f "/var/www/html/${source_path}" ]]" >"$m2c_log" 2>&1
+        then
+            m2c_msg "Pulling file from php docker container.................................  "
+            m2c_loading
+            m2c_sync pause >/dev/null 2>&1 && \
+            docker cp "$container":/var/www/html/"$source_path" "$(dirname "$dest_path")" >"$m2c_log" 2>&1 && \
+            m2c_sync resume >/dev/null 2>&1
+            res=$?
+            m2c_result ${res}
+            return ${res}
+        else
+            error="Specified path does not exist on php docker container: \n$source_path\n\n"
+        fi
+    fi
+
+    if [[ -n ${error} ]]
+    then
+        m2c_error "$error"
+    fi
+
+    return 1
+}
+
+m2c_pull_help() {
+    echo -e "
+\033[1;33mInformation:\033[0m
+  Pull file or directory from php docker container to magento src root. To
+  pull multiple files or directories, specify paths as list divided by spaces.
+  To pull all files, use --all flag. e.g. \`m2c pull -all\`. Specified
+  paths must be relative to docker container /var/www/html directory.
+
+\033[1;33mUsage:\033[0m
+  m2c pull [<path1> [<path2>...]] [flags...]
+
+\033[1;33mFlags:\033[0m
+  --all     Pull all files from php docker container to magento src root.
+  --help    Display this information.
+"
+    exit 0
+}
+
+m2c_pull() {
+    if [[ "$m2c_os" != "darwin" ]]
+    then
+        m2c_help
+    fi
+
+    if (("$#"))
+    then
+        m2c_in_array "--help" $@ && m2c_pull_help
+
+        if m2c_in_array "--all" $@
+        then
+            m2c_pull_exec
+        else
+            while (("$#")); do
+                case "$1" in
+                    *)
+                        m2c_pull_exec "$1"
+                    ;;
+                esac
+                shift
+            done
+        fi
+    else
+        m2c_pull_help
+    fi
+}
+
+m2c_push_exec() {
+    local project_dir="${m2c_project_dir}" \
+          sub_dir=${M2C_CFG_MAGENTO_SRC:-} \
+          container="${M2C_CFG_DOMAIN_NAME}__php" \
+          source_path error res
+
+    m2c_info_bold "\n[Push]\n\n"
+
+    if [[ -z "$1" ]]
+    then
+        m2c_msg "Pushing all files to php docker container..............................  "
+        m2c_loading
+        m2c_sync pause >/dev/null 2>&1 && \
+        docker cp "$project_dir${sub_dir:+/${sub_dir}}"/. "$container":/var/www/html/ >"$m2c_log" 2>&1 && \
+        docker exec "$container" chown -R app:app /var/www/ >"$m2c_log" 2>&1 && \
+        docker exec "$container" chmod u+x ./bin/magento >"$m2c_log" 2>&1 && \
+        docker exec "$container" chmod u+w -R ./var ./vendor ./pub/static ./pub/media ./app/etc >"$m2c_log" 2>&1 && \
+        m2c_sync resume >/dev/null 2>&1
+        res=$?
+        m2c_result ${res}
+        return ${res}
+    else
+        dest_path="${1%%+(/)}"
+        source_path="$project_dir${sub_dir:+/${sub_dir}}/$dest_path"
+
+        if [[ -d "$source_path" || -f "$source_path" ]]
+        then
+            m2c_info "$source_path "
+            m2c_info_bold "→\n\n"
+
+            if [[ -d "$source_path" ]]
+            then
+                m2c_msg "Pushing directory to php docker container..............................  "
+                m2c_loading
+                m2c_sync pause >"$m2c_log" 2>&1 && \
+                docker cp "$source_path"/. "$container":/var/www/html/"$dest_path" >"$m2c_log" 2>&1 && \
+                docker exec "$container" chown -R app:app "$dest_path" >"$m2c_log" 2>&1 && \
+                case "$dest_path" in
+                    var|vendor|pub/static|pub/media|app/etc|var/*|vendor/*|pub/static/*|pub/media/*|app/etc/*)
+                        docker exec "$container" chmod u+w -R ./"$dest_path" >"$m2c_log" 2>&1
+                    ;;
+                    *)
+                        true
+                    ;;
+                esac && \
+                m2c_sync resume >"$m2c_log" 2>&1
+            else
+                m2c_msg "Pushing file to php docker container....................................  "
+                m2c_loading
+                m2c_sync pause >"$m2c_log" 2>&1 && \
+                docker cp "$source_path" "$container":/var/www/html/"$(dirname "$dest_path")" >"$m2c_log" 2>&1 && \
+                docker exec "$container" chown -R app:app "$dest_path" >"$m2c_log" 2>&1 && \
+                case "$dest_path" in
+                    bin/magento)
+                        docker exec "$container" chmod u+x ./"$source_path" >"$m2c_log" 2>&1
+                    ;;
+                    var/*|vendor/*|pub/static/*|pub/media/*|app/etc/*)
+                        docker exec "$container" chmod u+w -R ./"$dest_path" >"$m2c_log" 2>&1
+                    ;;
+                    *)
+                        true
+                    ;;
+                esac && \
+                m2c_sync resume >"$m2c_log" 2>&1
+            fi
+
+            res=$?
+            m2c_result ${res}
+            return ${res}
+        else
+            error="Specified path does not exist on host machine: \n$source_path\n\n"
+        fi
+    fi
+
+    if [[ -n ${error} ]]
+    then
+        m2c_error "$error"
+    fi
+
+    return 1
+}
+
+m2c_push_help() {
+    echo -e "
+\033[1;33mInformation:\033[0m
+  Push local file or directory from magento src root to php docker container.
+  To push multiple files or directories, specify paths as list divided by
+  spaces. To push all files, use --all flag. e.g. \`m2c push -all\`.
+  Specified paths must be relative to magento src root directory.
+
+\033[1;33mUsage:\033[0m
+  m2c push [<path1> [<path2>...]] [flags...]
+
+\033[1;33mFlags:\033[0m
+  --all     Push all files from magento src root to php docker container.
+  --help    Display this information.
+"
+    exit 0
+}
+
+m2c_push() {
+    if [[ "$m2c_os" != "darwin" ]]
+    then
+        m2c_help
+    fi
+
+    if (("$#"))
+    then
+        m2c_in_array "--help" $@ && m2c_push_help
+
+        if m2c_in_array "--all" $@
+        then
+            m2c_push_exec
+        else
+            while (("$#")); do
+                case "$1" in
+                    *)
+                        m2c_push_exec "$1"
+                    ;;
+                esac
+                shift
+            done
+        fi
+    else
+        m2c_push_help
+    fi
+}
+
+m2c_redis_configure() {
+    (
+        m2c_magento notty setup:config:set --no-interaction --cache-backend=redis \
+                --cache-backend-redis-server=${M2C_CFG_DOMAIN_NAME}__redis --cache-backend-redis-db=0 && \
+        m2c_magento notty setup:config:set --no-interaction  --page-cache=redis \
+                --page-cache-redis-server=${M2C_CFG_DOMAIN_NAME}__redis --page-cache-redis-db=1 && \
+        m2c_magento notty setup:config:set --no-interaction --session-save=redis \
+                --session-save-redis-host=${M2C_CFG_DOMAIN_NAME}__redis --session-save-redis-log-level=4 \
+                --session-save-redis-db=2
+    ) >"$m2c_log" 2>&1
+
+    return $?
+}
+
+m2c_share() {
+    if (("$#"))
+    then
+        m2c_in_array "--help" $@ && m2c_share_help
+
+        case "$@" in
+            us|eu|ap|au|sa|jp|in)
+                m2c_share_exec $1
+            ;;
+            *)
+                m2c_share_error
+            ;;
+        esac
+    else
+        m2c_share_exec us
+    fi
+}
+
+m2c_share_error() {
+    m2c_error "Unknown argument \`$@\`. Run \`m2c share --help\` for usage information.\n"
+    exit 1
+}
+
+m2c_share_exec() {
+    local region="$1"
+          network="${M2C_CFG_DOMAIN_NAME/.test/}_default" \
+          container="${M2C_CFG_DOMAIN_NAME}__$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx")" \
+          port="$([[ -n ${M2C_CFG_VARNISH} ]] && echo "80" || echo "8080")"
+
+    m2c_info_bold "\n[Share]\n\n"
+
+    m2c_msg "Checking required dependencies.........................................  "
+    m2c_loading
+    m2c_res="$(m2c_magento notty module:status Shkoliar_Ngrok)"
+    m2c_result 0
+
+    if [[ "$m2c_res" != *"Module is enabled"* ]]
+    then
+        m2c_msg "Installing required dependencies.......................................  "
+        m2c_loading
+        m2c_composer notty require --dev shkoliar/magento-ngrok >"$m2c_log" 2>&1 && \
+        m2c_magento notty module:enable Shkoliar_Ngrok >"$m2c_log" 2>&1 && \
+        m2c_magento notty setup:upgrade >"$m2c_log" 2>&1
+        m2c_res=$?
+        m2c_result ${m2c_res}
+    else
+        m2c_res=0
+    fi
+
+    if [[ "$m2c_res" == "0" ]]
+    then
+        m2c_msg "Starting sharing session...............................................  "
+        m2c_loading
+        docker pull shkoliar/ngrok >"$m2c_log" 2>&1
+        m2c_result ${m2c_res}
+
+        docker run --rm -it -p 0.0.0.0:4551:4551/tcp --link ${container} --net ${network} \
+                --name ${M2C_CFG_DOMAIN_NAME}__ngrok shkoliar/ngrok ngrok http -region=${region} \
+                -bind-tls=true ${container}:${port} 2>"$m2c_log"
+        m2c_res=$?
+
+        if [[ "$m2c_res" == "0" ]]
+        then
+            m2c_msg "Sharing session ended..................................................  "
+            m2c_result 0
+        elif [[ -f "$m2c_log" ]]
+        then
+            error="$(echo $(cat "$m2c_log"))"
+            [[ -n ${error} ]] && m2c_error "$error\n"
+        fi
+    fi
+
+    exit ${m2c_res}
+}
+
+m2c_share_help() {
+    echo -e "
+\033[1;33mInformation:\033[0m
+  Start share session over ngrok secure tunnels. Command accepts optional
+  parameter to specify a region. Ex. \`m2c share eu\`. Available regions are
+  \`us\`, \`eu\`, \`ap\`, \`au\`, \`sa\`, \`jp\`, \`in\`. By default region is \`us\`.
+  For proper functioning of this command, required dependencies will be
+  installed. Please, visit https://github.com/shkoliar/magento-ngrok and
+  https://github.com/shkoliar/docker-ngrok for more information.
+
+\033[1;33mUsage:\033[0m
+  m2c share [region] [--help]
+
+\033[1;33mRegions:\033[0m
+  us        United States.
+  eu        Europe.
+  ap        Asia/Pacific.
+  au        Australia.
+  sa        South America.
+  jp        Japan.
+  in        India.
+
+\033[1;33mFlags:\033[0m
+  --help    Display this information.
+"
+    exit 0
+}
+
+m2c_sign() {
+    local m2c_ssl_dir="$m2c_global_dir"/ssl
+    local m2c_domains=($@)
+    local m2c_alt_names=
+    local m2c_dns_index=$(echo "$(cat "$m2c_ssl_dir"/config/v3_ext.conf | grep 'DNS.*' | awk 'END { print NR }')")
+    local m2c_dns_index=${m2c_dns_index:-0}
+
+    if [[ "$m2c_dns_index" == "0" ]]
+    then
+        m2c_log="$m2c_global_dir"/log
+    fi
+
+    for i in "${!m2c_domains[@]}"
+    do
+        if grep -q "*.${m2c_domains[$i]}" "$m2c_ssl_dir"/config/v3_ext.conf
+        then
+            continue
+        fi
+
+        m2c_dns_index=$((m2c_dns_index + 1))
+        m2c_alt_names+="
+        DNS.$((m2c_dns_index)) = ${m2c_domains[$i]}"
+        m2c_dns_index=$((m2c_dns_index + 1))
+        m2c_alt_names+="
+        DNS.$((m2c_dns_index)) = *.${m2c_domains[$i]}"
+    done
+
+    m2c_info_bold "\n[Installing SSL certificate]\n\n"
+
+    if [[ -z ${m2c_alt_names} ]]
+    then
+        m2c_msg "Signing SSL certificate................................................  "
+        m2c_loading
+        m2c_result 0
+    else
+        echo "$(cat "$m2c_ssl_dir"/config/v3_ext.conf)$m2c_alt_names" > "$m2c_ssl_dir"/config/v3_ext.conf
+
+        m2c_msg "Generating private key for SSL certificate.............................  "
+        m2c_loading
+        [[ -f "$m2c_ssl_dir"/private/m2c.key ]] && rm -rf "$m2c_ssl_dir"/private/m2c.key
+        openssl genrsa -out "$m2c_ssl_dir"/private/m2c.key 2048 >"$m2c_log" 2>&1
+        m2c_result $?
+
+        m2c_msg "Creating signing request for SSL certificate...........................  "
+        m2c_loading
+        openssl req -new -sha256 \
+            -key "$m2c_ssl_dir"/private/m2c.key \
+            -out "$m2c_ssl_dir"/certs/m2c.csr \
+            -config "$m2c_ssl_dir"/config/openssl.conf \
+            -subj "/O=Mage2click/OU=IT/CN=${m2c_domains[0]}" >"$m2c_log" 2>&1
+        m2c_result $?
+
+        m2c_msg "Signing SSL certificate................................................  "
+        m2c_loading
+        openssl x509 -req -days 3650 -sha256 -extensions v3_req \
+            -CA "$m2c_ssl_dir"/certs/rootCA.crt \
+            -CAkey "$m2c_ssl_dir"/private/rootCA.key \
+            -CAcreateserial -passin pass:m2c \
+            -in "$m2c_ssl_dir"/certs/m2c.csr \
+            -out "$m2c_ssl_dir"/certs/m2c.crt \
+            -extfile "$m2c_ssl_dir"/config/v3_ext.conf >"$m2c_log" 2>&1
+        m2c_result $?
+
+        if [[ -n "$(docker ps \
+                        --filter "label=com.docker.compose.project=m2c" \
+                        --filter "label=com.docker.compose.service=traefik" \
+                        -q)" ]]
+        then
+            m2c_global_restart traefik
+        fi
+    fi
+}
+
+m2c_sync() {
+    if [[ "$m2c_os" != "darwin" ]]
+    then
+        m2c_help
+    fi
+
+    local m2c_sync_sessions=("src" "vendor")
+    local m2c_sync_command=
+
+    if (("$#"))
+    then
+        m2c_in_array "--help" $@ && m2c_sync_help
+
+        while (("$#")); do
+            case "$1" in
+                start)
+                    m2c_sync_command="$1"
+                    shift
+                    m2c_sync_exec start
+                ;;
+                stop)
+                    m2c_sync_command="$1"
+                    shift
+                    m2c_sync_exec terminate
+                ;;
+                pause)
+                    m2c_sync_command="$1"
+                    shift
+                    m2c_sync_exec pause
+                ;;
+                resume)
+                    m2c_sync_command="$1"
+                    shift
+                    m2c_sync_exec resume
+                ;;
+                flush)
+                    m2c_sync_command="$1"
+                    shift
+
+                    if [[ -n $1 ]]
+                    then
+                        if m2c_in_array "$1" ${m2c_sync_sessions[@]}
+                        then
+                            m2c_sync_exec flush $1
+                            shift
+                        else
+                            m2c_sync_exec flush
+                        fi
+                    else
+                        m2c_sync_error "$1"
+                    fi
+                ;;
+                status)
+                    m2c_sync_command="$1"
+                    shift
+                    m2c_sync_exec list | awk '{if(NR>5)print}'
+                ;;
+                *)
+                    m2c_sync_error "$1"
+                ;;
+            esac
+        done
+    else
+        m2c_sync_help
+    fi
+}
+
+m2c_sync_error() {
+    m2c_error "Unknown argument \`$1\`. Run \`m2c sync --help\` for usage information.\n"
+    exit 1
+}
+
+m2c_sync_exec() {
+    local m2c_project_yml="$m2c_project_dir"/.m2c/mutagen/mutagen.yml
+    m2c_sync_yml_expand #TODO: check new mutagen versions, temporary fix for https://github.com/mutagen-io/mutagen/issues/128
+    m2c_mutagen project $@ ${m2c_project_yml}
+    m2c_sync_yml_restore #TODO: check new mutagen versions, temporary fix for https://github.com/mutagen-io/mutagen/issues/128
+}
+
+m2c_sync_yml_expand() {
+    local m2c_project_yml="$m2c_project_dir"/.m2c/mutagen/mutagen.yml
+    mv ${m2c_project_yml} ${m2c_project_yml}.bak
+    IFS=
+    echo "echo -e \"$(cat ${m2c_project_yml}.bak)\"" > ${m2c_project_yml}
+    echo -e $(source ${m2c_project_yml}) > ${m2c_project_yml}
+}
+
+m2c_sync_yml_restore() {
+    local m2c_project_yml="$m2c_project_dir"/.m2c/mutagen/mutagen.yml
+    rm ${m2c_project_yml}
+    mv ${m2c_project_yml}.bak ${m2c_project_yml}
+}
+
+m2c_sync_help() {
+    echo -e "
+\033[1;33mInformation:\033[0m
+  Controls the synchronization sessions between host and docker container.
+
+\033[1;33mUsage:\033[0m
+  m2c sync [command] [--help]
+
+\033[1;33mCommands:\033[0m
+  start     Start sync sessions.
+  stop      Stop sync sessions.
+  pause     Pause sync sessions.
+  resume    Resume paused sync sessions.
+  flush     Flush sync sessions.
+  status    Print sync sessions status.
+
+\033[1;33mFlags:\033[0m
+  --help    Display this information.
+"
+    exit 0
+}
+
+m2c_varnish() {
+    if [[ -z "$@" ]]; then
+        m2c_error "Please specify a varnish command. e.g. varnishstat\n"
+        return 1
+    fi
+
+    docker exec -i "${M2C_CFG_DOMAIN_NAME}__varnish" "$@"
+}
+
+m2c_varnish_configure() {
+    local version=${M2C_CFG_VARNISH:0:1} \
+          dir="$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}"
+
+    (
+        m2c_magento notty config:set --scope=default --scope-code=0 \
+            system/full_page_cache/caching_application 2 && \
+        m2c_magento notty config:set --scope=default --scope-code=0 \
+            system/full_page_cache/varnish/access_list ${M2C_CFG_DOMAIN_NAME}__nginx && \
+        m2c_magento notty config:set --scope=default --scope-code=0 \
+            system/full_page_cache/varnish/backend_host ${M2C_CFG_DOMAIN_NAME}__nginx && \
+        m2c_magento notty config:set --scope=default --scope-code=0 \
+            system/full_page_cache/varnish/backend_port 8080 && \
+        m2c_magento notty config:set --scope=default --scope-code=0 \
+            system/full_page_cache/varnish/grace_period 300 && \
+        m2c_magento notty setup:config:set --http-cache-hosts=${M2C_CFG_DOMAIN_NAME}__varnish:80 && \
+        m2c_magento notty varnish:vcl:generate --access-list ${M2C_CFG_DOMAIN_NAME}__nginx \
+            --backend-host ${M2C_CFG_DOMAIN_NAME}__nginx \
+            --backend-port 8080 --export-version ${M2C_CFG_VARNISH:0:1} \
+            --output-file ./var/default.vcl
+    ) >"$m2c_log" 2>&1 && \
+    (
+        m2c_pull var/default.vcl >/dev/null 2>&1 && \
+        sed -e 's/pub\/health_check.php/health_check.php/g' "$dir/var/default.vcl" > "$dir/var/default.temp" && \
+        mv "$dir/var/default.temp" "$dir/var/default.vcl" && \
+        docker cp "$dir/var/default.vcl" "${M2C_CFG_DOMAIN_NAME}__varnish:/usr/local/share/"
+    ) >"$m2c_log" 2>&1 && \
+    (
+        m2c_varnish varnishadm vcl.load default /usr/local/share/default.vcl && \
+        m2c_varnish varnishadm vcl.use default
+    ) >"$m2c_log" 2>&1 && \
+    (
+        rm -rf "$dir/var/default.vcl" && \
+        m2c_cli notty rm -rf ./var/default.vcl
+    ) >"$m2c_log" 2>&1
+
+    return $?
+}
+
+m2c_varnish_reset() {
+    local version=${M2C_CFG_VARNISH:0:1} \
+          dir="$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}"
+
+    (
+        m2c_magento notty config:set --scope=default --scope-code=0 \
+            system/full_page_cache/caching_application 1 && \
+        m2c_magento notty config:set --scope=default --scope-code=0 \
+            system/full_page_cache/varnish/access_list "" && \
+        m2c_magento notty config:set --scope=default --scope-code=0 \
+            system/full_page_cache/varnish/backend_host "" && \
+        m2c_magento notty config:set --scope=default --scope-code=0 \
+            system/full_page_cache/varnish/backend_port "" && \
+        m2c_magento notty config:set --scope=default --scope-code=0 \
+            system/full_page_cache/varnish/grace_period ""
+    ) >"$m2c_log" 2>&1
+
+    return $?
+}
+
+m2c_xdebug() {
+    if (("$#"))
+    then
+        m2c_in_array "--help" $@ && m2c_xdebug_help
+
+        m2c_info_bold "\n[Xdebug]\n\n"
+
+        case "$@" in
+            enable)
+                m2c_msg "Enabling Xdebug and restarting php container...........................  "
+                m2c_loading
+                (
+                    m2c_cli sed -i -e 's/^\;zend_extension/zend_extension/g' \
+                        /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+                    m2c_local_container_restart php
+                ) >"$m2c_log" 2>&1
+                m2c_result $?
+            ;;
+            disable)
+                m2c_msg "Disabling Xdebug and restarting php container..........................  "
+                m2c_loading
+                (
+                    m2c_cli sed -i -e 's/^\zend_extension/;zend_extension/g' \
+                        /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+                    m2c_local_container_restart php
+                ) >"$m2c_log" 2>&1
+                m2c_result $?
+            ;;
+            status)
+                m2c_loading
+                m2c_cli php -v | grep 'Xdebug' >/dev/null 2>&1
+                m2c_res=$?
+                m2c_result 0
+                m2c_erase_prev_lines 1
+                if [[ "$m2c_res" == "0" ]]
+                then
+                    m2c_msg "Xdebug is enabled\n"
+                else
+                    m2c_msg "Xdebug is disabled\n"
+                fi
+            ;;
+            *)
+                m2c_xdebug_error $@
+            ;;
+        esac
+    else
+        m2c_xdebug_help
+    fi
+}
+
+m2c_xdebug_error() {
+    m2c_error "Unknown argument \`$@\`. Run \`m2c xdebug --help\` for usage information.\n"
+    exit 1
+}
+
+m2c_xdebug_help() {
+    echo -e "
+\033[1;33mInformation:\033[0m
+  Activate/Deactivate xdebug on php docker service or read current
+  xdebug status.
+
+\033[1;33mUsage:\033[0m
+  m2c xdebug [command] [--help]
+
+\033[1;33mCommands:\033[0m
+  enable    Enable xdebug.
+  disable   Disable xdebug.
+  status    Show current xdebug status.
+
+\033[1;33mFlags:\033[0m
+  --help    Display this information.
+"
+    exit 0
+}
