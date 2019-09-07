@@ -2,16 +2,15 @@ FROM    php:7.0-fpm-alpine
 
 LABEL   maintainer="Mage2click, Dmitry Shkoliar @shkoliar"
 
-ARG     XDEBUG_VERSION=${XDEBUG_VERSION:-2.7.2}
 ARG     PHPREDIS_VERSION=${PHPREDIS_VERSION:-4.3.0}
 ARG     AMQP_VERSION=${AMQP_VERSION:-1.9.4}
 ARG     SSH2_VERSION=${SSH2_VERSION:-1.1.2}
 
 ENV     COMPOSER_ALLOW_SUPERUSER=1
 
-COPY    conf/php.ini /usr/local/etc/php/
-COPY    conf/*.conf /usr/local/etc/
-COPY    docker-host /usr/local/bin/
+COPY    common/conf/php.ini /usr/local/etc/php/
+COPY    common/conf/*.conf /usr/local/etc/
+COPY    common/bin/docker-host /usr/local/bin/
 
 RUN     apk add --no-cache busybox-suid \
             icu-dev freetype-dev libzip-dev libpng-dev libxml2-dev libedit-dev readline-dev \
@@ -24,10 +23,8 @@ RUN     apk add --no-cache busybox-suid \
             calendar mcrypt pdo_mysql mysqli soap xsl zip && \
         apk add --no-cache --virtual .build-deps ${PHPIZE_DEPS} && \
         yes '' | pecl install --onlyreqdeps igbinary \
-            xdebug-${XDEBUG_VERSION} redis-${PHPREDIS_VERSION} \
-            amqp-${AMQP_VERSION} ssh2-${SSH2_VERSION} && \
-        docker-php-ext-enable xdebug igbinary redis amqp ssh2 && \
-        sed -i -e 's/^zend_extension/\;zend_extension/g' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+            redis-${PHPREDIS_VERSION} amqp-${AMQP_VERSION} ssh2-${SSH2_VERSION} && \
+        docker-php-ext-enable igbinary redis amqp ssh2 && \
         set -ex && cd /tmp && \
         curl -O https://files.magerun.net/n98-magerun2.phar && \
         mv n98-magerun2.phar /usr/local/bin/ && \
@@ -38,7 +35,7 @@ RUN     apk add --no-cache busybox-suid \
         rm -rf /var/cache/apk/* && \
         rm -rf /tmp/* && \
         addgroup -g 1000 -S app && \
-        adduser -u 1000 -S app -G app -h /var/www/html -s /bin/bash && \
+        adduser -u 1000 -S app -G app -h /var/www -s /bin/bash && \
         echo 'export PS1="\w $ "' > /var/www/.bashrc && \
         mkdir -p /var/www/.config /var/www/.npm /sock /usr/local/var/log && \
         touch /usr/local/var/log/php-fpm.log /var/spool/cron/crontabs/app && \
@@ -46,7 +43,7 @@ RUN     apk add --no-cache busybox-suid \
             /var/www/.npm /usr/local/etc/php/conf.d /sock /usr/local/var/log/php-fpm.log \
             /usr/local/bin/n98-magerun2.phar && \
         chmod +x /usr/local/bin/docker-host && \
-        ln -sf /var/www/html/node_modules/grunt/bin/grunt /usr/bin/grunt \
+        ln -sf /var/www/html/node_modules/grunt/bin/grunt /usr/bin/grunt && \
         ln -sf /usr/local/bin/n98-magerun2.phar /usr/local/bin/n98-magerun2
 
 WORKDIR /var/www/html

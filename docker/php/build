@@ -6,11 +6,17 @@ VERSIONS=("5.6" "7.0" "7.1" "7.2")
 
 for i in "${!VERSIONS[@]}"
 do
-    docker build -t "mage2click-m2c-php-fpm-${VERSIONS[$i]}-alpine" \
-        "${HOME}/${VERSIONS[$i]}/fpm/alpine/"
-
+    docker build -f "${HOME}/${VERSIONS[$i]}/fpm/alpine/Dockerfile" \
+        -t "mage2click-m2c-php-fpm-${VERSIONS[$i]}-alpine" \
+        "${HOME}"
     docker tag "mage2click-m2c-php-fpm-${VERSIONS[$i]}-alpine" \
         "mage2click/m2c:php-fpm-${VERSIONS[$i]}-alpine"
+
+    docker build -f "${HOME}/${VERSIONS[$i]}/fpm-xdebug/alpine/Dockerfile" \
+        -t "mage2click-m2c-php-fpm-${VERSIONS[$i]}-xdebug-alpine" \
+        "${HOME}"
+    docker tag "mage2click-m2c-php-fpm-${VERSIONS[$i]}-xdebug-alpine" \
+        "mage2click/m2c:php-fpm-${VERSIONS[$i]}-xdebug-alpine"
 done
 
 rm -rf "${HOME}/.docker"
@@ -23,4 +29,6 @@ for i in "${!VERSIONS[@]}"
 do
     echo "docker push \"mage2click/m2c:php-fpm-${VERSIONS[$i]}-alpine\""
     echo "docker rmi -f \"mage2click/m2c:php-fpm-${VERSIONS[$i]}-alpine\""
+    echo "docker push \"mage2click/m2c:php-fpm-${VERSIONS[$i]}-xdebug-alpine\""
+    echo "docker rmi -f \"mage2click/m2c:php-fpm-${VERSIONS[$i]}-xdebug-alpine\""
 done
