@@ -282,7 +282,7 @@ m2c_db_import() {
             (
                 gunzip -c "$file" | \
                     LANG=C LC_CTYPE=C LC_ALL=C sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | \
-                    m2c_db_mysql -hdb -u"$M2C_CFG_MYSQL_USER" -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE"
+                    m2c_db_mysql notty
             ) >"$m2c_log" 2>&1
             m2c_result $?
         else
@@ -291,12 +291,13 @@ m2c_db_import() {
             (
                 cat "$file" | \
                     LANG=C LC_CTYPE=C LC_ALL=C sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | \
-                    m2c_db_mysql
+                    m2c_db_mysql notty
             ) >"$m2c_log" 2>&1
             m2c_result $?
         fi
 
         m2c_msg "Setting the project domain name........................................  "
+        m2c_loading
         m2c_magento notty config:set web/secure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1 && \
         m2c_magento notty config:set web/unsecure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1
         m2c_result $?
