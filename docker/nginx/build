@@ -9,7 +9,6 @@ for i in "${!VERSIONS[@]}"
 do
     docker build --build-arg NGINX_VERSION="${VERSIONS[$i]}" \
             -t "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" "${HOME}/alpine/"
-
     docker tag "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" \
         "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine"
 done

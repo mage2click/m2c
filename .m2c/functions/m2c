@@ -214,6 +214,142 @@ m2c_composer() {
     fi
 }
 
+m2c_db() {
+    if (("$#"))
+    then
+        m2c_in_array "--help" $@ && m2c_db_help
+
+        case "$1" in
+            mysql)
+                shift
+                m2c_db_mysql "$@"
+            ;;
+            import)
+                shift
+                m2c_db_import "$1"
+            ;;
+            export)
+                m2c_db_export
+            ;;
+            *)
+                m2c_db_error $@
+            ;;
+        esac
+    else
+        m2c_db_help
+    fi
+}
+
+m2c_db_mysql() {
+    if [[ "$1" == "notty" ]]
+    then
+        m2c_tty=
+        shift
+    else
+        m2c_tty=1
+    fi
+
+    docker exec -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__db" mysql \
+        -hdb -u"$M2C_CFG_MYSQL_USER" -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "$@"
+}
+
+m2c_db_mysqldump() {
+    if [[ "$1" == "notty" ]]
+    then
+        m2c_tty=
+        shift
+    else
+        m2c_tty=1
+    fi
+
+    docker exec -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__db" mysqldump \
+        -hdb -u"$M2C_CFG_MYSQL_USER" -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "$@"
+}
+
+m2c_db_import() {
+    local file="$1"
+
+    if [[ -f "$file" ]]
+    then
+        m2c_info_bold "\n[Importing database]\n\n"
+        m2c_info "$file "
+        m2c_info_bold "→"
+        m2c_info " DB\n\n"
+
+        if file --mime-type "$file" | grep -q gzip$; then
+            m2c_msg "Unpacking and importing database dump file.............................  "
+            m2c_loading
+            (
+                gunzip -c "$file" | \
+                    LANG=C LC_CTYPE=C LC_ALL=C sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | \
+                    m2c_db_mysql -hdb -u"$M2C_CFG_MYSQL_USER" -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE"
+            ) >"$m2c_log" 2>&1
+            m2c_result $?
+        else
+            m2c_msg "Importing database dump file...........................................  "
+            m2c_loading
+            (
+                cat "$file" | \
+                    LANG=C LC_CTYPE=C LC_ALL=C sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | \
+                    m2c_db_mysql
+            ) >"$m2c_log" 2>&1
+            m2c_result $?
+        fi
+
+        m2c_msg "Setting the project domain name........................................  "
+        m2c_magento notty config:set web/secure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1 && \
+        m2c_magento notty config:set web/unsecure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1
+        m2c_result $?
+    elif [[ -n "$file" ]]
+    then
+        m2c_error "Cannot locate database dump file at specified path: $file!\n"
+    else
+        m2c_error "Specify full path to plain sql or gzipped database dump file to import.\n"
+    fi
+}
+
+m2c_db_export() {
+    local file="$m2c_project_dir/db.$(date +%F.%H%M%S).sql.gz"
+
+    m2c_info_bold "\n[Exporting database]\n\n"
+    m2c_info "DB "
+    m2c_info_bold "→"
+    m2c_info " $file\n\n"
+
+    m2c_msg "Creating and compressing database dump file............................  "
+    m2c_loading
+    (
+        m2c_db_mysqldump --single-transaction --quick | \
+            LANG=C LC_CTYPE=C LC_ALL=C sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | \
+            gzip > "$file"
+    ) >"$m2c_log" 2>&1
+    m2c_result $?
+}
+
+m2c_db_error() {
+    m2c_error "Unknown argument \`$@\`. Run \`m2c db --help\` for usage information.\n"
+    exit 1
+}
+
+m2c_db_help() {
+    echo -e "
+\033[1;33mInformation:\033[0m
+  Import/Export database commands and mysql cli tool access.
+
+\033[1;33mUsage:\033[0m
+  m2c db [command] [--help]
+
+\033[1;33mCommands:\033[0m
+  mysql     Run mysql CLI command or open mysql command prompt.
+  export    Export magento database to gzip compressed sql dump.
+  import    Import plain sql or gzipped sql database dump file.
+
+\033[1;33mFlags:\033[0m
+  --help    Display this information.
+"
+    exit 0
+}
+
 m2c_global() {
     m2c_in_array "--help" $@ && m2c_global_help
 
@@ -856,7 +992,7 @@ m2c_init() {
                             if ! m2c_validate_file "$value"
                             then
                                 m2c_error_bold \
-                                    "Cannot locate database dump file at specified path $value!\n"
+                                    "Cannot locate database dump file at specified path: $value!\n"
                                 exit 1
                             fi
 
@@ -898,7 +1034,7 @@ m2c_init() {
 
             m2c_ask_text "Set the domain name for your project:" \
                          "$(basename "$m2c_project_dir").test" \
-                         "Invalid domain name %s!\nOnly valid domain names with .test tld are supported!\n" \
+                         "Invalid domain name: %s!\nOnly valid domain names with .test tld are supported!\n" \
                          "" \
                          m2c_validate_domain
 
@@ -950,7 +1086,7 @@ m2c_init() {
             then
                 m2c_ask_text "Set the sub-directory name:" \
                      "src" \
-                     "Invalid sub-directory name %s!\n" \
+                     "Invalid sub-directory name: %s!\n" \
                      "" \
                      m2c_validate_url_path
 
@@ -975,7 +1111,7 @@ m2c_init() {
 
             m2c_ask_text "Set the Magento admin url path:" \
                          "admin" \
-                         "Invalid admin url path %s!\n" \
+                         "Invalid admin url path: %s!\n" \
                          "" \
                          m2c_validate_url_path
 
@@ -1013,7 +1149,7 @@ m2c_init() {
 
                 m2c_ask_text "Set the database dump file path:" \
                              "" \
-                             "Cannot locate database dump file at specified path %s!\n" \
+                             "Cannot locate database dump file at specified path: %s!\n" \
                              "" \
                              m2c_validate_file
 
@@ -1057,35 +1193,7 @@ m2c_init() {
 
     if [[ -f "$m2c_magento_db_import" ]]
     then
-        m2c_info_bold "\n[Importing database]\n\n"
-
-        if file --mime-type "$m2c_magento_db_import" | grep -q gzip$; then
-            m2c_msg "Unpacking and importing database dump file.............................  "
-            m2c_loading
-            (
-                gunzip -c "$m2c_magento_db_import" | \
-                    m2c_cli notty LANG=C LC_CTYPE=C LC_ALL=C \
-                    sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | \
-                    mysql -hdb -u"$M2C_CFG_MYSQL_USER" -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE"
-            ) >"$m2c_log" 2>&1
-            m2c_result $?
-        else
-            m2c_msg "Importing database dump file...........................................  "
-            m2c_loading
-            (
-                cat "$m2c_magento_db_import" | \
-                    m2c_cli notty LANG=C LC_CTYPE=C LC_ALL=C \
-                    sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | \
-                    mysql -hdb -u"$M2C_CFG_MYSQL_USER" -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE"
-            ) >"$m2c_log" 2>&1
-            m2c_result $?
-        fi
-
-        m2c_msg "Setting the project domain name........................................  "
-        m2c_magento notty config:set web/secure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1 && \
-        m2c_magento notty config:set web/unsecure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1
-        m2c_result $?
-
+        m2c_db_import "$m2c_magento_db_import"
         m2c_info_bold "\n[Installing Magento]\n\n"
     else
         m2c_info_bold "\n[Installing Magento]\n\n"
