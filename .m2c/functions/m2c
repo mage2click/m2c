@@ -613,7 +613,8 @@ m2c_global_uninstall() {
     m2c_msg "Attention!\n\n"
     m2c_msg "All projects docker containers and its volumes will be removed!\n\n"
     m2c_msg "Projects files on the host will not be touched. Make sure that\n"
-    m2c_msg "you backed up projects databases.\n\n"
+    m2c_msg "you backed up projects databases. Use \`m2c db export\` per project\n"
+    m2c_msg "to create database dump file as backup.\n\n"
 
     m2c_ask_bool "Uninstall Mage2click toolset from your system?"
 
