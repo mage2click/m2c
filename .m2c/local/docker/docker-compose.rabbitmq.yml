@@ -5,7 +5,7 @@ services:
   rabbitmq:
     container_name: ${M2C_CFG_DOMAIN_NAME}__rabbitmq
     hostname: ${M2C_CFG_DOMAIN_NAME}__rabbitmq
-    image: rabbitmq:${M2C_CFG_RABBITMQ:-3.7.15}-management-alpine
+    image: rabbitmq:${M2C_CFG_RABBITMQ:-3.7}-management-alpine
     labels:
       - traefik.enable=true
       - traefik.port=15672
