@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ -z "$m2c_global_dir" ]]
+if [[ -z ${m2c_global_dir} ]]
 then
     echo -e "\033[1;31mThis script intended to be sourced and should not be executed directly!\033[0m"
     exit 1
@@ -300,7 +300,7 @@ m2c_db_import() {
         m2c_magento notty config:set web/secure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1 && \
         m2c_magento notty config:set web/unsecure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1
         m2c_result $?
-    elif [[ -n "$file" ]]
+    elif [[ -n ${file} ]]
     then
         m2c_error "Cannot locate database dump file at specified path: $file!\n"
     else
@@ -1232,12 +1232,12 @@ m2c_init() {
         m2c_result $?
     fi
 
-    if [[ -n "$m2c_composer_public_key" && -n "$m2c_composer_private_key" ]]
+    if [[ -n ${m2c_composer_public_key} && -n ${m2c_composer_private_key} ]]
     then
         m2c_msg "Configuring composer authentication for Docker container...............  "
         m2c_loading
         m2c_cli notty composer config http-basic.repo.magento.com \
-            "$m2c_composer_public_key" "$m2c_composer_private_key" >"$m2c_log" 2>&1
+            ${m2c_composer_public_key} ${m2c_composer_private_key} >"$m2c_log" 2>&1
         m2c_result $?
     fi
 
@@ -1262,7 +1262,7 @@ m2c_init() {
     m2c_redis_configure
     m2c_result $?
 
-    if [[ -n "$M2C_CFG_ELASTICSEARCH" ]]
+    if [[ -n ${M2C_CFG_ELASTICSEARCH} ]]
     then
         m2c_msg "Configuring Elasticsearch..............................................  "
         m2c_loading
@@ -1270,7 +1270,7 @@ m2c_init() {
         m2c_result $?
     fi
 
-    if [[ -n "$M2C_CFG_VARNISH" ]]
+    if [[ -n ${M2C_CFG_VARNISH} ]]
     then
         m2c_msg "Configuring Varnish....................................................  "
         m2c_loading
@@ -1324,7 +1324,7 @@ m2c_init_detect_magento() {
 
         version=$(echo $(grep version "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" | cut -c 17- | rev | cut -c 3- | rev 2>/dev/null))
 
-        if [[ -n "$version" ]]
+        if [[ -n ${version} ]]
         then
             m2c_msg "Detected Magento v$version................................................  "
             M2C_CFG_MAGENTO="$version"
@@ -1356,14 +1356,14 @@ m2c_init_composer_auth() {
         m2c_erase_prev_lines 1
         m2c_msg "Authentication is required for Composer repository repo.magento.com\n\n"
 
-        if [[ -n "$m2c_composer_public_key" && -n "$m2c_composer_private_key" ]]
+        if [[ -n ${m2c_composer_public_key} && -n ${m2c_composer_private_key} ]]
         then
             m2c_ask_bool "Use authentication information from the current composer config?"
         else
             m2c_res=
         fi
 
-        if [[ -z ${m2c_res} || -z "$m2c_composer_public_key" || -z "$m2c_composer_private_key" ]]
+        if [[ -z ${m2c_res} || -z ${m2c_composer_public_key} || -z ${m2c_composer_private_key} ]]
         then
             m2c_ask_text "Public key:" \
                      "" \
@@ -1464,6 +1464,10 @@ m2c_local() {
         remove)
             shift
             m2c_local_remove "$@"
+        ;;
+        update)
+            shift
+            m2c_local_update
         ;;
         *)
             local m2c_local_command=
@@ -1607,7 +1611,7 @@ m2c_local_remove() {
 
     case "$@" in
         varnish)
-            service="varnish"
+            service="$1"
             m2c_ask_bool "Remove Varnish service?"
 
             if [[ "$m2c_res" == "1" ]]
@@ -1623,7 +1627,7 @@ m2c_local_remove() {
             fi
         ;;
         elasticsearch)
-            service="elasticsearch"
+            service="$1"
             m2c_ask_bool "Remove Elasticsearch service?"
 
             if [[ "$m2c_res" == "1" ]]
@@ -1639,7 +1643,7 @@ m2c_local_remove() {
             fi
         ;;
         rabbitmq)
-            service="rabbitmq"
+            service="$1"
             m2c_ask_bool "Remove RabbitMQ service?"
 
             if [[ "$m2c_res" == "1" ]]
@@ -1648,7 +1652,7 @@ m2c_local_remove() {
             fi
         ;;
         phpmyadmin)
-            service="phpmyadmin"
+            service="$1"
             m2c_ask_bool "Remove phpMyAdmin service?"
 
             if [[ "$m2c_res" == "1" ]]
@@ -1672,6 +1676,28 @@ m2c_local_remove() {
         m2c_save_project_env
         m2c_local up
     fi
+}
+
+m2c_local_update() {
+    m2c_info_bold "\n[Update]\n\n"
+
+    m2c_ask_bool "Update project docker configuration to latest?"
+
+    if [[ -z ${m2c_res} ]]
+    then
+        exit 0
+    fi
+
+    m2c_msg "\nUpdating project docker configuration..................................  "
+    m2c_loading
+    mkdir -p "$m2c_project_dir"/.m2c/mutagen "$m2c_project_dir"/.m2c/docker >"$m2c_log" 2>&1 && \
+    yes | cp -rf "$m2c_global_dir"/local/docker/* "$m2c_project_dir"/.m2c/docker/ >"$m2c_log" 2>&1 && \
+    yes | cp -rf "$m2c_global_dir"/local/mutagen/mutagen.yml \
+        "$m2c_project_dir"/.m2c/mutagen/mutagen.yml >"$m2c_log" 2>&1 && \
+    rm -rf "$m2c_project_dir"/.m2c/mutagen/mutagen.yml.lock >"$m2c_log" 2>&1
+    m2c_result $?
+
+    m2c_local up
 }
 
 m2c_local_container_id() {
