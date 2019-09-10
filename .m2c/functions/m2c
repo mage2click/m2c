@@ -591,11 +591,11 @@ m2c_global_update() {
     m2c_info_bold "\n[Update]\n\n"
     m2c_msg "Checking for update....................................................  "
     m2c_loading
-    remote_version="$(curl -Ls https://raw.githubusercontent.com/mage2click/m2c/master/.m2c/version)"
+    remote_version="$(curl -sL https://raw.githubusercontent.com/mage2click/m2c/master/.m2c/version)"
 
     if [[ "$remote_version" -gt "$version" ]]
     then
-        curl -Ls -o m2c.run raw.githubusercontent.com/mage2click/m2c/master/m2c && \
+        curl -sL -o m2c.run raw.githubusercontent.com/mage2click/m2c/master/m2c && \
             m2c_result 0 && \
             chmod 755 m2c.run && \
             ./m2c.run
@@ -1071,6 +1071,16 @@ m2c_init() {
         m2c_save_project_env
         m2c_logo
     else
+        echo
+        m2c_ask_bool "Initialize project in the current directory?"
+
+        if [[ -z ${m2c_res} ]]
+        then
+            exit 0
+        else
+            m2c_erase_prev_lines 2
+        fi
+
         m2c_logo
         m2c_info_bold "\n[Initializing project]\n\n"
 
@@ -1288,7 +1298,7 @@ m2c_init() {
 
     if [[ -n ${m2c_composer_public_key} && -n ${m2c_composer_private_key} ]]
     then
-        m2c_msg "Configuring composer authentication for Docker container...............  "
+        m2c_msg "Configuring composer authentication for docker containers..............  "
         m2c_loading
         m2c_cli notty composer config http-basic.repo.magento.com \
             ${m2c_composer_public_key} ${m2c_composer_private_key} >"$m2c_log" 2>&1
@@ -1306,7 +1316,9 @@ m2c_init() {
         sed -e 's/fastcgi_backend/$fastcgi_backend/g' \
             "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf.sample" > \
             "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf" && \
-        m2c_push nginx.conf >/dev/null 2>&1 && \
+        docker cp "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf" \
+            "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/nginx.conf && \
+        docker exec "${M2C_CFG_DOMAIN_NAME}__php" chown -R app:app nginx.conf && \
         m2c_local_container_restart nginx
     ) >"$m2c_log" 2>&1
     m2c_result $?
@@ -1339,23 +1351,37 @@ m2c_init() {
         m2c_magento notty setup:static-content:deploy -f >"$m2c_log" 2>&1
         m2c_result $?
 
-        m2c_msg "Installing Magento 2 node modules dependencies.........................  "
+        m2c_msg "Installing Magento node modules dependencies...........................  "
         m2c_loading
-        yes | cp -rf "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json.sample" \
-            "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json" >"$m2c_log" 2>&1 && \
-        m2c_push package.json >/dev/null 2>&1 && \
-        m2c_npm install >"$m2c_log" 2>&1
+        (
+            yes | cp -rf "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json.sample" \
+                "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json" && \
+            docker cp "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json" \
+                "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/package.json && \
+            docker exec "${M2C_CFG_DOMAIN_NAME}__php" chown -R app:app package.json && \
+            m2c_npm install
+        ) >"$m2c_log" 2>&1
         m2c_result $?
 
         m2c_msg "Clearing the cache for good measure....................................  "
         m2c_loading
-        m2c_magento notty cache:flush >"$m2c_log" 2>&1 && \
-        m2c_magento notty cache:enable >"$m2c_log" 2>&1
+        (
+            m2c_magento notty cache:flush && \
+            m2c_magento notty cache:enable
+        ) >"$m2c_log" 2>&1
         m2c_result $?
     fi
 
     m2c_sign ${M2C_CFG_DOMAIN_NAME}
-    m2c_sync start
+
+    if [[ "$m2c_os" == "darwin" ]]
+    then
+        m2c_info_bold "\n[Mutagen]\n\n"
+        m2c_msg "Starting sync sessions.................................................  "
+        m2c_sync start >"$m2c_log" 2>&1 && \
+        sleep 15
+        m2c_result $?
+    fi
 }
 
 m2c_init_check_version() {
@@ -2523,7 +2549,8 @@ m2c_sign() {
 m2c_sync() {
     if [[ "$m2c_os" != "darwin" ]]
     then
-        m2c_help
+        m2c_error "Unknown argument \`sync\`. Run \`m2c --help\` for usage information.\n"
+        exit 1
     fi
 
     local m2c_sync_sessions=("src" "vendor")
