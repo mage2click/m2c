@@ -1,3 +1,0 @@
-#!/bin/bash
-
-curl -sL -o m2c.run raw.githubusercontent.com/mage2click/m2c/master/m2c && chmod 755 m2c.run && ./m2c.run
