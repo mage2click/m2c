@@ -16,5 +16,6 @@ then
     if ! grep -q -f /usr/share/ca-certificates/m2c/rootCA.crt /etc/ssl/certs/ca-certificates.crt
     then
         cat /usr/share/ca-certificates/m2c/rootCA.crt >> /etc/ssl/certs/ca-certificates.crt
+        ln -sf /usr/share/ca-certificates/m2c/rootCA.crt /etc/ssl/certs/ca-cert-Mage2click_RootCert_CA.pem
     fi
 fi
