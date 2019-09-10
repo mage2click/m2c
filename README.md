@@ -13,13 +13,13 @@ This configuration has been tested on macOS.
 To install Mage2click toolset to your system, simply run command below.
 
 ```bash
-curl -sL -o m2c.run raw.githubusercontent.com/mage2click/m2c/master/m2c && chmod 755 m2c.run && ./m2c.run
+curl -sL raw.githubusercontent.com/mage2click/m2c/master/get | bash
 ```
 
 Or shortened version of above.
 
 ```bash
-curl -sL -o m2c.run get.m2c.run && chmod 755 m2c.run && ./m2c.run
+curl -sL get.m2c.run | bash
 ```
 
 
