@@ -22,5 +22,37 @@ Or shortened version of above.
 curl -sL get.m2c.run | bash
 ```
 
+For macOS systems, mutagen.io tool will be bundled in the toolset for high-performance files sync between host and docker containers.
 
+## What is included
+
+### Global system-wide services 
+
+After toolset is installed, you will have the next tools available locally:
+
+- Traefik - https://traefik.m2c.test
+- Portainer - https://portainer.m2c.test
+- Mailhog - https://mailhog.m2c.test
+- Dnsmasq - https://dnsmasq.m2c.test
+
+Toolset local homepage with links to all tools listed above - https://m2c.test  
+
+### Per-project services
+
+Most of services are available with version on your choice.
+
+All docker Magento projects initialized with: 
+
+- Nginx
+- PHP-FPM
+- MariaDB
+- Redis
+- Xdebug
+
+And optionally available:
+
+- Varnish
+- Elasticsearch
+- phpMyadmin
+- RabbitMQ 
 
