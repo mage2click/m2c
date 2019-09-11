@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r m2c_version="0.2.6"
+declare -r m2c_version="0.2.7"
 declare -r m2c_os="$(uname -s | awk '{print tolower($0)}')"
 declare -r m2c_global_dir="$(echo ~/.m2c)"
 declare m2c_loading_pid=
@@ -199,11 +199,11 @@ m2c_ask_text() {
 
         m2c_erase_prev_lines $((( res_count + error_count )))
 
+        res=$(m2c_trim "$res" | tr -dc '[:print:]')
+
         if [[ -z ${res} ]]
         then
             res="$default"
-        else
-            res=$(m2c_trim "$res" | tr -dc '[:print:]')
         fi
 
         if ${validate} "$res" "${validate_value[@]}"
@@ -452,7 +452,7 @@ if [[ "$0" != "/usr/local/bin/m2c" ]]
 then
     m2c_logo
 
-    if [[ ! -f "$m2c_global_dir"/version ]]
+    if [[ ! -f "$m2c_global_dir"/build ]]
     then
         message="Install Mage2click Docker Magento environment and toolset to your system?"
     else
@@ -475,7 +475,7 @@ then
     fi
 
     m2c_requirements
-    rm -rf "$m2c_global_dir"/{bin,completions,dnsmasq,docker,functions,local,traefik,www,version} >/dev/null 2>&1
+    rm -rf "$m2c_global_dir"/{bin,completions,dnsmasq,docker,functions,local,traefik,www,build} >/dev/null 2>&1
     m2c_install
     . "$m2c_global_dir"/functions/m2c
     m2c_sign "m2c.test"

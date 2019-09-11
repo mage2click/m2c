@@ -585,15 +585,15 @@ m2c_global_info() {
 }
 
 m2c_global_update() {
-    local version="$(cat "$m2c_global_dir"/version)" \
+    local build="$(cat "$m2c_global_dir"/build)" \
           remote_version
 
     m2c_info_bold "\n[Update]\n\n"
     m2c_msg "Checking for update....................................................  "
     m2c_loading
-    remote_version="$(curl -sL https://raw.githubusercontent.com/mage2click/m2c/master/.m2c/version)"
+    remote_build="$(curl -sL https://raw.githubusercontent.com/mage2click/m2c/master/.m2c/build)"
 
-    if [[ "$remote_version" -gt "$version" ]]
+    if [[ "$remote_build" -gt "$build" ]]
     then
         curl -sL -o m2c.run raw.githubusercontent.com/mage2click/m2c/master/m2c && \
             m2c_result 0 && \
@@ -1378,6 +1378,7 @@ m2c_init() {
     then
         m2c_info_bold "\n[Mutagen]\n\n"
         m2c_msg "Starting sync sessions.................................................  "
+        m2c_loading
         m2c_sync start >"$m2c_log" 2>&1 && \
         sleep 15
         m2c_result $?
