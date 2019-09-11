@@ -1,6 +1,6 @@
 # Mage2click Docker Magento <br><small>environment and toolset</small>
 
-![Mage2click Docker Magento environment and toolset](assets/images/install.png)
+<p align="center"><img src="assets/images/install.png" width="600" align="center" alt="Mage2click Docker Magento environment and toolset" /></p>
 
 Mage2click toolset is a system-wide command-line tool for managing simultaneously running docker Magento projects with insanely easy installation and configuration. It includes plenty of configurable services and useful commands for developing and projects orchestration right out of the box.
 
