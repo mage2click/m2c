@@ -15,7 +15,7 @@ Mage2click toolset is a system-wide command-line tool for managing simultaneousl
 
 This setup assumes you are running Docker on a computer with at least 6GB of allocated RAM, a dual-core, and an SSD hard drive. 
  
-This configuration has been tested on macOS. Linux based systems still require testing.
+This configuration has been tested on macOS. Linux based systems still require testing. Any testing are welcomed!
 
 ## Installation
 
@@ -65,7 +65,6 @@ And optionally available:
 - phpMyadmin
 - RabbitMQ 
 
+## License
 
-## License 
-
-MIT
+[MIT](LICENSE)
