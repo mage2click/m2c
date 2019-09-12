@@ -1493,15 +1493,16 @@ m2c_init_help() {
     echo -e "
 \033[1;33mInformation:\033[0m
   Initializes Docker Magento project in the current directory. If no arguments
-  provided, interactive setup mode will be started. If at least one parameter
-  or option is provided, automated setup will be started, for all missing
-  parameters default values will be used.
+  defined, interactive setup mode will be started. If at least one argument
+  is defined, automated setup will be started. All undefined parameters will
+  be set with default values.
 
 \033[1;33mUsage:\033[0m
   m2c init [parameters...] [flags...]
 
 \033[1;33mParameters:\033[0m
-  --domain <magento.test>           Set domain name with .test tld to use.
+  --domain <magento.test>           Set domain name with .test tld to use for
+                                    the project.
   --nginx-version <1.17>            Set Nginx version.
   --php-version <7.2>               Set PHP version.
   --mariadb-version <10.3>          Set MariaDB version.

@@ -65,6 +65,34 @@ And optionally available:
 - phpMyadmin
 - RabbitMQ 
 
+## Usage
+
+After toolset is installed on your system, you may use it to initialize new or existing magento projects.
+
+### Interactive configuration mode
+
+To project, open the desired directory with terminal and run
+
+```bash
+m2c init
+```
+
+This command will launch project initialization in interactive mode. Simply follow the steps to configure the desired Docker Magento development environment.
+
+### Commandline configuration mode
+
+If at least one command argument is defined, automated setup will be started. All undefined parameters will be set with default values.
+
+```bash
+m2c init [parameters...] [flags...]
+```
+
+To get a list of all available parameters and flags run 
+
+```bash
+m2c init --help
+```
+
 ## License
 
 [MIT](LICENSE)
