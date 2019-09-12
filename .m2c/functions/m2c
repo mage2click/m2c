@@ -860,11 +860,21 @@ m2c_init() {
     local m2c_magento_db_import=
     local m2c_magento_sample_data=
 
+    m2c_in_array "--help" $@ && m2c_init_help
+
+    echo
+    m2c_ask_bool "Initialize project in the current directory?"
+
+    if [[ -z ${m2c_res} ]]
+    then
+        exit 0
+    else
+        m2c_erase_prev_lines 2
+    fi
+
     if (("$#"))
     then
         m2c_load_project_defaults_env
-
-        m2c_in_array "--help" $@ && m2c_init_help
 
         while (("$#"))
         do
@@ -1071,16 +1081,6 @@ m2c_init() {
         m2c_save_project_env
         m2c_logo
     else
-        echo
-        m2c_ask_bool "Initialize project in the current directory?"
-
-        if [[ -z ${m2c_res} ]]
-        then
-            exit 0
-        else
-            m2c_erase_prev_lines 2
-        fi
-
         m2c_logo
         m2c_info_bold "\n[Initializing project]\n\n"
 
@@ -1490,8 +1490,6 @@ m2c_init_error() {
 }
 
 m2c_init_help() {
-    m2c_logo
-
     echo -e "
 \033[1;33mInformation:\033[0m
   Initializes Docker Magento project in the current directory. If no arguments
