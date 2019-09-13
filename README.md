@@ -69,6 +69,8 @@ And optionally available:
 
 After toolset is installed on your system, you may use it to initialize new or existing magento projects.
 
+To get a list of all commands and usage information, run ```m2c``` or ```m2c --help``` which is equivalent.
+
 ### Interactive configuration mode
 
 To initialize project, open the desired directory with terminal and run
