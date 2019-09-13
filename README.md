@@ -71,7 +71,7 @@ After toolset is installed on your system, you may use it to initialize new or e
 
 ### Interactive configuration mode
 
-To project, open the desired directory with terminal and run
+To initialize project, open the desired directory with terminal and run
 
 ```bash
 m2c init
