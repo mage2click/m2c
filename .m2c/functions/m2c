@@ -204,13 +204,11 @@ m2c_composer() {
         m2c_tty=1
     fi
 
-    if [[ "$m2c_os" != "darwin" ]]
+    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" composer "$@"
+
+    if [[ "$m2c_os" == "darwin" ]]
     then
-        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" composer "$@"
-    else
-        m2c_sync pause >/dev/null 2>&1
-        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" composer "$@"
-        m2c_pull vendor
+        m2c_msg "\nConsider on pulling vendor directory to the host by running \`m2c pull vendor\` command if composer packages were changed."
     fi
 }
 
@@ -440,7 +438,7 @@ m2c_global_print_service() {
 m2c_global_up() {
     local service=($1)
 
-    m2c_info_bold "\n[Creating docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+    m2c_info_bold "\n[Creating docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
     for i in "${!service[@]}"
     do
@@ -456,7 +454,7 @@ m2c_global_up() {
 m2c_global_start() {
     local service=($1)
 
-    m2c_info_bold "\n[Starting docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+    m2c_info_bold "\n[Starting docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
     for i in "${!service[@]}"
     do
@@ -473,7 +471,7 @@ m2c_global_start() {
 m2c_global_restart() {
     local service=($1)
 
-    m2c_info_bold "\n[Restarting docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+    m2c_info_bold "\n[Restarting docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
     for i in "${!service[@]}"
     do
@@ -490,7 +488,7 @@ m2c_global_restart() {
 m2c_global_stop() {
     local service=($1)
 
-    m2c_info_bold "\n[Stopping docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+    m2c_info_bold "\n[Stopping docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
     for i in "${!service[@]}"
     do
@@ -1951,33 +1949,25 @@ m2c_local_project_check_dir() {
 
 m2c_local_project_check() {
     m2c_local_project_check_dir
-    m2c_loading
 
     if [[ -z "$(m2c_local_container_id php)" ]]
     then
-        m2c_result 0
-        m2c_erase_prev_lines 1
         m2c_error "This command intended to be used with the initialized projects only!\nTo initialize a new project in the current directory, run \`m2c init\` command.\n"
         exit 1
     fi
-
-    m2c_result 0
-    m2c_erase_prev_lines 1
 }
 
 m2c_local_active_project_check() {
-    m2c_local_project_check
-    m2c_loading
+    m2c_local_project_check_dir
 
-    if [[ -z "$(m2c_local_active_container_id php)" ]]
+    if [[ -z "$(m2c_local_container_id php)" ]]
     then
-        m2c_result 0
-        m2c_erase_prev_lines 1
+        m2c_error "This command intended to be used with the initialized projects only!\nTo initialize a new project in the current directory, run \`m2c init\` command.\n"
+        exit 1
+    elif [[ -z "$(m2c_local_active_container_id php)" ]]
+    then
         m2c_local start
     fi
-
-    m2c_result 0
-    m2c_erase_prev_lines 1
 }
 
 m2c_local_error() {
