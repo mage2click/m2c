@@ -731,6 +731,7 @@ m2c_urn() {
 
     m2c_msg "Creating PhpStorm configuration........................................  "
     m2c_loading
+    m2c_cli notty mkdir .idea >/dev/null 2>&1 && \
     m2c_magento dev:urn-catalog:generate .idea/misc.xml >"$m2c_log" 2>&1
     m2c_result $?
 
@@ -745,7 +746,7 @@ m2c_urn() {
         yes | cp -rf "$m2c_project_dir/.idea/misc.xml" "$m2c_project_dir/${M2C_CFG_MAGENTO_SRC}/.idea"
     fi
 
-    m2c_cli notty rm -f .idea/misc.xml >/dev/null 2>&1
+    m2c_cli notty rm -rf .idea >/dev/null 2>&1
 
     m2c_msg "\nUniform Resource Names have been generated!\nRestart PHPStorm to get changes applied.\n"
 }
