@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r m2c_version="0.2.11"
+declare -r m2c_version="0.2.12"
 declare -r m2c_os="$(uname -s | awk '{print tolower($0)}')"
 declare -r m2c_global_dir="$(echo ~/.m2c)"
 declare m2c_loading_pid=
@@ -85,7 +85,9 @@ m2c_error_bold() {
 }
 
 m2c_result() {
-    local res=$1 error
+    local res=$1 \
+          noexit=$2 \
+          error
 
     m2c_stop_spinner >/dev/null 2>&1
     tput cnorm
@@ -101,6 +103,8 @@ m2c_result() {
             error="$(echo $(cat "$m2c_log"))"
             [[ -n ${error} ]] && m2c_error "$error\n"
         fi
+
+        [[ -z ${noexit} ]] && exit 1
     fi
 }
 
@@ -272,7 +276,7 @@ m2c_requirements() {
         ;;
         *)
             echo "Currently we are not supporting $m2c_os based OS yet." >"$m2c_log"
-            m2c_result 1
+            m2c_result 1 1
             pass=0
         ;;
     esac
@@ -284,7 +288,7 @@ m2c_requirements() {
 
     [[ "$test" == "1" ]] && echo "Docker command line interface was not found." >"$m2c_log"
 
-    m2c_result ${test}
+    m2c_result ${test} 1
 
     [[ ${test} -eq 0 ]] || pass=0
 
@@ -295,10 +299,12 @@ m2c_requirements() {
 
     [[ "$test" == "1" ]] && echo "Docker-compose command line interface was not found." >"$m2c_log"
 
-    m2c_result ${test}
+    m2c_result ${test} 1
+
 
     [[ ${test} -eq 0 ]] || pass=0
 
+    test=0
     m2c_msg "Ports 80 and 443 availability check....................................  "
     m2c_loading
 
@@ -319,7 +325,7 @@ m2c_requirements() {
             test=1
         fi
     fi
-    m2c_result ${test}
+    m2c_result ${test} 1
 
     [[ ${test} -eq 0 ]] || pass=0
 
