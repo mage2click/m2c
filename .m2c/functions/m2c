@@ -600,7 +600,7 @@ m2c_global_update() {
     else
         m2c_result 0
         m2c_logo
-        m2c_msg "You’re up-to-date! v$m2c_version is currently the newest version available."
+        m2c_msg "You’re up-to-date! v$m2c_version is currently the newest version available.\n"
     fi
 
     exit 0

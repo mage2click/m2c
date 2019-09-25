@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r m2c_version="0.2.12"
+declare -r m2c_version="0.2.13"
 declare -r m2c_os="$(uname -s | awk '{print tolower($0)}')"
 declare -r m2c_global_dir="$(echo ~/.m2c)"
 declare m2c_loading_pid=
@@ -249,17 +249,6 @@ m2c_in_array () {
         [[ "$entry" == "$match" ]] && return 0
     done
     return 1
-}
-
-m2c_curl_percent() {
-    local message="$1"
-	while read -d $'\r' -r p; do
-		p=${p:(-6)}
-		p=${p%'%'*}
-		p=${p/,/}
-		printf "\r\033[K%s\033[1;33m%s\033[0m" "$message" $(echo "${p}%")
-	done
-	echo -ne "\r\033[K$message"
 }
 
 m2c_requirements() {
