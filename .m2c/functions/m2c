@@ -2012,7 +2012,7 @@ m2c_local_print_service() {
 m2c_local_start() {
     local service=("$@")
 
-    m2c_info_bold "\n[Starting docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+    m2c_info_bold "\n[Starting docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
     for i in "${!service[@]}"
     do
@@ -2026,7 +2026,7 @@ m2c_local_start() {
 m2c_local_restart() {
     local service=("$@")
 
-    m2c_info_bold "\n[Restarting docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+    m2c_info_bold "\n[Restarting docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
     for i in "${!service[@]}"
     do
@@ -2040,7 +2040,7 @@ m2c_local_restart() {
 m2c_local_stop() {
     local service=("$@")
 
-    m2c_info_bold "\n[Stopping docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+    m2c_info_bold "\n[Stopping docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
     for i in "${!service[@]}"
     do
@@ -2054,7 +2054,7 @@ m2c_local_stop() {
 m2c_local_up() {
     local service=("$@")
 
-    m2c_info_bold "\n[Creating docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+    m2c_info_bold "\n[Creating docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
     for i in "${!service[@]}"
     do
