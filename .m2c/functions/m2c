@@ -1913,8 +1913,9 @@ m2c_local_project_up() {
         cd "$m2c_project_dir/.m2c/docker/"
 
         export M2C_PROJECT_PATH="$m2c_project_dir"
+        export M2C_PROJECT_NAME="${M2C_CFG_DOMAIN_NAME/.test/}"
 
-        docker-compose --project-name "${M2C_CFG_DOMAIN_NAME/.test/}" \
+        docker-compose --project-name "${M2C_PROJECT_NAME}" \
             --file docker-compose.yml \
             --file docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml \
             ${M2C_CFG_PHPMYADMIN:+--file docker-compose.phpmyadmin.yml} \

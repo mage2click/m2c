@@ -1,0 +1,19 @@
+[http.routers]
+  [http.routers.https-redirect]
+    rule = "HostRegexp(`{any:.*}`)"
+    entrypoints = ["http"]
+    middlewares = ["https-redirect"]
+    service = "dummy"
+
+[http.middlewares]
+  [http.middlewares.https-redirect.redirectScheme]
+    scheme = "https"
+
+[http.services]
+  [http.services.dummy.LoadBalancer]
+     [[http.services.dummy.LoadBalancer.servers]]
+        url = "localhost"
+
+[[tls.certificates]]
+  certFile = "/etc/ssl/certs/m2c.crt"
+  keyFile = "/etc/ssl/private/m2c.key"

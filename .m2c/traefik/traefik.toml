@@ -1,14 +1,17 @@
-defaultEntryPoints = ["http", "https"]
+[api]
+  dashboard = true
 
 [entryPoints]
   [entryPoints.http]
-  address = ":80"
-    [entryPoints.http.redirect]
-    entryPoint = "https"
+    address = ":80"
   [entryPoints.https]
-  address = ":443"
-  compress = false
-    [entryPoints.https.tls]
-      [[entryPoints.https.tls.certificates]]
-      certFile = "/etc/ssl/certs/m2c.crt"
-      keyFile = "/etc/ssl/private/m2c.key"
+    address = ":443"
+  [entryPoints.mysql]
+    address = ":3306"
+
+[providers]
+  [providers.docker]
+    exposedByDefault = false
+    network = "m2c"
+  [providers.file]
+    filename = "/etc/traefik/dynamic.toml"
