@@ -9,7 +9,7 @@
   <a href="https://twitter.com/intent/follow?screen_name=mage2_click" target="_blank"><img src="https://img.shields.io/twitter/follow/mage2_click?color=brightgreen&label=mage2_click&logo=twitter&logoColor=white&style=for-the-badge" /></a>
 </p>
 
-Mage2click toolset is a system-wide command-line tool for managing simultaneously running docker Magento projects with insanely easy installation and configuration. It includes plenty of configurable services and useful commands for developing and projects orchestration right out of the box.
+Mage2click toolset is a system-wide command-line tool for creating and managing simultaneously running docker Magento projects with insanely easy installation and configuration. It includes plenty of configurable services and useful commands for developing and project orchestration right out of the box. On macOS systems, mutagen.io tool will be bundled in the toolset for high-performance files sync between host and docker containers.
 
 ## Prerequisites
 
@@ -31,8 +31,6 @@ Or shortened version of above.
 curl -sL get.m2c.run | bash
 ```
 
-For macOS systems, mutagen.io tool will be bundled in the toolset for high-performance files sync between host and docker containers.
-
 ## What is included
 
 ### Global system-wide services 
@@ -46,9 +44,7 @@ After toolset is installed, you will have the next tools available locally:
 
 Toolset local homepage with links to all tools listed above - <a href="https://m2c.test" target="_blank">https://m2c.test</a>
 
-**All docker images with services listed above must be active.** 
-
-Services are configured to start automatically and should not be stopped. Without active Traefik and Dnsmasq, m2c backed projects can't work properly.  
+**All docker images with services listed above must be active.** These services are configured to start automatically and should not be stopped. Without active Traefik and Dnsmasq, m2c backed projects can't work properly.  
 
 ### Per-project services
 
