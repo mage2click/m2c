@@ -11,6 +11,18 @@
 
 Mage2click toolset is a system-wide command-line tool for creating and managing simultaneously running docker Magento projects with insanely easy installation and configuration. It includes plenty of configurable services and useful commands for developing and project orchestration right out of the box. On macOS systems, mutagen.io tool will be bundled in the toolset for high-performance files sync between host and docker containers.
 
+## Table of contents
+
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [What is included](#what-is-included)
+    - [Global system-wide services](global-system-wide-services)
+    - [Per-project services](per-project-services)
+- [Usage](#usage)
+    - [Interactive project initialization mode](interactive-project-initialization-mode)
+    - [Commandline project initialization mode](commandline-project-initialization mode)
+- [License](#license)
+
 ## Prerequisites
 
 This setup assumes you are running Docker on a computer with at least 6GB of allocated RAM, a dual-core, and an SSD hard drive. 
@@ -71,7 +83,7 @@ After toolset is installed on your system, you may use it to initialize new or e
 
 To get a list of all commands and usage information, run ```m2c``` or ```m2c --help``` which is equivalent.
 
-### Interactive configuration mode
+### Interactive project initialization mode
 
 To initialize project, open the desired directory with terminal and run
 
@@ -81,7 +93,7 @@ m2c init
 
 This command will launch project initialization in interactive mode. Simply follow the steps to configure the desired Docker Magento development environment.
 
-### Commandline configuration mode
+### Commandline project initialization mode
 
 If at least one command argument is defined, automated setup will be started. All undefined parameters will be set with default values.
 
@@ -89,7 +101,7 @@ If at least one command argument is defined, automated setup will be started. Al
 m2c init [parameters...] [flags...]
 ```
 
-To get a list of all available parameters and flags run 
+To get a list of all available parameters and flags for project configuration, run 
 
 ```bash
 m2c init --help
