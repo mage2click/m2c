@@ -20,7 +20,7 @@ Mage2click toolset is a system-wide command-line tool for creating and managing 
     - [Per-project services](per-project-services)
 - [Usage](#usage)
     - [Interactive project initialization mode](interactive-project-initialization-mode)
-    - [Commandline project initialization mode](commandline-project-initialization mode)
+    - [Commandline project initialization mode](commandline-project-initialization-mode)
 - [License](#license)
 
 ## Prerequisites
