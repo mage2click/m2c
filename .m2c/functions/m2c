@@ -43,6 +43,7 @@ m2c_load_project_env() {
     fi
 
     export M2C_PROJECT_PATH="$m2c_project_dir"
+    export M2C_PROJECT_NAME=${M2C_CFG_DOMAIN_NAME/.test/}
 
     export M2C_TRAEFIK_IP="$(docker ps \
         --filter "label=com.docker.compose.project=m2c" \
