@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r m2c_version="0.2.13"
+declare -r m2c_version="0.2.15"
 declare -r m2c_os="$(uname -s | awk '{print tolower($0)}')"
 declare -r m2c_global_dir="$(echo ~/.m2c)"
 declare m2c_loading_pid=
@@ -400,7 +400,7 @@ m2c_install() {
         m2c_loading
         case "$m2c_os" in
             darwin)
-                sudo security delete-certificate -c 'm2c.local' >"$m2c_log" 2>&1 && \
+                sudo security delete-certificate -c 'm2c.local' >/dev/null 2>&1
                 sudo security add-trusted-cert -d -r trustRoot \
                         -k /Library/Keychains/System.keychain "$m2c_global_dir"/ssl/certs/rootCA.crt >"$m2c_log" 2>&1
                 test=$?

@@ -40,6 +40,7 @@ services:
       - MYSQL_USER=${M2C_CFG_MYSQL_USER:-magento}
       - MYSQL_PASSWORD=${M2C_CFG_MYSQL_PASSWORD:-magento}
     volumes:
+      - ./../mysql/custom.cnf:/etc/mysql/conf.d/custom.cnf
       - db_data:/var/lib/mysql
     labels:
       - traefik.enable=true

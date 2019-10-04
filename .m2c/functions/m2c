@@ -42,6 +42,8 @@ m2c_load_project_env() {
         set +a
     fi
 
+    export M2C_PROJECT_PATH="$m2c_project_dir"
+
     export M2C_TRAEFIK_IP="$(docker ps \
         --filter "label=com.docker.compose.project=m2c" \
         --filter "label=com.docker.compose.service=traefik" \
@@ -1223,9 +1225,10 @@ m2c_init() {
 
     local url
 
-    mkdir -p "$m2c_project_dir"/.m2c/mutagen
+    mkdir -p "$m2c_project_dir"/.m2c/mutagen "$m2c_project_dir"/.m2c/mysql
     yes | cp -rf "$m2c_global_dir"/local/docker/* "$m2c_project_dir"/.m2c/docker/
     yes | cp -rf "$m2c_global_dir"/local/mutagen/mutagen.yml "$m2c_project_dir"/.m2c/mutagen/mutagen.yml
+    yes | cp -rf "$m2c_global_dir"/local/mysql/custom.cnf "$m2c_project_dir"/.m2c/mysql/custom.cnf
     rm -rf "$m2c_project_dir"/.m2c/mutagen/mutagen.yml.lock >/dev/null 2>&1
 
     if [[ -z ${m2c_magento_exists} ]]
@@ -1565,6 +1568,8 @@ m2c_local() {
             local m2c_local_services=("db" "php" "xdebug" "nginx" "redis" "varnish" \
                                       "elasticsearch" "phpmyadmin" "rabbitmq")
 
+            local m2c_local_existing_services=($(m2c_local_list_services))
+
             while (("$#"))
             do
                 case "$1" in
@@ -1573,8 +1578,7 @@ m2c_local() {
                         shift
                     ;;
                     nginx|php|xdebug|db|redis|varnish|elasticsearch|phpmyadmin|rabbitmq)
-                        if ! [[ \
-                                "$1" == "varnish" && -z ${M2C_CFG_VARNISH} || \
+                        if ! [[ "$1" == "varnish" && -z ${M2C_CFG_VARNISH} || \
                                 "$1" == "elasticsearch" && -z ${M2C_CFG_ELASTICSEARCH} || \
                                 "$1" == "phpmyadmin" && -z ${M2C_CFG_PHPMYADMIN} || \
                                 "$1" == "rabbitmq" && -z ${M2C_CFG_RABBITMQ} ]]
@@ -1584,7 +1588,13 @@ m2c_local() {
                         shift
                     ;;
                     *)
-                        m2c_local_error "$1" "$m2c_local_command"
+                        if m2c_in_array "$1" ${m2c_local_existing_services[@]}
+                        then
+                            m2c_local_service+=("$1")
+                            shift
+                        else
+                            m2c_local_error "$1" "$m2c_local_command"
+                        fi
                     ;;
                 esac
             done
@@ -1593,7 +1603,7 @@ m2c_local() {
             then
                 if ! (("${#m2c_local_service[@]}"))
                 then
-                    for i in "${!m2c_local_services[@]}"
+                    for i in "${!m2c_local_existing_services[@]}"
                     do
                         if [[ "$m2c_local_command" == "remove" ]] || ! [[ \
                                 "${m2c_local_services[$i]}" == "varnish" && -z ${M2C_CFG_VARNISH} || \
@@ -1601,7 +1611,7 @@ m2c_local() {
                                 "${m2c_local_services[$i]}" == "phpmyadmin" && -z ${M2C_CFG_PHPMYADMIN} || \
                                 "${m2c_local_services[$i]}" == "rabbitmq" && -z ${M2C_CFG_RABBITMQ} ]]
                         then
-                            m2c_local_service+=("${m2c_local_services[$i]}")
+                            m2c_local_service+=("${m2c_local_existing_services[$i]}")
                         fi
                     done
                 fi
@@ -1912,10 +1922,7 @@ m2c_local_project_up() {
     then
         cd "$m2c_project_dir/.m2c/docker/"
 
-        export M2C_PROJECT_PATH="$m2c_project_dir"
-        export M2C_PROJECT_NAME="${M2C_CFG_DOMAIN_NAME/.test/}"
-
-        docker-compose --project-name "${M2C_PROJECT_NAME}" \
+        docker-compose --project-name "${M2C_CFG_DOMAIN_NAME/.test/}" \
             --file docker-compose.yml \
             --file docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml \
             ${M2C_CFG_PHPMYADMIN:+--file docker-compose.phpmyadmin.yml} \
@@ -1928,6 +1935,21 @@ m2c_local_project_up() {
     fi
 
     return 1
+}
+
+m2c_local_list_services() {
+    cd "$m2c_project_dir/.m2c/docker/"
+
+    docker-compose --project-name "${M2C_CFG_DOMAIN_NAME/.test/}" \
+        --file docker-compose.yml \
+        --file docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml \
+        ${M2C_CFG_PHPMYADMIN:+--file docker-compose.phpmyadmin.yml} \
+        ${M2C_CFG_ELASTICSEARCH:+--file docker-compose.elasticsearch.yml} \
+        ${M2C_CFG_RABBITMQ:+--file docker-compose.rabbitmq.yml} \
+        --file docker-compose.${m2c_os}.yml \
+        ps --services --all
+
+    return $?
 }
 
 m2c_local_project_down() {
@@ -2007,13 +2029,19 @@ m2c_local_print_service() {
         rabbitmq)
             m2c_msg "RabbitMQ...............................................................  "
         ;;
+        *)
+            local service=$(echo "$1" | awk '{ print toupper( substr( $0, 1, 1 ) ) substr( $0, 2 ); }')
+            local chars_count=${#service}
+
+            m2c_msg "$service$(printf %$((71 - chars_count))s | tr " " ".")  "
+        ;;
     esac
 }
 
 m2c_local_start() {
     local service=("$@")
 
-    m2c_info_bold "\n[Starting docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+    m2c_info_bold "\n[Starting docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
     for i in "${!service[@]}"
     do
@@ -2027,7 +2055,7 @@ m2c_local_start() {
 m2c_local_restart() {
     local service=("$@")
 
-    m2c_info_bold "\n[Restarting docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+    m2c_info_bold "\n[Restarting docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
     for i in "${!service[@]}"
     do
@@ -2041,7 +2069,7 @@ m2c_local_restart() {
 m2c_local_stop() {
     local service=("$@")
 
-    m2c_info_bold "\n[Stopping docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+    m2c_info_bold "\n[Stopping docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
     for i in "${!service[@]}"
     do
@@ -2055,7 +2083,7 @@ m2c_local_stop() {
 m2c_local_up() {
     local service=("$@")
 
-    m2c_info_bold "\n[Creating docker container$((("${#service[@]}" > 1)) && echo "s")]\n\n"
+    m2c_info_bold "\n[Creating docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
     for i in "${!service[@]}"
     do
