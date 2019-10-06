@@ -2547,12 +2547,19 @@ m2c_sign() {
             -subj "/O=Mage2click/OU=IT/CN=${m2c_domains[0]}" >"$m2c_log" 2>&1
         m2c_result $?
 
+        if [[ "$m2c_os" == "darwin" ]]
+        then
+            pass="m2c"
+        else
+            pass="m2c0"
+        fi
+
         m2c_msg "Signing SSL certificate................................................  "
         m2c_loading
         openssl x509 -req -days 3650 -sha256 -extensions v3_req \
             -CA "$m2c_ssl_dir"/certs/rootCA.crt \
             -CAkey "$m2c_ssl_dir"/private/rootCA.key \
-            -CAcreateserial -passin pass:m2c \
+            -CAcreateserial -passin pass:${pass} \
             -in "$m2c_ssl_dir"/certs/m2c.csr \
             -out "$m2c_ssl_dir"/certs/m2c.crt \
             -extfile "$m2c_ssl_dir"/config/v3_ext.conf >"$m2c_log" 2>&1

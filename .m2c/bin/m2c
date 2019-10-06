@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r m2c_version="0.2.16"
+declare -r m2c_version="0.2.17"
 declare -r m2c_os="$(uname -s | awk '{print tolower($0)}')"
 declare -r m2c_global_dir="$(echo ~/.m2c)"
 declare m2c_loading_pid=
@@ -337,15 +337,17 @@ m2c_install() {
 
     m2c_msg "Extracting data........................................................  "
     m2c_loading 2
-    tail -n+${archive} "${0}" | tar xpJ -C ~ && >"$m2c_log" 2>&1
+    tail -n+${archive} "${0}" | tar -xzp -C ~ && >"$m2c_log" 2>&1
     test=$?
-    ln -sf "$m2c_global_dir"/bin/m2c /usr/local/bin/m2c
-    ln -sf "$m2c_global_dir"/completions/bash/m2c /usr/local/etc/bash_completion.d/m2c
-    if [[ ! -f "$m2c_global_dir"/ssl/config/v3_ext.conf ]]
+    if [[ "$test" == "0" ]]
     then
-        mv "$m2c_global_dir"/ssl/config/v3_ext.blank.conf "$m2c_global_dir"/ssl/config/v3_ext.conf
-    else
-        rm -f "$m2c_global_dir"/ssl/config/v3_ext.blank.conf
+      ln -sf "$m2c_global_dir"/bin/m2c /usr/local/bin/m2c
+      if [[ ! -f "$m2c_global_dir"/ssl/config/v3_ext.conf ]]
+      then
+          mv "$m2c_global_dir"/ssl/config/v3_ext.blank.conf "$m2c_global_dir"/ssl/config/v3_ext.conf
+      else
+          rm -f "$m2c_global_dir"/ssl/config/v3_ext.blank.conf
+      fi
     fi
     m2c_result ${test}
 
@@ -368,17 +370,24 @@ m2c_install() {
     then
         m2c_info_bold "\n[Installing CA certificate]\n\n"
 
+        if [[ "$m2c_os" == "darwin" ]]
+        then
+            pass="m2c"
+        else
+            pass="m2c0"
+        fi
+
         m2c_msg "Generating private key for CA certificate..............................  "
         m2c_loading
         mkdir -p "$m2c_global_dir"/ssl/{certs,crl,new,private,serial} >"$m2c_log" 2>&1 && \
-        openssl genrsa -aes256 -passout pass:m2c -out "$m2c_global_dir"/ssl/private/rootCA.key 4096 >"$m2c_log" 2>&1
+        openssl genrsa -aes256 -passout pass:${pass} -out "$m2c_global_dir"/ssl/private/rootCA.key 4096 >"$m2c_log" 2>&1
         test=$?
         m2c_result ${test}
 
         m2c_msg "Signing CA certificate.................................................  "
         m2c_loading
         openssl req -new -x509 -nodes -sha256 -days 3650 \
-            -passin pass:m2c -subj "/O=Mage2click/OU=IT/CN=m2c.local" \
+            -passin pass:${pass} -subj "/O=Mage2click/OU=IT/CN=m2c.local" \
             -config "$m2c_global_dir"/ssl/config/rootca.conf \
             -key "$m2c_global_dir"/ssl/private/rootCA.key \
             -out "$m2c_global_dir"/ssl/certs/rootCA.crt >"$m2c_log" 2>&1
@@ -443,6 +452,7 @@ m2c_on_exit() {
 trap m2c_on_exit EXIT
 
 m2c_log="$m2c_global_dir"/log
+touch "$m2c_log"
 
 if [[ "$0" != "/usr/local/bin/m2c" ]]
 then
