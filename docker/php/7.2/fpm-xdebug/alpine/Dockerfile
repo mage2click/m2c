@@ -30,10 +30,10 @@ RUN     apk add --no-cache busybox-suid \
         rm -rf /tmp/* && \
         addgroup -g 1000 -S app && \
         adduser -u 1000 -S app -G app -h /var/www -s /bin/sh && \
-        mkdir -p /var/www/.config /sock /usr/local/var/log && \
+        mkdir -p /var/www/.config /sock /usr/local/var/log /var/log && \
         touch /usr/local/var/log/php-fpm.log && \
         chown -R app:app /var/www/html /var/www/.config /usr/local/etc/php/conf.d \
-            /sock /usr/local/var/log/php-fpm.log && \
+            /sock /usr/local/var/log/php-fpm.log /var/log && \
         chmod +x /usr/local/bin/docker-host
 
 WORKDIR /var/www/html
