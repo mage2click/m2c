@@ -643,12 +643,29 @@ m2c_global_uninstall() {
             m2c_msg "Uninstalling...........................................................  "
             m2c_loading
             true
-            docker rm -vf $(docker ps \
+
+            local containers="$(docker ps \
                 --filter "label=com.docker.compose.project=${projects[$i]}" \
-                -qa) >"$m2c_log" 2>&1 && \
-            docker network rm $(docker network ls \
+                -qa)"
+
+            local volumes="$(docker volume ls \
                 --filter "label=com.docker.compose.project=${projects[$i]}" \
-                -q) >"$m2c_log" 2>&1
+                -q)"
+
+            local networks="$(docker network ls \
+                --filter "label=com.docker.compose.project=${projects[$i]}" \
+                -q)"
+
+            (
+                [[ -n ${containers} ]] && docker rm --force --volumes ${containers} >"$m2c_log" 2>&1 || true
+            ) && \
+            (
+                [[ -n ${volumes} ]] && docker volume rm --force ${volumes} >"$m2c_log" 2>&1 || true
+            ) && \
+            (
+                [[ -n ${networks} ]] && docker network rm --force ${networks} >"$m2c_log" 2>&1 || true
+            )
+
             m2c_result $?
         done
 
@@ -771,6 +788,7 @@ m2c_help() {
   cli           Run any cli command without going into the bash prompt.
   composer      Run composer specific commands.
   db            Database related commands.
+  down          Remove project docker containers, volumes, and networks.
   grunt         Run grunt specific commands.
   info          Print project info and status.
   init          Initialize project in the current directory.
@@ -805,6 +823,7 @@ m2c_help() {
   cli           Run any cli command without going into the bash prompt.
   composer      Run composer specific commands.
   db            Database related commands.
+  down          Remove project docker containers, volumes, and networks.
   grunt         Run grunt specific commands.
   info          Print project info and status.
   init          Initialize project in the current directory.
@@ -1270,8 +1289,10 @@ m2c_init() {
         m2c_msg "Started magento installation, it may take a while......................  "
         m2c_loading
 
+        rm -rf "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php"
+
         m2c_magento notty setup:install \
-                --db-host=db \
+                --db-host=${M2C_CFG_DOMAIN_NAME}__db \
                 --db-name=${M2C_CFG_MYSQL_DATABASE} \
                 --db-user=${M2C_CFG_MYSQL_USER} \
                 --db-password=${M2C_CFG_MYSQL_PASSWORD} \
@@ -1866,10 +1887,24 @@ m2c_local_container_remove() {
 
     if [[ -n ${service} ]]
     then
-        docker rm -vf $(docker ps \
-            --filter "label=com.docker.compose.project=${M2C_CFG_DOMAIN_NAME/.test/}" \
+        local project="${M2C_CFG_DOMAIN_NAME/.test/}"
+
+        local containers="$(docker ps \
+            --filter "label=com.docker.compose.project=$project" \
             --filter "label=com.docker.compose.service=$service" \
-            -qa) >"$m2c_log" 2>&1
+            -qa)"
+
+        local volumes="$(docker volume ls \
+            --filter "label=com.docker.compose.project=$project" \
+            --filter "label=com.docker.compose.service=$service" \
+            -q | grep "${project}_${service}_data")"
+
+        (
+            [[ -n ${containers} ]] && docker rm --force --volumes ${containers} >"$m2c_log" 2>&1 || true
+        ) && \
+        (
+            [[ -n ${volumes} ]] && docker volume rm --force ${volumes} >"$m2c_log" 2>&1 || true
+        )
 
         return $?
     fi
@@ -1948,12 +1983,29 @@ m2c_local_list_services() {
 }
 
 m2c_local_project_down() {
-    docker rm -vf $(docker ps \
-        --filter "label=com.docker.compose.project=${M2C_CFG_DOMAIN_NAME/.test/}" \
-        -qa) >"$m2c_log" 2>&1 && \
-    docker network rm $(docker network ls \
-        --filter "label=com.docker.compose.project=${M2C_CFG_DOMAIN_NAME/.test/}" \
-        -q) >"$m2c_log" 2>&1
+    local project="${M2C_CFG_DOMAIN_NAME/.test/}"
+
+    local containers="$(docker ps \
+        --filter "label=com.docker.compose.project=$project" \
+        -qa)"
+
+    local volumes="$(docker volume ls \
+        --filter "label=com.docker.compose.project=$project" \
+        -q)"
+
+    local networks="$(docker network ls \
+        --filter "label=com.docker.compose.project=$project" \
+        -q)"
+
+    (
+        [[ -n ${containers} ]] && docker rm --force --volumes ${containers} >"$m2c_log" 2>&1 || true
+    ) && \
+    (
+        [[ -n ${volumes} ]] && docker volume rm --force ${volumes} >"$m2c_log" 2>&1 || true
+    ) && \
+    (
+        [[ -n ${networks} ]] && docker network rm --force ${networks} >"$m2c_log" 2>&1 || true
+    )
 
     return $?
 }
