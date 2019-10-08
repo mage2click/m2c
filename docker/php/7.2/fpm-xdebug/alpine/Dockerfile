@@ -1,41 +1,72 @@
-FROM    php:7.2-fpm-alpine
+FROM    alpine:3.8
 
 LABEL   maintainer="Mage2click, Dmitry Shkoliar @shkoliar"
 
-ARG     XDEBUG_VERSION=${XDEBUG_VERSION:-2.7.2}
-ARG     PHPREDIS_VERSION=${PHPREDIS_VERSION:-4.3.0}
-ARG     AMQP_VERSION=${AMQP_VERSION:-1.9.4}
-ARG     SSH2_VERSION=${SSH2_VERSION:-1.1.2}
+ARG     PHP_VERSION=${PHP_VERSION:-"7.2.22-r0"}
 
-COPY    common/conf-xdebug/php.ini /usr/local/etc/php/
-COPY    common/conf-xdebug/*.conf /usr/local/etc/
-COPY    common/bin/docker-host /usr/local/bin/
+COPY    common/conf-xdebug/php.ini /etc/php7/conf.d/
+COPY    common/conf-xdebug/php-fpm.conf /etc/php7/
+COPY    common/conf-xdebug/supervisor.conf /etc/
+COPY    common/bin/* /usr/local/bin/
 
-RUN     apk add --no-cache busybox-suid \
-            icu-dev freetype-dev libzip-dev libpng-dev libxml2-dev libedit-dev readline-dev \
-            gettext-dev libxslt-dev libssh2-dev rabbitmq-c-dev libjpeg-turbo-dev libsodium-dev \
-            libmcrypt-dev lsof supervisor && \
-        docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ && \
-        docker-php-ext-configure zip --with-libzip && \
-        docker-php-ext-install \
-            bcmath gd intl mbstring opcache readline gettext sodium \
-            calendar pdo_mysql mysqli soap xsl zip && \
-        apk add --no-cache --virtual .build-deps ${PHPIZE_DEPS} && \
-        yes '' | pecl install --onlyreqdeps igbinary mcrypt-1.0.2\
-            xdebug-${XDEBUG_VERSION} redis-${PHPREDIS_VERSION} \
-            amqp-${AMQP_VERSION} ssh2-${SSH2_VERSION} && \
-        docker-php-ext-enable xdebug igbinary mcrypt redis amqp ssh2 && \
-        apk del .build-deps && \
+RUN     apk update && \
+        apk add --no-cache \
+            php7=${PHP_VERSION} \
+            php7-bcmath=${PHP_VERSION} \
+            php7-ctype=${PHP_VERSION} \
+            php7-curl=${PHP_VERSION} \
+            php7-dom=${PHP_VERSION} \
+            php7-fpm=${PHP_VERSION} \
+            php7-gd=${PHP_VERSION} \
+            php7-iconv=${PHP_VERSION} \
+            php7-intl=${PHP_VERSION} \
+            php7-json=${PHP_VERSION} \
+            php7-mbstring=${PHP_VERSION} \
+            php7-mysqli=${PHP_VERSION} \
+            php7-opcache=${PHP_VERSION} \
+            php7-openssl=${PHP_VERSION} \
+            php7-pdo_mysql=${PHP_VERSION} \
+            php7-simplexml=${PHP_VERSION} \
+            php7-soap=${PHP_VERSION} \
+            php7-sodium=${PHP_VERSION} \
+            php7-tokenizer=${PHP_VERSION} \
+            php7-xmlwriter=${PHP_VERSION} \
+            php7-xsl=${PHP_VERSION} \
+            php7-zip=${PHP_VERSION} \
+            php7-amqp \
+            php7-mcrypt \
+            php7-redis \
+            php7-ssh2 \
+            php7-xdebug \
+            curl \
+            gzip \
+            lsof \
+            supervisor && \
+        \
+        \
+        sed -i -e 's/^;zend_extension/\zend_extension/g' /etc/php7/conf.d/xdebug.ini && \
+        \
+        \
         rm -rf /var/cache/apk/* && \
         rm -rf /tmp/* && \
+        \
+        \
         addgroup -g 1000 -S app && \
         adduser -u 1000 -S app -G app -h /var/www -s /bin/sh && \
-        mkdir -p /var/www/.config /sock /usr/local/var/log /var/log && \
-        touch /usr/local/var/log/php-fpm.log && \
-        chown -R app:app /var/www/html /var/www/.config /usr/local/etc/php/conf.d \
-            /sock /usr/local/var/log/php-fpm.log /var/log && \
-        chmod +x /usr/local/bin/docker-host
+        \
+        \
+        mkdir -p /var/www/html /var/www/.config /sock && \
+        touch /var/spool/cron/crontabs/app && \
+        chown -R app:app /var/www/html /var/www/.config \
+            /etc/php7/conf.d /sock /var/log && \
+        chmod +x /usr/local/bin/docker-host /usr/local/bin/docker-php-entrypoint && \
+        \
+        \
+        ln -sf /usr/sbin/php-fpm7 /usr/sbin/php-fpm && \
+        ln -sf /etc/init.d/php-fpm7 /etc/init.d/php-fpm
+
+ENTRYPOINT ["docker-php-entrypoint"]
 
 WORKDIR /var/www/html
 
-CMD     docker-host; supervisord -c /usr/local/etc/supervisor.conf
+CMD     docker-host; supervisord -c /etc/supervisor.conf
