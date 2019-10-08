@@ -42,6 +42,9 @@ m2c_load_project_env() {
         set +a
     fi
 
+    export DOCKER_CLIENT_TIMEOUT=600
+    export COMPOSE_HTTP_TIMEOUT=600
+
     export M2C_PROJECT_PATH="$m2c_project_dir"
 
     export M2C_TRAEFIK_IP="$(docker ps \
