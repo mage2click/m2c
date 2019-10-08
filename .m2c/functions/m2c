@@ -725,7 +725,7 @@ m2c_node() {
 }
 
 m2c_redis() {
-    docker-compose exec "${M2C_CFG_DOMAIN_NAME}__redis" "$@"
+    docker exec "${M2C_CFG_DOMAIN_NAME}__redis" redis-cli "$@"
 }
 
 m2c_urn() {
