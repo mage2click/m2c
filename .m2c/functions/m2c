@@ -253,7 +253,8 @@ m2c_db_mysql() {
     fi
 
     docker exec -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__db" mysql \
-        -hdb -u"$M2C_CFG_MYSQL_USER" -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "$@"
+        -h"${M2C_CFG_DOMAIN_NAME}__db" -u"$M2C_CFG_MYSQL_USER" \
+        -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "$@"
 }
 
 m2c_db_mysqldump() {
@@ -266,7 +267,8 @@ m2c_db_mysqldump() {
     fi
 
     docker exec -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__db" mysqldump \
-        -hdb -u"$M2C_CFG_MYSQL_USER" -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "$@"
+        -h"${M2C_CFG_DOMAIN_NAME}__db" -u"$M2C_CFG_MYSQL_USER" \
+        -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "$@"
 }
 
 m2c_db_import() {
