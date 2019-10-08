@@ -1603,17 +1603,7 @@ m2c_local() {
             then
                 if ! (("${#m2c_local_service[@]}"))
                 then
-                    for i in "${!m2c_local_existing_services[@]}"
-                    do
-                        if [[ "$m2c_local_command" == "remove" ]] || ! [[ \
-                                "${m2c_local_services[$i]}" == "varnish" && -z ${M2C_CFG_VARNISH} || \
-                                "${m2c_local_services[$i]}" == "elasticsearch" && -z ${M2C_CFG_ELASTICSEARCH} || \
-                                "${m2c_local_services[$i]}" == "phpmyadmin" && -z ${M2C_CFG_PHPMYADMIN} || \
-                                "${m2c_local_services[$i]}" == "rabbitmq" && -z ${M2C_CFG_RABBITMQ} ]]
-                        then
-                            m2c_local_service+=("${m2c_local_existing_services[$i]}")
-                        fi
-                    done
+                    m2c_local_service=("${m2c_local_existing_services[@]}")
                 fi
 
                 case ${m2c_local_command} in
