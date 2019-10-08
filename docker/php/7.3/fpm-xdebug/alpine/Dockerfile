@@ -29,6 +29,8 @@ RUN     apk update && \
             php7-simplexml=${PHP_VERSION} \
             php7-soap=${PHP_VERSION} \
             php7-sodium=${PHP_VERSION} \
+            php7-tokenizer=${PHP_VERSION} \
+            php7-xmlwriter=${PHP_VERSION} \
             php7-xsl=${PHP_VERSION} \
             php7-zip=${PHP_VERSION} \
             php7-pecl-amqp \
