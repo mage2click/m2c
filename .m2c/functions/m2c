@@ -448,7 +448,7 @@ m2c_global_up() {
         m2c_loading
         docker-compose --project-name m2c \
             --file "$m2c_global_dir/docker/docker-compose.yml" up \
-            -d --force-recreate ${service[$i]} >"$m2c_log" 2>&1
+            --detach --force-recreate --no-color --no-deps ${service[$i]} >"$m2c_log" 2>&1
         m2c_result $?
     done
 }
@@ -1921,7 +1921,7 @@ m2c_local_project_up() {
             ${M2C_CFG_ELASTICSEARCH:+--file docker-compose.elasticsearch.yml} \
             ${M2C_CFG_RABBITMQ:+--file docker-compose.rabbitmq.yml} \
             --file docker-compose.${m2c_os}.yml \
-            up --detach --force-recreate --no-color "$service" >"$m2c_log" 2>&1
+            up --detach --force-recreate --no-color --no-deps "$service" >"$m2c_log" 2>&1
 
         return $?
     fi
