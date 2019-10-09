@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r m2c_version="0.2.21"
+declare -r m2c_version="0.2.22"
 declare -r m2c_os="$(uname -s | awk '{print tolower($0)}')"
 declare -r m2c_global_dir="$(echo ~/.m2c)"
 declare m2c_loading_pid=
@@ -351,21 +351,6 @@ m2c_install() {
     fi
     m2c_result ${test}
 
-    case ${m2c_os} in
-        darwin)
-            if [[ ! -f "$m2c_global_dir"/mutagen/mutagen || \
-                "$(echo "$("$m2c_global_dir"/mutagen/mutagen version)")" != "0.10.0" ]]
-            then
-                m2c_info_bold "\n[Installing Mutagen for docker sync performance]\n\n"
-                mkdir -p "$m2c_global_dir"/mutagen >"$m2c_log" 2>&1
-                curl -L \
-                    "https://github.com/mutagen-io/mutagen/releases/download/v0.10.0/mutagen_darwin_amd64_v0.10.0.tar.gz" | \
-                    tar xzf - -o -C "$m2c_global_dir"/mutagen/
-                chmod 0755 "$m2c_global_dir"/mutagen/mutagen
-            fi
-        ;;
-    esac
-
     if [[ ! -f "$m2c_global_dir"/ssl/certs/rootCA.crt ]] || [[ ! -f "$m2c_global_dir"/ssl/private/rootCA.key ]]
     then
         m2c_info_bold "\n[Installing CA certificate]\n\n"
@@ -405,7 +390,7 @@ m2c_install() {
         tput civis
         m2c_erase_prev_lines 1
 
-        m2c_msg "Trusting root CA certificate ..........................................  "
+        m2c_msg "Trusting root CA certificate...........................................  "
         m2c_loading
         case "$m2c_os" in
             darwin)
@@ -435,6 +420,44 @@ m2c_install() {
         esac
         m2c_result ${test}
     fi
+
+    case ${m2c_os} in
+        darwin)
+            if [[ ! -f /etc/resolver/test || \
+                "$(cat /etc/resolver/test)" != "nameserver 127.0.0.1" ]]
+            then
+                m2c_info_bold "\n[Configuring .test domains resolver]\n\n"
+
+                m2c_msg "Password is required to create resolver file...........................  "
+                m2c_loading
+                m2c_result 0
+                tput cnorm
+                while ! sudo -p "$(printf "\033[0mPassword:")$(printf "\033[1;31m%s" " ")" true
+                do
+                    exit 1
+                done
+                tput civis
+                m2c_erase_prev_lines 1
+
+                m2c_msg "Creating the resolver file.............................................  "
+                m2c_loading
+                sudo mkdir -p /etc/resolver && \
+                sudo bash -c 'echo "nameserver 127.0.0.1" > /etc/resolver/test'
+                m2c_result $?
+            fi
+
+            if [[ ! -f "$m2c_global_dir"/mutagen/mutagen || \
+                "$(echo "$("$m2c_global_dir"/mutagen/mutagen version)")" != "0.10.0" ]]
+            then
+                m2c_info_bold "\n[Installing Mutagen for docker sync performance]\n\n"
+                mkdir -p "$m2c_global_dir"/mutagen >"$m2c_log" 2>&1
+                curl -L \
+                    "https://github.com/mutagen-io/mutagen/releases/download/v0.10.0/mutagen_darwin_amd64_v0.10.0.tar.gz" | \
+                    tar xzf - -o -C "$m2c_global_dir"/mutagen/
+                chmod 0755 "$m2c_global_dir"/mutagen/mutagen
+            fi
+        ;;
+    esac
 }
 
 m2c_on_exit() {
