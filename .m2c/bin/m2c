@@ -550,11 +550,11 @@ else
         ;;
         *)
             case "$1" in
-                up)
+                up|down)
                     m2c_local_project_check_dir
                     m2c_local $@
                 ;;
-                add|down|info|remove|restart|start|status|stop|update)
+                add|info|remove|restart|start|status|stop|update)
                     m2c_local_project_check
                     m2c_local $@
                 ;;
