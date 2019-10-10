@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r m2c_version="0.2.25"
+declare -r m2c_version="0.2.26"
 declare -r m2c_os="$(uname -s | awk '{print tolower($0)}')"
 declare -r m2c_global_dir="$(echo ~/.m2c)"
 declare m2c_loading_pid=
@@ -294,8 +294,10 @@ m2c_requirements() {
     [[ ${test} -eq 0 ]] || pass=0
 
     test=0
-    m2c_msg "Ports 80 and 443 availability check....................................  "
+    m2c_msg "Ports 80, 443 and 53 availability check................................  "
     m2c_loading
+
+    local ports=
 
     if [[ -z "$(docker ps \
                     --filter "label=com.docker.compose.project=m2c" \
@@ -304,16 +306,39 @@ m2c_requirements() {
     then
         if lsof -PiTCP:80 -sTCP:LISTEN -t >/dev/null 2>&1
         then
-            echo "Port 80 is already used by some other service." >"$m2c_log"
-            test=1
+            ports="TCP 80"
         fi
 
         if lsof -PiTCP:443 -sTCP:LISTEN -t >/dev/null 2>&1
         then
-            echo "Port 443 is already used by some other service." >"$m2c_log"
-            test=1
+            if [[ -z ${ports} ]]
+            then
+                ports="TCP 443"
+            else
+                ports="$ports, 443"
+            fi
         fi
     fi
+
+    if [[ -z "$(docker ps \
+                    --filter "label=com.docker.compose.project=m2c" \
+                    --filter "label=com.docker.compose.service=dnsmasq" \
+                    -q)" ]] && lsof -PiUDP:53 -tn >/dev/null 2>&1
+    then
+        if [[ -z ${ports} ]]
+        then
+            ports="UDP 53"
+        else
+            ports="$ports and UDP 53"
+        fi
+    fi
+
+    if [[ -n ${ports} ]]
+    then
+        test=1
+        echo "$ports already used by some other service.\n" >"$m2c_log"
+    fi
+
     m2c_result ${test} 1
 
     [[ ${test} -eq 0 ]] || pass=0
