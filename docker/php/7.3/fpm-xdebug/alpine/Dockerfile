@@ -30,6 +30,7 @@ RUN     apk update && \
             php7-pdo_mysql=${PHP_VERSION} \
             php7-simplexml=${PHP_VERSION} \
             php7-soap=${PHP_VERSION} \
+            php7-sockets=${PHP_VERSION} \
             php7-sodium=${PHP_VERSION} \
             php7-tokenizer=${PHP_VERSION} \
             php7-xml=${PHP_VERSION} \
