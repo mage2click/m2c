@@ -13,11 +13,13 @@ RUN     apk update && \
         apk add --no-cache \
             php7=${PHP_VERSION} \
             php7-bcmath=${PHP_VERSION} \
+            php7-calendar=${PHP_VERSION} \
             php7-ctype=${PHP_VERSION} \
             php7-curl=${PHP_VERSION} \
             php7-dom=${PHP_VERSION} \
             php7-fpm=${PHP_VERSION} \
             php7-gd=${PHP_VERSION} \
+            php7-gettext=${PHP_VERSION} \
             php7-iconv=${PHP_VERSION} \
             php7-intl=${PHP_VERSION} \
             php7-json=${PHP_VERSION} \
@@ -30,6 +32,7 @@ RUN     apk update && \
             php7-soap=${PHP_VERSION} \
             php7-sodium=${PHP_VERSION} \
             php7-tokenizer=${PHP_VERSION} \
+            php7-xml=${PHP_VERSION} \
             php7-xmlwriter=${PHP_VERSION} \
             php7-xsl=${PHP_VERSION} \
             php7-zip=${PHP_VERSION} \
