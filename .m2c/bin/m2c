@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r m2c_version="0.2.24"
+declare -r m2c_version="0.2.25"
 declare -r m2c_os="$(uname -s | awk '{print tolower($0)}')"
 declare -r m2c_global_dir="$(echo ~/.m2c)"
 declare m2c_loading_pid=
@@ -352,13 +352,14 @@ m2c_install() {
     test=$?
     if [[ "$test" == "0" ]]
     then
-      ln -sf "$m2c_global_dir"/bin/m2c /usr/local/bin/m2c
-      if [[ ! -f "$m2c_global_dir"/ssl/config/v3_ext.conf ]]
-      then
-          mv "$m2c_global_dir"/ssl/config/v3_ext.blank.conf "$m2c_global_dir"/ssl/config/v3_ext.conf
-      else
-          rm -f "$m2c_global_dir"/ssl/config/v3_ext.blank.conf
-      fi
+        sudo ln -sf "$m2c_global_dir"/bin/m2c /usr/local/bin/m2c
+
+        if [[ ! -f "$m2c_global_dir"/ssl/config/v3_ext.conf ]]
+        then
+            mv "$m2c_global_dir"/ssl/config/v3_ext.blank.conf "$m2c_global_dir"/ssl/config/v3_ext.conf
+        else
+            rm -f "$m2c_global_dir"/ssl/config/v3_ext.blank.conf
+        fi
     fi
     m2c_result ${test}
 
