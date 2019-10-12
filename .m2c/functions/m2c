@@ -2603,7 +2603,7 @@ m2c_sign() {
 
         m2c_msg "Signing SSL certificate................................................  "
         m2c_loading
-        openssl x509 -req -days 3650 -sha256 -extensions v3_req \
+        openssl x509 -req -days 825 -sha256 -extensions v3_req \
             -CA "$m2c_ssl_dir"/certs/rootCA.crt \
             -CAkey "$m2c_ssl_dir"/private/rootCA.key \
             -CAcreateserial -passin pass:${pass} \
