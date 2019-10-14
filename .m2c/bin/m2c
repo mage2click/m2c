@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r m2c_version="0.2.26"
+declare -r m2c_version="0.2.27"
 declare -r m2c_os="$(uname -s | awk '{print tolower($0)}')"
 declare -r m2c_global_dir="$(echo ~/.m2c)"
 declare m2c_loading_pid=
@@ -408,7 +408,7 @@ m2c_install() {
 
         m2c_msg "Signing CA certificate.................................................  "
         m2c_loading
-        openssl req -new -x509 -nodes -sha256 -days 3650 \
+        openssl req -new -x509 -nodes -sha256 -days 825 \
             -passin pass:${pass} -subj "/O=Mage2click/OU=IT/CN=m2c.local" \
             -config "$m2c_global_dir"/ssl/config/rootca.conf \
             -key "$m2c_global_dir"/ssl/private/rootCA.key \
