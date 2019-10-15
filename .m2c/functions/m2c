@@ -422,6 +422,20 @@ m2c_global_error() {
     exit 1
 }
 
+m2c_global_load_env() {
+    local config_env="$m2c_global_dir/docker/.env"
+
+    [[ -f "$config_env" ]] && . "$config_env"
+}
+
+m2c_global_save_env() {
+    local config_env="$m2c_global_dir/docker/.env"
+
+    [[ -f "$config_env" ]] || mkdir -p "$(dirname "$config_env")" && touch "$config_env"
+
+    set | grep '^M2C_GLOBAL_' > "$config_env"
+}
+
 m2c_global_print_service() {
     case "$1" in
         portainer)
