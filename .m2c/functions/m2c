@@ -24,6 +24,11 @@ m2c_get_project_dir() {
     [[ "$current_dir" != ~ ]] && [[ "$current_dir" != "/" ]] && echo "$current_dir" || echo "$(pwd)"
 }
 
+m2c_load_env() {
+    m2c_global_load_env
+    m2c_load_project_env
+}
+
 m2c_save_project_env() {
     local config_env="$m2c_project_dir/.m2c/docker/.env"
 
@@ -360,6 +365,10 @@ m2c_global() {
     m2c_in_array "--help" $@ && m2c_global_help
 
     case "$1" in
+        autostart)
+            shift
+            m2c_global_autostart "$@"
+        ;;
         info|status)
             m2c_global_info
         ;;
@@ -422,6 +431,20 @@ m2c_global_error() {
     exit 1
 }
 
+m2c_global_load_env() {
+    local config_env="$m2c_global_dir/docker/.env"
+
+    [[ -f "$config_env" ]] && . "$config_env"
+}
+
+m2c_global_save_env() {
+    local config_env="$m2c_global_dir/docker/.env"
+
+    [[ -f "$config_env" ]] || mkdir -p "$(dirname "$config_env")" && touch "$config_env"
+
+    set | grep '^M2C_GLOBAL_' > "$config_env"
+}
+
 m2c_global_print_service() {
     case "$1" in
         portainer)
@@ -447,12 +470,14 @@ m2c_global_up() {
 
     m2c_info_bold "\n[Creating docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
+    cd "$m2c_global_dir/docker/"
+
     for i in "${!service[@]}"
     do
         m2c_global_print_service ${service[$i]}
         m2c_loading
         docker-compose --project-name m2c \
-            --file "$m2c_global_dir/docker/docker-compose.yml" up \
+            --file docker-compose.yml up \
             --detach --force-recreate --no-color --no-deps ${service[$i]} >"$m2c_log" 2>&1
         m2c_result $?
     done
@@ -553,6 +578,29 @@ m2c_global_projects() {
 
     m2c_msg "=========================================================================\n"
     exit 0
+}
+
+m2c_global_autostart() {
+    case "$@" in
+        1|enable|enabled|on|true)
+            M2C_GLOBAL_SERVICES_AUTO_START="always"
+            m2c_global_save_env
+            m2c_global up
+            m2c_msg "\nToolset related global docker services will be started automatically with docker startup.\n"
+        ;;
+        0|disable|disabled|off|false)
+            M2C_GLOBAL_SERVICES_AUTO_START="no"
+            m2c_global_save_env
+            m2c_global up
+            m2c_msg "\nToolset related global docker services won't be started automatically with docker startup.\n"
+        ;;
+        status)
+            m2c_msg "Toolset related global docker services autostart is $([[ "$M2C_GLOBAL_SERVICES_AUTO_START" == "always" ]] && echo "ON" || echo "OFF").\n"
+        ;;
+        *)
+            m2c_global_error "$@"
+        ;;
+    esac
 }
 
 m2c_global_info() {
@@ -685,9 +733,13 @@ m2c_global_help() {
   Control Mage2click toolset installation and its docker services.
 
 \033[1;33mUsage:\033[0m
-  m2c global <command> [service...] [--help]
+  m2c global <command> [--help]
+
+  m2c global <restart|start|stop|up> [service...]
+  m2c global autostart [on|off]
 
 \033[1;33mCommands:\033[0m
+  autostart     Configure autostart of toolset docker services.
   projects      Show existing Mage2click-backed projects.
   restart       Restart Mage2click toolset docker services.
   start         Start stopped Mage2click toolset docker services.
