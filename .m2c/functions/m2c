@@ -733,9 +733,13 @@ m2c_global_help() {
   Control Mage2click toolset installation and its docker services.
 
 \033[1;33mUsage:\033[0m
-  m2c global <command> [service...] [--help]
+  m2c global <command> [--help]
+
+  m2c global <restart|start|stop|up> [service...]
+  m2c global autostart [on|off]
 
 \033[1;33mCommands:\033[0m
+  autostart     Configure autostart of toolset docker services.
   projects      Show existing Mage2click-backed projects.
   restart       Restart Mage2click toolset docker services.
   start         Start stopped Mage2click toolset docker services.
