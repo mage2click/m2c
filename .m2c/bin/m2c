@@ -523,6 +523,9 @@ then
     rm -rf "$m2c_global_dir"/{bin,completions,dnsmasq,docker,functions,local,traefik,www,build} >/dev/null 2>&1
     m2c_install
     . "$m2c_global_dir"/functions/m2c
+
+    m2c_global_load_env
+
     m2c_sign "m2c.test"
     m2c_global up
 
@@ -542,7 +545,8 @@ else
     . "$m2c_global_dir"/functions/m2c
     declare -r m2c_project_dir="$(m2c_get_project_dir)"
     m2c_log="$m2c_project_dir"/.m2c/log
-    m2c_load_project_env
+
+    m2c_load_env
 
     case "$1" in
         global)
