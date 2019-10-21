@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r m2c_version="0.3.1"
+declare -r m2c_version="0.3.2"
 declare -r m2c_os="$(uname -s | awk '{print tolower($0)}')"
 declare -r m2c_global_dir="$(echo ~/.m2c)"
 declare m2c_loading_pid=
@@ -154,7 +154,8 @@ m2c_ask_text() {
           error_info=$4 \
           validate=$5 \
           validate_value=() \
-          res valid error_count res_count valid=1
+          res res_count \
+          error_count valid=1
 
     shift
     shift
@@ -192,7 +193,7 @@ m2c_ask_text() {
             error_count="$(echo -en "$error_count" | awk 'END { print NR }')"
         fi
 
-        res="$(read -er 2>&1 | tee >(cat - >&5) | tr -d '\r')"
+        read -r res
         res_count=$(echo "$res" | awk 'END { print NR }')
 
         [[ ${error_count} -eq 0 ]] && (( res_count++ ))
@@ -528,9 +529,7 @@ then
 
     m2c_sign "m2c.test"
 
-    m2c_res="$(pwd)"
     m2c_global up
-    cd "$m2c_res"
 
     m2c_info_bold "\n[Installation finished]\n\n"
     m2c_msg "Mage2click toolset is successfully installed! \n\nRun \`m2c --help\` command for usage information. \nVisit local https://m2c.test to check useful links to included services.\n\n"

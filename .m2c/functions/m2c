@@ -470,15 +470,16 @@ m2c_global_up() {
 
     m2c_info_bold "\n[Creating docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
-    cd "$m2c_global_dir/docker/"
-
     for i in "${!service[@]}"
     do
         m2c_global_print_service ${service[$i]}
         m2c_loading
-        docker-compose --project-name m2c \
-            --file docker-compose.yml up \
-            --detach --force-recreate --no-color --no-deps ${service[$i]} >"$m2c_log" 2>&1
+        (
+            cd "$m2c_global_dir/docker/" && \
+            docker-compose --project-name m2c \
+                --file docker-compose.yml up \
+                --detach --force-recreate --no-color --no-deps ${service[$i]}
+        ) >"$m2c_log" 2>&1
         m2c_result $?
     done
 }
@@ -1643,10 +1644,7 @@ m2c_local() {
         *)
             local m2c_local_command=
             local m2c_local_service=()
-            local m2c_local_services=("db" "php" "xdebug" "nginx" "redis" "varnish" \
-                                      "elasticsearch" "phpmyadmin" "rabbitmq")
-
-            local m2c_local_existing_services=($(m2c_local_list_services))
+            local m2c_local_services=($(m2c_local_list_services))
 
             while (("$#"))
             do
@@ -1666,7 +1664,7 @@ m2c_local() {
                         shift
                     ;;
                     *)
-                        if m2c_in_array "$1" ${m2c_local_existing_services[@]}
+                        if m2c_in_array "$1" ${m2c_local_services[@]}
                         then
                             m2c_local_service+=("$1")
                             shift
@@ -1681,7 +1679,7 @@ m2c_local() {
             then
                 if ! (("${#m2c_local_service[@]}"))
                 then
-                    m2c_local_service=("${m2c_local_existing_services[@]}")
+                    m2c_local_service=("${m2c_local_services[@]}")
                 fi
 
                 case ${m2c_local_command} in
@@ -2004,17 +2002,17 @@ m2c_local_project_up() {
 
     if [[ -n ${service} ]]
     then
-        cd "$m2c_project_dir/.m2c/docker/"
-
-        docker-compose --project-name "${M2C_CFG_DOMAIN_NAME/.test/}" \
-            --file docker-compose.yml \
-            --file docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml \
-            ${M2C_CFG_PHPMYADMIN:+--file docker-compose.phpmyadmin.yml} \
-            ${M2C_CFG_ELASTICSEARCH:+--file docker-compose.elasticsearch.yml} \
-            ${M2C_CFG_RABBITMQ:+--file docker-compose.rabbitmq.yml} \
-            --file docker-compose.${m2c_os}.yml \
-            up --detach --force-recreate --no-color --no-deps "$service" >"$m2c_log" 2>&1
-
+        (
+            cd "$m2c_project_dir/.m2c/docker/" && \
+            docker-compose --project-name "${M2C_CFG_DOMAIN_NAME/.test/}" \
+                --file docker-compose.yml \
+                --file docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml \
+                ${M2C_CFG_PHPMYADMIN:+--file docker-compose.phpmyadmin.yml} \
+                ${M2C_CFG_ELASTICSEARCH:+--file docker-compose.elasticsearch.yml} \
+                ${M2C_CFG_RABBITMQ:+--file docker-compose.rabbitmq.yml} \
+                --file docker-compose.${m2c_os}.yml \
+                up --detach --force-recreate --no-color --no-deps "$service"
+        ) >"$m2c_log" 2>&1
         return $?
     fi
 
@@ -2022,17 +2020,17 @@ m2c_local_project_up() {
 }
 
 m2c_local_list_services() {
-    cd "$m2c_project_dir/.m2c/docker/"
-
-    docker-compose --project-name "${M2C_CFG_DOMAIN_NAME/.test/}" \
-        --file docker-compose.yml \
-        --file docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml \
-        ${M2C_CFG_PHPMYADMIN:+--file docker-compose.phpmyadmin.yml} \
-        ${M2C_CFG_ELASTICSEARCH:+--file docker-compose.elasticsearch.yml} \
-        ${M2C_CFG_RABBITMQ:+--file docker-compose.rabbitmq.yml} \
-        --file docker-compose.${m2c_os}.yml \
-        ps --services --all
-
+    (
+        cd "$m2c_project_dir/.m2c/docker/" && \
+        docker-compose --project-name "${M2C_CFG_DOMAIN_NAME/.test/}" \
+            --file docker-compose.yml \
+            --file docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml \
+            ${M2C_CFG_PHPMYADMIN:+--file docker-compose.phpmyadmin.yml} \
+            ${M2C_CFG_ELASTICSEARCH:+--file docker-compose.elasticsearch.yml} \
+            ${M2C_CFG_RABBITMQ:+--file docker-compose.rabbitmq.yml} \
+            --file docker-compose.${m2c_os}.yml \
+            ps --services --all
+    )
     return $?
 }
 
