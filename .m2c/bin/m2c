@@ -528,9 +528,7 @@ then
 
     m2c_sign "m2c.test"
 
-    m2c_res="$(pwd)"
     m2c_global up
-    cd "$m2c_res"
 
     m2c_info_bold "\n[Installation finished]\n\n"
     m2c_msg "Mage2click toolset is successfully installed! \n\nRun \`m2c --help\` command for usage information. \nVisit local https://m2c.test to check useful links to included services.\n\n"
