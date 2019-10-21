@@ -1584,7 +1584,7 @@ m2c_init_help() {
   --domain <magento.test>           Set domain name with .test tld to use for
                                     the project.
   --nginx-version <1.17>            Set Nginx version.
-  --php-version <7.2>               Set PHP version.
+  --php-version <7.3>               Set PHP version.
   --mariadb-version <10.3>          Set MariaDB version.
   --redis-version <5.0>             Set Redis version.
   --varnish-version <5.2>           Set Varnish version, applicable only when
@@ -1593,7 +1593,7 @@ m2c_init_help() {
                                     when --elasticsearch option is present.
   --rabbitmq-version <3.7>          Set RabbitMQ version. Applicable only when
                                     --rabbitmq option is present.
-  --magento-version <2.3.2>         Set Magento version to install. Applicable
+  --magento-version <2.3.3>         Set Magento version to install. Applicable
                                     only for clean installs.
   --magento-admin-url <admin>       Set Magento admin url path. Applicable only
                                     for clean installs.
