@@ -45,6 +45,7 @@ RUN     apk update && \
             composer \
             curl \
             bash \
+            git \
             gzip \
             lsof \
             npm \
