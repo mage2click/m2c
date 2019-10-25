@@ -21,6 +21,7 @@ Mage2click toolset is a system-wide command-line tool for creating and managing 
 - [Usage](#usage)
     - [Interactive project initialization mode](#interactive-project-initialization-mode)
     - [Commandline project initialization mode](#commandline-project-initialization-mode)
+    - [Debugging with Xdebug](https://github.com/mage2click/m2c/wiki/Debugging-with-Xdebug)
 - [License](#license)
 
 ## Prerequisites
