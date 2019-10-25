@@ -15,7 +15,7 @@ COPY    common/bin/docker-host /usr/local/bin/
 RUN     apk add --no-cache busybox-suid \
             icu-dev freetype-dev libzip-dev libpng-dev libxml2-dev libedit-dev readline-dev \
             gettext-dev libxslt-dev libssh2-dev rabbitmq-c-dev libjpeg-turbo-dev libmcrypt-dev \
-            bash lsof nodejs-npm supervisor && \
+            bash git lsof nodejs-npm supervisor && \
         docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ && \
         docker-php-ext-configure zip --with-libzip && \
         docker-php-ext-install \
