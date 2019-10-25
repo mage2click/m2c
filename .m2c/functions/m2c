@@ -6,7 +6,7 @@ then
     exit 1
 fi
 
-declare -r m2c_varnish_versions=("5.2" "4.1")
+declare -r m2c_varnish_versions=("6.2" "5.2" "4.1")
 declare -r m2c_elasticsearch_versions=("6.8" "6.7" "6.6" "6.5" "6.4" "6.3" "6.2" "6.1" "6.0" \
                                        "5.6" "5.5" "5.4" "5.3" "5.2" "5.1" "5.0" \
                                        "2.4" "2.3" "2.2" "2.1" "2.0")
@@ -1588,7 +1588,7 @@ m2c_init_help() {
   --php-version <7.3>               Set PHP version.
   --mariadb-version <10.3>          Set MariaDB version.
   --redis-version <5.0>             Set Redis version.
-  --varnish-version <5.2>           Set Varnish version, applicable only when
+  --varnish-version <6.2>           Set Varnish version, applicable only when
                                     --varnish option is present.
   --elasticsearch-version <6.8>     Set Elasticsearch version. Applicable only
                                     when --elasticsearch option is present.
