@@ -6,7 +6,7 @@ then
     exit 1
 fi
 
-declare -r m2c_varnish_versions=("6.2" "5.2" "4.1")
+declare -r m2c_varnish_versions=("5.2" "4.1" "6.2")
 declare -r m2c_elasticsearch_versions=("6.8" "6.7" "6.6" "6.5" "6.4" "6.3" "6.2" "6.1" "6.0" \
                                        "5.6" "5.5" "5.4" "5.3" "5.2" "5.1" "5.0" \
                                        "2.4" "2.3" "2.2" "2.1" "2.0")
@@ -1588,7 +1588,7 @@ m2c_init_help() {
   --php-version <7.3>               Set PHP version.
   --mariadb-version <10.3>          Set MariaDB version.
   --redis-version <5.0>             Set Redis version.
-  --varnish-version <6.2>           Set Varnish version, applicable only when
+  --varnish-version <5.2>           Set Varnish version, applicable only when
                                     --varnish option is present.
   --elasticsearch-version <6.8>     Set Elasticsearch version. Applicable only
                                     when --elasticsearch option is present.
@@ -2801,6 +2801,8 @@ m2c_varnish_configure() {
     local version=${M2C_CFG_VARNISH:0:1} \
           dir="$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}"
 
+    [[ "$version" == "6" ]] && version=5
+
     (
         m2c_magento notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/caching_application 2 && \
@@ -2815,7 +2817,7 @@ m2c_varnish_configure() {
         m2c_magento notty setup:config:set --http-cache-hosts=${M2C_CFG_DOMAIN_NAME}__varnish:80 && \
         m2c_magento notty varnish:vcl:generate --access-list ${M2C_CFG_DOMAIN_NAME}__nginx \
             --backend-host ${M2C_CFG_DOMAIN_NAME}__nginx \
-            --backend-port 8080 --export-version ${M2C_CFG_VARNISH:0:1} \
+            --backend-port 8080 --export-version ${version} \
             --output-file ./var/default.vcl
     ) >"$m2c_log" 2>&1 && \
     (
@@ -2837,9 +2839,6 @@ m2c_varnish_configure() {
 }
 
 m2c_varnish_reset() {
-    local version=${M2C_CFG_VARNISH:0:1} \
-          dir="$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}"
-
     (
         m2c_magento notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/caching_application 1 && \
