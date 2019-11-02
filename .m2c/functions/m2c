@@ -52,6 +52,12 @@ m2c_load_project_env() {
 
     export M2C_PROJECT_PATH="$m2c_project_dir"
 
+    if [[ "$m2c_os" != "darwin" ]]
+    then
+        export M2C_UID="$(id -u)"
+        export M2C_GID="$(id -g)"
+    fi
+
     export M2C_TRAEFIK_IP="$(docker ps \
         --filter "label=com.docker.compose.project=m2c" \
         --filter "label=com.docker.compose.service=traefik" \
