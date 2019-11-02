@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/magento/magento2" target="_blank"><img src="https://img.shields.io/badge/magento-2.X-brightgreen.svg?logo=magento&longCache=true&style=for-the-badge&logoColor=white" alt="Supported Magento Versions" /></a>
   <a href="https://hub.docker.com/r/mage2click/m2c/" target="_blank"><img src="https://img.shields.io/docker/pulls/mage2click/m2c.svg?label=docker%20pulls&style=for-the-badge&logo=docker&logoColor=white&color=brightgreen" alt="Docker Hub Pulls" /></a>
-  <a href="https://join.slack.com/t/mage2click/shared_invite/enQtNjE1Mjc0NDM3MjE4LWMwMjJjMTcyMmM1MzhkYmExNWIxMmNhYjY1ZDY3ZTM2MTk3ODlkZDY1ZjA5MjJkYjAyNGRiMGM3ODA3N2Y5MmI" target="_blank"><img src="https://img.shields.io/badge/chat-Mage2click-brightgreen.svg?style=for-the-badge&logo=slack" alt="Mage2click in Slack"/></a>
+  <a href="https://mage2click.slack.com/#general" target="_blank"><img src="https://img.shields.io/badge/chat-Mage2click-brightgreen.svg?style=for-the-badge&logo=slack" alt="Mage2click in Slack"/></a>
   <a href="https://twitter.com/intent/follow?screen_name=mage2_click" target="_blank"><img src="https://img.shields.io/twitter/follow/mage2_click?color=brightgreen&label=mage2_click&logo=twitter&logoColor=white&style=for-the-badge" /></a>
 </p>
 
@@ -50,14 +50,23 @@ curl -sL get.m2c.run | bash
 
 After toolset is installed, you will have the next tools available locally:
 
-- Traefik - <a href="https://traefik.m2c.test" target="_blank">https://traefik.m2c.test</a>
+- Traefik - <a href="https://traefik.m2c.test" target="_blank">https://traefik.m2c.test</a>  
+  > An open-source reverse proxy and load balancer for HTTP and TCP-based applications that is easy, dynamic, automatic, fast, full-featured, production proven, provides metrics, and integrates with every major cluster technology. <a href="https://traefik.io" target="_blank">https://traefik.io</a>
 - Portainer - <a href="https://portainer.m2c.test" target="_blank">https://portainer.m2c.test</a>
+  > Portainer is a lightweight management toolset that allows you to easily build, manage and maintain Docker environments. Created by experts, Portainer is an opinionated toolset that captures years of experience to allow you to reliably and quickly create, operate and trouble-shoot your Docker environments. <a href="https://portainer.io" target="_blank">https://portainer.io</a>
 - Mailhog - <a href="https://mailhog.m2c.test" target="_blank">https://mailhog.m2c.test</a>
+  > MailHog is an email testing tool for developers. Allows to view messages in the web UI, or retrieve them with the JSON API. Optionally allows to release messages to real SMTP servers for delivery. <a href="https://github.com/mailhog/MailHog" target="_blank">https://github.com/mailhog/MailHog</a>
 - Dnsmasq - <a href="https://dnsmasq.m2c.test" target="_blank">https://dnsmasq.m2c.test</a>
+  > Dnsmasq provides network infrastructure for small networks: DNS, DHCP, router advertisement and network boot. It is designed to be lightweight and have a small footprint, suitable for resource constrained routers and firewalls. <a href="http://www.thekelleys.org.uk/dnsmasq/doc.html" target="_blank">http://www.thekelleys.org.uk/dnsmasq/doc.html</a>
 
 Toolset local homepage with links to all tools listed above - <a href="https://m2c.test" target="_blank">https://m2c.test</a>
 
-**All docker images with services listed above must be active.** These services are configured to start automatically and should not be stopped. Without active Traefik and Dnsmasq, m2c backed projects can't work properly.  
+**All docker images with services listed above required to be active for toolset functioning.** These services are configured to start automatically and should not be stopped. Without active Traefik and Dnsmasq, m2c backed projects can't work properly.   
+If you don't want auto-start of these services, you can disable it with the command below.
+
+````bash
+m2c global autostart off
+````
 
 ### Per-project services
 
