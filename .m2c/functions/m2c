@@ -68,7 +68,7 @@ m2c_load_project_defaults_env() {
 m2c_validate_domain() {
     local domain=$1
 
-    if [[ -n ${domain} && -n $(echo "$domain" | grep -E \
+    if [[ -n ${domain} && -n $(echo "$domain" | grep -$([[ "$m2c_os" == "darwin" ]] && echo "E" || echo "P") \
         '(^(?:[a-zA-Z0-9](?:(?:[a-zA-Z0-9\-]){0,61}[a-zA-Z0-9])?\.)+test$)') ]]
     then
         return 0
@@ -94,7 +94,7 @@ m2c_validate_file() {
 m2c_validate_url_path() {
     local value=$1
 
-    [[ -n ${value} && -n $(echo "$value" | grep -E \
+    [[ -n ${value} && -n $(echo "$value" | grep -$([[ "$m2c_os" == "darwin" ]] && echo "E" || echo "P") \
         '(^(?:[a-zA-Z0-9](?:(?:[a-zA-Z0-9\-\_])[a-zA-Z0-9])?)+$)') ]] && return 0 || return 1
 }
 
@@ -1332,7 +1332,8 @@ m2c_init() {
     m2c_result 0
 
     m2c_local up
-    m2c_push --all
+
+    [[ "$m2c_os" == "darwin" ]] && m2c_push --all
 
     if [[ -f "$m2c_magento_db_import" ]]
     then
