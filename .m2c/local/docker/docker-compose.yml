@@ -44,6 +44,7 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - default
+      - m2c
 
   redis:
     container_name: ${M2C_CFG_DOMAIN_NAME}__redis
