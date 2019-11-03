@@ -5,6 +5,8 @@ services:
   mage2click:
     container_name: m2c.test__mage2click
     image: mage2click/m2c:home
+    ports:
+      - "127.0.0.1:33060:22/tcp"
     labels:
       - traefik.passHostHeader=true
       - traefik.enable=true
