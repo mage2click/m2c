@@ -482,7 +482,7 @@ m2c_global_up() {
         m2c_loading
         (
             cd "$m2c_global_dir/docker/" && \
-            docker-compose --project-name m2c \
+            yes | docker-compose --project-name m2c \
                 --file docker-compose.yml up \
                 --detach --force-recreate --no-color --no-deps ${service[$i]}
         ) >"$m2c_log" 2>&1
@@ -2011,7 +2011,7 @@ m2c_local_project_up() {
     then
         (
             cd "$m2c_project_dir/.m2c/docker/" && \
-            docker-compose --project-name "${M2C_CFG_DOMAIN_NAME/.test/}" \
+            yes | docker-compose --project-name "${M2C_CFG_DOMAIN_NAME/.test/}" \
                 --file docker-compose.yml \
                 --file docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml \
                 ${M2C_CFG_PHPMYADMIN:+--file docker-compose.phpmyadmin.yml} \
