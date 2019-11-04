@@ -21,7 +21,9 @@ Mage2click toolset is a system-wide command-line tool for creating and managing 
 - [Usage](#usage)
     - [Interactive project initialization mode](#interactive-project-initialization-mode)
     - [Commandline project initialization mode](#commandline-project-initialization-mode)
-    - [Debugging with Xdebug](https://github.com/mage2click/m2c/wiki/Debugging-with-Xdebug)
+    - [Connecting to Database](#connecting-to-database)
+    - [Debugging with Xdebug](#debugging-with-xdebug)
+- [Authors Information](#authors-information)
 - [License](#license)
 
 ## Prerequisites
@@ -50,23 +52,24 @@ curl -sL get.m2c.run | bash
 
 After toolset is installed, you will have the next tools available locally:
 
-- Traefik - <a href="https://traefik.m2c.test" target="_blank">https://traefik.m2c.test</a>  
+- Traefik - `https://traefik.m2c.test`
   > An open-source reverse proxy and load balancer for HTTP and TCP-based applications that is easy, dynamic, automatic, fast, full-featured, production proven, provides metrics, and integrates with every major cluster technology. <a href="https://traefik.io" target="_blank">https://traefik.io</a>
-- Portainer - <a href="https://portainer.m2c.test" target="_blank">https://portainer.m2c.test</a>
+- Portainer - `https://portainer.m2c.test`
   > Portainer is a lightweight management toolset that allows you to easily build, manage and maintain Docker environments. Created by experts, Portainer is an opinionated toolset that captures years of experience to allow you to reliably and quickly create, operate and trouble-shoot your Docker environments. <a href="https://portainer.io" target="_blank">https://portainer.io</a>
-- Mailhog - <a href="https://mailhog.m2c.test" target="_blank">https://mailhog.m2c.test</a>
+- Mailhog - `https://mailhog.m2c.test`
   > MailHog is an email testing tool for developers. Allows to view messages in the web UI, or retrieve them with the JSON API. Optionally allows to release messages to real SMTP servers for delivery. <a href="https://github.com/mailhog/MailHog" target="_blank">https://github.com/mailhog/MailHog</a>
-- Dnsmasq - <a href="https://dnsmasq.m2c.test" target="_blank">https://dnsmasq.m2c.test</a>
+- Dnsmasq - `https://dnsmasq.m2c.test`
   > Dnsmasq provides network infrastructure for small networks: DNS, DHCP, router advertisement and network boot. It is designed to be lightweight and have a small footprint, suitable for resource constrained routers and firewalls. <a href="http://www.thekelleys.org.uk/dnsmasq/doc.html" target="_blank">http://www.thekelleys.org.uk/dnsmasq/doc.html</a>
 
-Toolset local homepage with links to all tools listed above - <a href="https://m2c.test" target="_blank">https://m2c.test</a>
+Toolset local homepage with links to all tools listed above - `https://m2c.test`
 
-**All docker images with services listed above required to be active for toolset functioning.** These services are configured to start automatically and should not be stopped. Without active Traefik and Dnsmasq, m2c backed projects can't work properly.   
+**All docker images with services listed above required to be active for toolset functioning.** These services are configured to start automatically and should not be stopped. Without active Traefik and Dnsmasq, m2c backed projects can't work properly.  
+
 If you don't want auto-start of these services, you can disable it with the command below.
 
-````bash
+```bash
 m2c global autostart off
-````
+```
 
 ### Per-project services
 
@@ -91,7 +94,11 @@ And optionally available:
 
 After toolset is installed on your system, you may use it to initialize new or existing magento projects.
 
-To get a list of all commands and usage information, run ```m2c``` or ```m2c --help``` which is equivalent.
+To get a list of all commands and usage information, run command below.
+
+```bash
+m2c --help
+```
 
 ### Interactive project initialization mode
 
@@ -116,6 +123,24 @@ To get a list of all available parameters and flags for project configuration, r
 ```bash
 m2c init --help
 ```
+
+### Connecting to Database
+
+Project database can be easily accessed in a few ways - with help of optional phpMyAdmin service or with database managing applications by using a direct connection to the database via SSH tunnel.  
+Read the article at project's wiki page on how to connect to your project's database - <a href="https://github.com/mage2click/m2c/wiki/Connecting-to-Database" target="_blank">Connecting to Database</a>
+
+### Debugging with Xdebug
+
+Mage2click toolset supports Magento debugging with Xdebug out of the box. Only a few configuration steps are required.  
+Read the article at project's wiki page on how to use Xdebug with PHPStorm - <a href="https://github.com/mage2click/m2c/wiki/Debugging-with-Xdebug" target="_blank">Debugging with Xdebug</a>
+
+## Authors Information
+
+### Dmitry Shkoliar
+<a href="https://www.zend.com/en/yellow-pages/ZEND026786" target="_blank">Zend Certified PHP Engineer</a>, Magento2, Docker, PWA, Varnish, JS, HTML5, Mobile, iOS, Android  
+Github: <a href="https://github.com/shkoliar" target="_blank">@shkoliar</a>  
+Twitter: <a href="https://twitter.com/shkoliar" target="_blank">@shkoliar</a>  
+Website: <a href="https://shkoliar.com" target="_blank">shkoliar.com</a>  
 
 ## License
 
