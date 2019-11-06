@@ -196,7 +196,13 @@ m2c_cli() {
         m2c_tty=1
     fi
 
-    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" "$@"
+    if m2c_in_array "--debug" $@
+    then
+        shift
+        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__xdebug" "$@"
+    else
+        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" "$@"
+    fi
 }
 
 m2c_bash() {
@@ -2230,7 +2236,13 @@ m2c_magento() {
         m2c_tty=1
     fi
 
-    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" php bin/magento $@
+    if m2c_in_array "--debug" $@
+    then
+        shift
+        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__xdebug" php bin/magento $@
+    else
+        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" php bin/magento $@
+    fi
 }
 
 m2c_magerun() {
