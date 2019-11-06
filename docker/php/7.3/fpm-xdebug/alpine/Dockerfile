@@ -11,6 +11,7 @@ COPY    common/bin/* /usr/local/bin/
 
 RUN     apk update && \
         apk add --no-cache \
+            shadow \
             php7=${PHP_VERSION} \
             php7-bcmath=${PHP_VERSION} \
             php7-calendar=${PHP_VERSION} \
