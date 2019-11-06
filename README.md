@@ -1,4 +1,4 @@
-# Mage2click Docker Magento <br><small>environment and toolset</small>
+<h1 align="center">Mage2click Docker Magento Toolset</h1> 
 
 <p align="center"><img src="assets/images/install.png" width="600" align="center" alt="Mage2click Docker Magento environment and toolset" /></p>
 
