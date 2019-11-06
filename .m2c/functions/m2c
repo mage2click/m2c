@@ -2224,7 +2224,7 @@ m2c_magento() {
         m2c_tty=1
     fi
 
-    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" bin/magento "$@"
+    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" php bin/magento $@
 }
 
 m2c_magerun() {
