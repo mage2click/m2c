@@ -114,9 +114,9 @@ m2c_elasticsearch_configure() {
     local version=${M2C_CFG_ELASTICSEARCH:0:1}
 
     (
-        m2c_magento notty config:set --scope=default --scope-code=0 catalog/search/engine \
+        m2c_magento --notty config:set --scope=default --scope-code=0 catalog/search/engine \
             elasticsearch${version/2/} && \
-        m2c_magento notty config:set --scope=default --scope-code=0 \
+        m2c_magento --notty config:set --scope=default --scope-code=0 \
             catalog/search/elasticsearch${version/2/}_server_hostname \
             ${M2C_CFG_DOMAIN_NAME}__elasticsearch
     ) >"$m2c_log" 2>&1
@@ -128,8 +128,8 @@ m2c_elasticsearch_reset() {
     local version=${M2C_CFG_ELASTICSEARCH:0:1}
 
     (
-        m2c_magento notty config:set --scope=default --scope-code=0 catalog/search/engine mysql && \
-        m2c_magento notty config:set --scope=default --scope-code=0 \
+        m2c_magento --notty config:set --scope=default --scope-code=0 catalog/search/engine mysql && \
+        m2c_magento --notty config:set --scope=default --scope-code=0 \
             catalog/search/elasticsearch${version/2/}_server_hostname ""
     ) >"$m2c_log" 2>&1
 
@@ -188,10 +188,10 @@ m2c_set_opt_version() {
 }
 
 m2c_cli() {
-    if [[ "$1" == "notty" ]]
+    if m2c_in_array "--notty" $@
     then
-        m2c_tty=
         shift
+        m2c_tty=
     else
         m2c_tty=1
     fi
@@ -200,22 +200,28 @@ m2c_cli() {
 }
 
 m2c_bash() {
-    if [[ "$1" == "notty" ]]
+    if m2c_in_array "--notty" $@
     then
-        m2c_tty=
         shift
+        m2c_tty=
     else
         m2c_tty=1
     fi
 
-    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" bash "$@"
+    if m2c_in_array "--debug" $@
+    then
+        shift
+        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__xdebug" bash "$@"
+    else
+        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" bash "$@"
+    fi
 }
 
 m2c_composer() {
-    if [[ "$1" == "notty" ]]
+    if m2c_in_array "--notty" $@
     then
-        m2c_tty=
         shift
+        m2c_tty=
     else
         m2c_tty=1
     fi
@@ -255,10 +261,10 @@ m2c_db() {
 }
 
 m2c_db_mysql() {
-    if [[ "$1" == "notty" ]]
+    if m2c_in_array "--notty" $@
     then
-        m2c_tty=
         shift
+        m2c_tty=
     else
         m2c_tty=1
     fi
@@ -269,10 +275,10 @@ m2c_db_mysql() {
 }
 
 m2c_db_mysqldump() {
-    if [[ "$1" == "notty" ]]
+    if m2c_in_array "--notty" $@
     then
-        m2c_tty=
         shift
+        m2c_tty=
     else
         m2c_tty=1
     fi
@@ -298,7 +304,7 @@ m2c_db_import() {
             (
                 gunzip -c "$file" | \
                     LANG=C LC_CTYPE=C LC_ALL=C sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | \
-                    m2c_db_mysql notty
+                    m2c_db_mysql --notty
             ) >"$m2c_log" 2>&1
             m2c_result $?
         else
@@ -307,15 +313,15 @@ m2c_db_import() {
             (
                 cat "$file" | \
                     LANG=C LC_CTYPE=C LC_ALL=C sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | \
-                    m2c_db_mysql notty
+                    m2c_db_mysql --notty
             ) >"$m2c_log" 2>&1
             m2c_result $?
         fi
 
         m2c_msg "Setting the project domain name........................................  "
         m2c_loading
-        m2c_magento notty config:set web/secure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1 && \
-        m2c_magento notty config:set web/unsecure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1
+        m2c_magento --notty config:set web/secure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1 && \
+        m2c_magento --notty config:set web/unsecure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1
         m2c_result $?
     elif [[ -n ${file} ]]
     then
@@ -770,10 +776,10 @@ m2c_global_help() {
 }
 
 m2c_grunt() {
-    if [[ "$1" == "notty" ]]
+    if m2c_in_array "--notty" $@
     then
-        m2c_tty=
         shift
+        m2c_tty=
     else
         m2c_tty=1
     fi
@@ -782,10 +788,10 @@ m2c_grunt() {
 }
 
 m2c_npm() {
-    if [[ "$1" == "notty" ]]
+    if m2c_in_array "--notty" $@
     then
-        m2c_tty=
         shift
+        m2c_tty=
     else
         m2c_tty=1
     fi
@@ -794,10 +800,10 @@ m2c_npm() {
 }
 
 m2c_node() {
-    if [[ "$1" == "notty" ]]
+    if m2c_in_array "--notty" $@
     then
-        m2c_tty=
         shift
+        m2c_tty=
     else
         m2c_tty=1
     fi
@@ -814,7 +820,7 @@ m2c_urn() {
 
     m2c_msg "Creating PhpStorm configuration........................................  "
     m2c_loading
-    m2c_cli notty mkdir .idea >/dev/null 2>&1 && \
+    m2c_cli --notty mkdir .idea >/dev/null 2>&1 && \
     m2c_magento dev:urn-catalog:generate .idea/misc.xml >"$m2c_log" 2>&1
     m2c_result $?
 
@@ -829,7 +835,7 @@ m2c_urn() {
         yes | cp -rf "$m2c_project_dir/.idea/misc.xml" "$m2c_project_dir/${M2C_CFG_MAGENTO_SRC}/.idea"
     fi
 
-    m2c_cli notty rm -rf .idea >/dev/null 2>&1
+    m2c_cli --notty rm -rf .idea >/dev/null 2>&1
 
     m2c_msg "\nUniform Resource Names have been generated!\nRestart PHPStorm to get changes applied.\n"
 }
@@ -1353,7 +1359,7 @@ m2c_init() {
 
         rm -rf "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php"
 
-        m2c_magento notty setup:install \
+        m2c_magento --notty setup:install \
                 --db-host=${M2C_CFG_DOMAIN_NAME}__db \
                 --db-name=${M2C_CFG_MYSQL_DATABASE} \
                 --db-user=${M2C_CFG_MYSQL_USER} \
@@ -1369,17 +1375,17 @@ m2c_init() {
                 --currency=${M2C_CFG_CURRENCY} \
                 --timezone=${M2C_CFG_TIMEZONE} \
                 --use-rewrites=1 >"$m2c_log" 2>&1 && \
-        m2c_magento notty config:set trans_email/ident_general/email \
+        m2c_magento --notty config:set trans_email/ident_general/email \
             "owner@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
-        m2c_magento notty config:set trans_email/ident_sales/email \
+        m2c_magento --notty config:set trans_email/ident_sales/email \
             "sales@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
-        m2c_magento notty config:set trans_email/ident_support/email \
+        m2c_magento --notty config:set trans_email/ident_support/email \
             "support@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
-        m2c_magento notty config:set trans_email/ident_custom1/email \
+        m2c_magento --notty config:set trans_email/ident_custom1/email \
             "custom1@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
-        m2c_magento notty config:set trans_email/ident_custom2/email \
+        m2c_magento --notty config:set trans_email/ident_custom2/email \
             "custom2@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
-        m2c_magento notty config:set contact/email/recipient_email \
+        m2c_magento --notty config:set contact/email/recipient_email \
             "hello@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1
         m2c_result $?
     fi
@@ -1388,14 +1394,14 @@ m2c_init() {
     then
         m2c_msg "Configuring composer authentication for docker containers..............  "
         m2c_loading
-        m2c_cli notty composer config http-basic.repo.magento.com \
+        m2c_cli --notty composer config http-basic.repo.magento.com \
             ${m2c_composer_public_key} ${m2c_composer_private_key} >"$m2c_log" 2>&1
         m2c_result $?
     fi
 
     m2c_msg "Turning on developer mode..............................................  "
     m2c_loading
-    m2c_magento notty deploy:mode:set developer >"$m2c_log" 2>&1
+    m2c_magento --notty deploy:mode:set developer >"$m2c_log" 2>&1
     m2c_result $?
 
     m2c_msg "Configuring Nginx......................................................  "
@@ -1436,7 +1442,7 @@ m2c_init() {
     then
         m2c_msg "Forcing deploy of static content.......................................  "
         m2c_loading
-        m2c_magento notty setup:static-content:deploy -f >"$m2c_log" 2>&1
+        m2c_magento --notty setup:static-content:deploy -f >"$m2c_log" 2>&1
         m2c_result $?
 
         m2c_msg "Installing Magento node modules dependencies...........................  "
@@ -1454,8 +1460,8 @@ m2c_init() {
         m2c_msg "Clearing the cache for good measure....................................  "
         m2c_loading
         (
-            m2c_magento notty cache:flush && \
-            m2c_magento notty cache:enable
+            m2c_magento --notty cache:flush && \
+            m2c_magento --notty cache:enable
         ) >"$m2c_log" 2>&1
         m2c_result $?
     fi
@@ -2216,10 +2222,10 @@ m2c_local_down() {
 }
 
 m2c_magento() {
-    if [[ "$1" == "notty" ]]
+    if m2c_in_array "--notty" $@
     then
-        m2c_tty=
         shift
+        m2c_tty=
     else
         m2c_tty=1
     fi
@@ -2228,10 +2234,10 @@ m2c_magento() {
 }
 
 m2c_magerun() {
-    if [[ "$1" == "notty" ]]
+    if m2c_in_array "--notty" $@
     then
-        m2c_tty=
         shift
+        m2c_tty=
     else
         m2c_tty=1
     fi
@@ -2275,7 +2281,7 @@ m2c_pull_exec() {
         m2c_info "$dest_path "
         m2c_info_bold "←\n\n"
 
-        if m2c_bash notty -c "[[ -d "/var/www/html/${source_path}" ]]" >"$m2c_log" 2>&1
+        if m2c_bash --notty -c "[[ -d "/var/www/html/${source_path}" ]]" >"$m2c_log" 2>&1
         then
             m2c_msg "Pulling directory from php docker container............................  "
             m2c_loading
@@ -2285,7 +2291,7 @@ m2c_pull_exec() {
             res=$?
             m2c_result ${res}
             return ${res}
-        elif m2c_bash notty -c "[[ -f "/var/www/html/${source_path}" ]]" >"$m2c_log" 2>&1
+        elif m2c_bash --notty -c "[[ -f "/var/www/html/${source_path}" ]]" >"$m2c_log" 2>&1
         then
             m2c_msg "Pulling file from php docker container.................................  "
             m2c_loading
@@ -2484,11 +2490,11 @@ m2c_push() {
 
 m2c_redis_configure() {
     (
-        m2c_magento notty setup:config:set --no-interaction --cache-backend=redis \
+        m2c_magento --notty setup:config:set --no-interaction --cache-backend=redis \
                 --cache-backend-redis-server=${M2C_CFG_DOMAIN_NAME}__redis --cache-backend-redis-db=0 && \
-        m2c_magento notty setup:config:set --no-interaction  --page-cache=redis \
+        m2c_magento --notty setup:config:set --no-interaction  --page-cache=redis \
                 --page-cache-redis-server=${M2C_CFG_DOMAIN_NAME}__redis --page-cache-redis-db=1 && \
-        m2c_magento notty setup:config:set --no-interaction --session-save=redis \
+        m2c_magento --notty setup:config:set --no-interaction --session-save=redis \
                 --session-save-redis-host=${M2C_CFG_DOMAIN_NAME}__redis --session-save-redis-log-level=4 \
                 --session-save-redis-db=2
     ) >"$m2c_log" 2>&1
@@ -2529,16 +2535,16 @@ m2c_share_exec() {
 
     m2c_msg "Checking required dependencies.........................................  "
     m2c_loading
-    m2c_res="$(m2c_magento notty module:status Shkoliar_Ngrok)"
+    m2c_res="$(m2c_magento --notty module:status Shkoliar_Ngrok)"
     m2c_result 0
 
     if [[ "$m2c_res" != *"Module is enabled"* ]]
     then
         m2c_msg "Installing required dependencies.......................................  "
         m2c_loading
-        m2c_composer notty require --dev shkoliar/magento-ngrok >"$m2c_log" 2>&1 && \
-        m2c_magento notty module:enable Shkoliar_Ngrok >"$m2c_log" 2>&1 && \
-        m2c_magento notty setup:upgrade >"$m2c_log" 2>&1
+        m2c_composer --notty require --dev shkoliar/magento-ngrok >"$m2c_log" 2>&1 && \
+        m2c_magento --notty module:enable Shkoliar_Ngrok >"$m2c_log" 2>&1 && \
+        m2c_magento --notty setup:upgrade >"$m2c_log" 2>&1
         m2c_res=$?
         m2c_result ${m2c_res}
     else
@@ -2811,18 +2817,18 @@ m2c_varnish_configure() {
     [[ "$version" == "6" ]] && version=5
 
     (
-        m2c_magento notty config:set --scope=default --scope-code=0 \
+        m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/caching_application 2 && \
-        m2c_magento notty config:set --scope=default --scope-code=0 \
+        m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/varnish/access_list ${M2C_CFG_DOMAIN_NAME}__nginx && \
-        m2c_magento notty config:set --scope=default --scope-code=0 \
+        m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/varnish/backend_host ${M2C_CFG_DOMAIN_NAME}__nginx && \
-        m2c_magento notty config:set --scope=default --scope-code=0 \
+        m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/varnish/backend_port 8080 && \
-        m2c_magento notty config:set --scope=default --scope-code=0 \
+        m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/varnish/grace_period 300 && \
-        m2c_magento notty setup:config:set --http-cache-hosts=${M2C_CFG_DOMAIN_NAME}__varnish:80 && \
-        m2c_magento notty varnish:vcl:generate --access-list ${M2C_CFG_DOMAIN_NAME}__nginx \
+        m2c_magento --notty setup:config:set --http-cache-hosts=${M2C_CFG_DOMAIN_NAME}__varnish:80 && \
+        m2c_magento --notty varnish:vcl:generate --access-list ${M2C_CFG_DOMAIN_NAME}__nginx \
             --backend-host ${M2C_CFG_DOMAIN_NAME}__nginx \
             --backend-port 8080 --export-version ${version} \
             --output-file ./var/default.vcl
@@ -2839,7 +2845,7 @@ m2c_varnish_configure() {
     ) >"$m2c_log" 2>&1 && \
     (
         rm -rf "$dir/var/default.vcl" && \
-        m2c_cli notty rm -rf ./var/default.vcl
+        m2c_cli --notty rm -rf ./var/default.vcl
     ) >"$m2c_log" 2>&1
 
     return $?
@@ -2847,15 +2853,15 @@ m2c_varnish_configure() {
 
 m2c_varnish_reset() {
     (
-        m2c_magento notty config:set --scope=default --scope-code=0 \
+        m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/caching_application 1 && \
-        m2c_magento notty config:set --scope=default --scope-code=0 \
+        m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/varnish/access_list "" && \
-        m2c_magento notty config:set --scope=default --scope-code=0 \
+        m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/varnish/backend_host "" && \
-        m2c_magento notty config:set --scope=default --scope-code=0 \
+        m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/varnish/backend_port "" && \
-        m2c_magento notty config:set --scope=default --scope-code=0 \
+        m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/varnish/grace_period ""
     ) >"$m2c_log" 2>&1
 
