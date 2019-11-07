@@ -21,6 +21,7 @@ Mage2click toolset is a system-wide command-line tool for creating and managing 
 - [Usage](#usage)
     - [Interactive project initialization mode](#interactive-project-initialization-mode)
     - [Commandline project initialization mode](#commandline-project-initialization-mode)
+    - [CLI Commands reference](#cli-commands-reference)
     - [Connecting to Database](#connecting-to-database)
     - [Debugging with Xdebug](#debugging-with-xdebug)
 - [Authors Information](#authors-information)
@@ -66,7 +67,8 @@ After toolset is installed, you will have the next tools available locally:
 
 Toolset local homepage with links to all tools listed above - `https://m2c.test`
 
-**All docker images with services listed above required to be active for toolset functioning.** These services are configured to start automatically and should not be stopped. Without active Traefik and Dnsmasq, m2c backed projects can't work properly.  
+**All docker images with services listed above required to be active for toolset functioning.**  
+These services are configured to start automatically and should not be stopped. Without active Traefik and Dnsmasq, m2c backed projects can't work properly.  
 
 If you don't want auto-start of these services, you can disable it with the command below.
 
