@@ -1638,90 +1638,117 @@ m2c_init_help() {
 }
 
 m2c_local() {
-    m2c_in_array "--help" $@ && m2c_help
-
     case "$1" in
         add)
             shift
             m2c_local_add "$@"
         ;;
-        down)
-            shift
-            m2c_local_down
-        ;;
-        info|status)
-            m2c_local_info
-        ;;
         remove)
             shift
             m2c_local_remove "$@"
         ;;
-        update)
-            shift
-            m2c_local_update
-        ;;
         *)
-            local m2c_local_command=
-            local m2c_local_service=()
-            local m2c_local_services=($(m2c_local_list_services))
+            m2c_in_array "--help" $@ && m2c_help
 
-            while (("$#"))
-            do
-                case "$1" in
-                    up|start|restart|stop)
-                        m2c_local_command="$1"
-                        shift
-                    ;;
-                    nginx|php|xdebug|db|redis|varnish|elasticsearch|phpmyadmin|rabbitmq)
-                        if ! [[ "$1" == "varnish" && -z ${M2C_CFG_VARNISH} || \
-                                "$1" == "elasticsearch" && -z ${M2C_CFG_ELASTICSEARCH} || \
-                                "$1" == "phpmyadmin" && -z ${M2C_CFG_PHPMYADMIN} || \
-                                "$1" == "rabbitmq" && -z ${M2C_CFG_RABBITMQ} ]]
+            case "$1" in
+                down)
+                    shift
+                    m2c_local_down
+                ;;
+                info|status)
+                    m2c_local_info
+                ;;
+                update)
+                    shift
+                    m2c_local_update
+                ;;
+                *)
+                    local m2c_local_command=
+                    local m2c_local_service=()
+                    local m2c_local_services=($(m2c_local_list_services))
+
+                    while (("$#"))
+                    do
+                        case "$1" in
+                            up|start|restart|stop)
+                                m2c_local_command="$1"
+                                shift
+                            ;;
+                            nginx|php|xdebug|db|redis|varnish|elasticsearch|phpmyadmin|rabbitmq)
+                                if ! [[ "$1" == "varnish" && -z ${M2C_CFG_VARNISH} || \
+                                        "$1" == "elasticsearch" && -z ${M2C_CFG_ELASTICSEARCH} || \
+                                        "$1" == "phpmyadmin" && -z ${M2C_CFG_PHPMYADMIN} || \
+                                        "$1" == "rabbitmq" && -z ${M2C_CFG_RABBITMQ} ]]
+                                then
+                                    m2c_local_service+=("$1")
+                                fi
+                                shift
+                            ;;
+                            *)
+                                if m2c_in_array "$1" ${m2c_local_services[@]}
+                                then
+                                    m2c_local_service+=("$1")
+                                    shift
+                                else
+                                    m2c_local_error "$1" "$m2c_local_command"
+                                fi
+                            ;;
+                        esac
+                    done
+
+                    if [[ -n ${m2c_local_command} ]]
+                    then
+                        if ! (("${#m2c_local_service[@]}"))
                         then
-                            m2c_local_service+=("$1")
+                            m2c_local_service=("${m2c_local_services[@]}")
                         fi
-                        shift
-                    ;;
-                    *)
-                        if m2c_in_array "$1" ${m2c_local_services[@]}
-                        then
-                            m2c_local_service+=("$1")
-                            shift
-                        else
-                            m2c_local_error "$1" "$m2c_local_command"
-                        fi
-                    ;;
-                esac
-            done
 
-            if [[ -n ${m2c_local_command} ]]
-            then
-                if ! (("${#m2c_local_service[@]}"))
-                then
-                    m2c_local_service=("${m2c_local_services[@]}")
-                fi
-
-                case ${m2c_local_command} in
-                    up)
-                        m2c_local_up "${m2c_local_service[@]}"
-                    ;;
-                    start)
-                        m2c_local_start "${m2c_local_service[@]}"
-                    ;;
-                    restart)
-                        m2c_local_restart "${m2c_local_service[@]}"
-                    ;;
-                    stop)
-                        m2c_local_stop "${m2c_local_service[@]}"
-                    ;;
-                esac
-            fi
+                        case ${m2c_local_command} in
+                            up)
+                                m2c_local_up "${m2c_local_service[@]}"
+                            ;;
+                            start)
+                                m2c_local_start "${m2c_local_service[@]}"
+                            ;;
+                            restart)
+                                m2c_local_restart "${m2c_local_service[@]}"
+                            ;;
+                            stop)
+                                m2c_local_stop "${m2c_local_service[@]}"
+                            ;;
+                        esac
+                    fi
+                ;;
+            esac
         ;;
     esac
 }
 
+m2c_local_add_help() {
+    echo -e "
+\033[1;33mInformation:\033[0m
+  Adds optional service to the project.
+
+\033[1;33mUsage:\033[0m
+  m2c add <service>
+
+\033[1;33mServices:\033[0m
+  elasticsearch     Elasticsearch service.
+  phpmyadmin        phpMyAdmin service.
+  rabbitmq          RabbitMQ service.
+  varnish           Varnish service.
+
+\033[1;33mFlags:\033[0m
+  --help            Displays this information.
+"
+    exit 0
+}
+
 m2c_local_add() {
     case "$@" in
+        --help)
+            m2c_local_add_help
+        ;;
         varnish)
             m2c_ask_bool "Add Varnish service?"
             M2C_CFG_VARNISH=${m2c_res}
@@ -1786,15 +1813,43 @@ m2c_local_add() {
             fi
         ;;
         *)
-            m2c_local_error "$@" "add"
+            if [[ "$@" == "" ]]
+            then
+                m2c_local_error " " "add"
+            else
+                m2c_local_error "$*" "add"
+            fi
         ;;
     esac
+}
+
+m2c_local_remove_help() {
+    echo -e "
+\033[1;33mInformation:\033[0m
+  Removes optional service from the project.
+
+\033[1;33mUsage:\033[0m
+  m2c remove <service>
+
+\033[1;33mServices:\033[0m
+  elasticsearch     Elasticsearch service.
+  phpmyadmin        phpMyAdmin service.
+  rabbitmq          RabbitMQ service.
+  varnish           Varnish service.
+
+\033[1;33mFlags:\033[0m
+  --help            Displays this information.
+"
+    exit 0
 }
 
 m2c_local_remove() {
     local service=
 
     case "$@" in
+        --help)
+            m2c_local_remove_help
+        ;;
         varnish)
             service="$1"
             m2c_ask_bool "Remove Varnish service?"
@@ -1846,7 +1901,12 @@ m2c_local_remove() {
             fi
         ;;
         *)
-            m2c_local_error "$@" "remove"
+            if [[ "$@" == "" ]]
+            then
+                m2c_local_error " " "remove"
+            else
+                m2c_local_error "$*" "remove"
+            fi
         ;;
     esac
 
