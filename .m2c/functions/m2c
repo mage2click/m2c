@@ -856,11 +856,16 @@ m2c_help() {
   m2c <command> [arguments...] [--help]
 
 \033[1;33mCommands:\033[0m
-  add           Add optional service to project.
-  bash          Open the bash prompt on project php docker service.
-  cli           Run any cli command without going into the bash prompt.
-  composer      Run composer specific commands.
-  db            Database related commands.
+  add           Adds optional service to the project.
+                Run \`m2c add --help\` for command usage information.
+  bash          Opens the bash prompt on the project's php docker service.
+                With \`--debug\` flag, the bash prompt will be opened on the
+                project's xdebug  docker service.
+  cli           Runs any CLI command without going into the bash prompt.
+  composer      Runs Composer specific commands.
+  db            Database related commands. Import/Export database commands and
+                MySQL CLI tool access. Run \`m2c db --help\` for command usage
+                information.
   down          Remove project docker containers, volumes, and networks.
   grunt         Run grunt specific commands.
   info          Print project info and status.
@@ -891,11 +896,18 @@ m2c_help() {
   m2c <command> [args...] [--help]
 
 \033[1;33mCommands:\033[0m
-  add           Add optional service to project.
-  bash          Open the bash prompt on project php docker service.
-  cli           Run any cli command without going into the bash prompt.
-  composer      Run composer specific commands.
-  db            Database related commands.
+  add           Adds optional service to the project.
+                Run \`m2c add --help\` for command usage information.
+  bash          Opens the bash prompt on the project's php service.
+                With \`--debug\` flag, the bash prompt will be opened on the
+                project's xdebug service.
+  cli           Runs any CLI command without going into the bash prompt of the
+                project's php service. With \`--debug\` flag, the CLI command
+                will run on the project's xdebug service.
+  composer      Runs Composer specific commands.
+  db            Database related commands. Import/Export database commands and
+                MySQL CLI tool access. Run \`m2c db --help\` for command usage
+                information.
   down          Remove project docker containers, volumes, and networks.
   grunt         Run grunt specific commands.
   info          Print project info and status.
@@ -1730,7 +1742,7 @@ m2c_local_add_help() {
   Adds optional service to the project.
 
 \033[1;33mUsage:\033[0m
-  m2c add <service>
+  m2c add <service|--help>
 
 \033[1;33mServices:\033[0m
   elasticsearch     Elasticsearch service.
@@ -1815,7 +1827,7 @@ m2c_local_add() {
         *)
             if [[ "$@" == "" ]]
             then
-                m2c_local_error " " "add"
+                m2c_local_add_help
             else
                 m2c_local_error "$*" "add"
             fi
@@ -1829,7 +1841,7 @@ m2c_local_remove_help() {
   Removes optional service from the project.
 
 \033[1;33mUsage:\033[0m
-  m2c remove <service>
+  m2c remove <service|--help>
 
 \033[1;33mServices:\033[0m
   elasticsearch     Elasticsearch service.
@@ -1903,7 +1915,7 @@ m2c_local_remove() {
         *)
             if [[ "$@" == "" ]]
             then
-                m2c_local_error " " "remove"
+                m2c_local_remove_help
             else
                 m2c_local_error "$*" "remove"
             fi
