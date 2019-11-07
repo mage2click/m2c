@@ -52,14 +52,17 @@ curl -sL get.m2c.run | bash
 
 After toolset is installed, you will have the next tools available locally:
 
-- Traefik - `https://traefik.m2c.test`
-  > An open-source reverse proxy and load balancer for HTTP and TCP-based applications that is easy, dynamic, automatic, fast, full-featured, production proven, provides metrics, and integrates with every major cluster technology. <a href="https://traefik.io" target="_blank">https://traefik.io</a>
-- Portainer - `https://portainer.m2c.test`
-  > Portainer is a lightweight management toolset that allows you to easily build, manage and maintain Docker environments. Created by experts, Portainer is an opinionated toolset that captures years of experience to allow you to reliably and quickly create, operate and trouble-shoot your Docker environments. <a href="https://portainer.io" target="_blank">https://portainer.io</a>
-- Mailhog - `https://mailhog.m2c.test`
-  > MailHog is an email testing tool for developers. Allows to view messages in the web UI, or retrieve them with the JSON API. Optionally allows to release messages to real SMTP servers for delivery. <a href="https://github.com/mailhog/MailHog" target="_blank">https://github.com/mailhog/MailHog</a>
-- Dnsmasq - `https://dnsmasq.m2c.test`
-  > Dnsmasq provides network infrastructure for small networks: DNS, DHCP, router advertisement and network boot. It is designed to be lightweight and have a small footprint, suitable for resource constrained routers and firewalls. <a href="http://www.thekelleys.org.uk/dnsmasq/doc.html" target="_blank">http://www.thekelleys.org.uk/dnsmasq/doc.html</a>
+**Traefik** - `https://traefik.m2c.test`
+> Traefik is an open-source reverse proxy and load balancer for HTTP and TCP-based applications that is easy, dynamic, automatic, fast, full-featured, production proven, provides metrics, and integrates with every major cluster technology. <a href="https://traefik.io" target="_blank">https://traefik.io</a>
+>
+**Portainer** - `https://portainer.m2c.test`
+> Portainer is a lightweight management toolset that allows you to easily build, manage and maintain Docker environments. Created by experts, Portainer is an opinionated toolset that captures years of experience to allow you to reliably and quickly create, operate and trouble-shoot your Docker environments. <a href="https://portainer.io" target="_blank">https://portainer.io</a>
+
+**Mailhog** - `https://mailhog.m2c.test`
+> MailHog is an email testing tool for developers. Allows to view messages in the web UI, or retrieve them with the JSON API. Optionally allows to release messages to real SMTP servers for delivery. <a href="https://github.com/mailhog/MailHog" target="_blank">https://github.com/mailhog/MailHog</a>
+
+**Dnsmasq** - `https://dnsmasq.m2c.test`
+> Dnsmasq provides network infrastructure for small networks: DNS, DHCP, router advertisement and network boot. It is designed to be lightweight and have a small footprint, suitable for resource constrained routers and firewalls. <a href="http://www.thekelleys.org.uk/dnsmasq/doc.html" target="_blank">http://www.thekelleys.org.uk/dnsmasq/doc.html</a>
 
 Toolset local homepage with links to all tools listed above - `https://m2c.test`
 
@@ -123,6 +126,39 @@ To get a list of all available parameters and flags for project configuration, r
 ```bash
 m2c init --help
 ```
+
+### CLI Commands reference
+
+#### Project area commands 
+
+```bash
+m2c add <service|--help>
+``` 
+Adds optional service to the project. Available optional services are: `elasticsearch`, `phpmyadmin`, `rabbitmq` and `varnish`. Run `m2c add --help` for command usage information.
+
+```bash
+m2c bash [--debug]
+```
+Opens the bash prompt on the project's php docker service.  With `--debug` flag, the bash prompt will be opened on the project's xdebug  docker service.
+
+```bash
+m2c cli [--debug]
+```
+Runs any CLI command without going into the bash prompt of the project's php service. With \`--debug\` flag, the CLI command will run on the project's xdebug service.
+
+```bash
+m2c composer
+```
+Runs [Composer](https://getcomposer.org) specific commands.
+
+```bash
+m2c db
+```
+Database related commands. Import/Export database commands and MySQL CLI tool access. Run `m2c db --help` for command usage information.
+
+
+_Adding information about other CLI commands is in progress..._
+
 
 ### Connecting to Database
 
