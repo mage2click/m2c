@@ -9,7 +9,7 @@
   <a href="https://twitter.com/intent/follow?screen_name=mage2_click" target="_blank"><img src="https://img.shields.io/twitter/follow/mage2_click?color=brightgreen&label=mage2_click&logo=twitter&logoColor=white&style=for-the-badge" /></a>
 </p>
 
-Mage2click toolset is a system-wide command-line tool for creating and managing simultaneously running docker Magento projects with insanely easy installation and configuration. It includes plenty of configurable services and useful commands for developing and project orchestration right out of the box. On macOS systems, mutagen.io tool will be bundled in the toolset for high-performance files sync between host and docker containers.
+Mage2click toolset is a system-wide command-line tool for creating and managing simultaneously running Docker Magento projects with insanely easy installation and configuration. It includes plenty of configurable services and useful commands for developing and project orchestration right out of the box. On macOS systems, mutagen.io tool will be bundled in the toolset for high-performance files sync between host and Docker containers.
 
 ## Table of contents
 
@@ -67,7 +67,7 @@ After toolset is installed, you will have the next tools available locally:
 
 Toolset local homepage with links to all tools listed above - `https://m2c.test`
 
-**All docker images with services listed above required to be active for toolset functioning.**  
+**All Docker images with services listed above required to be active for toolset functioning.**  
 These services are configured to start automatically and should not be stopped. Without active Traefik and Dnsmasq, m2c backed projects can't work properly.  
 
 If you don't want auto-start of these services, you can disable it with the command below.
@@ -80,7 +80,7 @@ m2c global autostart off
 
 Most of services are available with version on your choice.
 
-All docker Magento projects initialized with: 
+All Docker Magento projects initialized with: 
 
 - Nginx
 - PHP-FPM
@@ -139,24 +139,55 @@ m2c add <service|--help>
 Adds optional service to the project. Available optional services are: `elasticsearch`, `phpmyadmin`, `rabbitmq` and `varnish`. Run `m2c add --help` for command usage information.
 
 ```bash
-m2c bash [--debug]
+m2c bash [--debug] ...
 ```
-Opens the bash prompt on the project's php docker service.  With `--debug` flag, the bash prompt will be opened on the project's xdebug  docker service.
+Opens the bash prompt on the project's php Docker service.  With `--debug` flag, the bash prompt will be opened on the project's xdebug Docker service.
 
 ```bash
-m2c cli [--debug]
+m2c cli [--debug] ...
 ```
 Runs any CLI command without going into the bash prompt of the project's php service. With \`--debug\` flag, the CLI command will run on the project's xdebug service.
 
 ```bash
-m2c composer
+m2c composer ...
 ```
 Runs [Composer](https://getcomposer.org) specific commands.
 
 ```bash
-m2c db
+m2c db <command|--help>
 ```
-Database related commands. Import/Export database commands and MySQL CLI tool access. Run `m2c db --help` for command usage information.
+Database related commands. Import/Export database commands and MySQL CLI tool access. Available optional services are: `export`, `import` and `mysql`. Run `m2c db --help` for command usage information.
+
+```bash
+m2c down
+```
+Removes project Docker containers, volumes, and networks. Project sources on the host will be untouched. Don't forget to create a database backup before running this command.
+
+```bash
+m2c grunt
+```
+The grunt command-line interface. Runs grunt specific commands at projects Docker containers.
+
+```bash
+m2c info
+```
+Prints project info and Docker containers status.
+
+```bash
+m2c init
+```
+Initializes project in the current directory. Run \`m2c init --help\` for command usage information.
+
+```bash
+m2c m
+```
+Magento command-line tool interface. Runs bin/magento specific commands.  Its is shortened alias of `m2c magento` command.
+
+```bash
+m2c mr
+```
+n98-magerun command-line tool interface. Runs n98-magerun specific commands. It is shortened alias of `m2c magerun` command.
+
 
 
 _Adding information about other CLI commands is in progress..._
