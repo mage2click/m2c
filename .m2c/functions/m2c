@@ -363,18 +363,18 @@ m2c_db_error() {
 m2c_db_help() {
     echo -e "
 \033[1;33mInformation:\033[0m
-  Import/Export database commands and mysql cli tool access.
+  Import/Export database commands and MySQL CLI tool access.
 
 \033[1;33mUsage:\033[0m
   m2c db <command|--help>
 
 \033[1;33mCommands:\033[0m
-  mysql     Run mysql CLI command or open mysql command prompt.
-  export    Export magento database to gzip compressed sql dump.
-  import    Import plain sql or gzipped sql database dump file.
+  mysql     Runs mysql CLI command or open mysql command prompt.
+  export    Exports magento database to gzip compressed sql dump.
+  import    Imports plain sql or gzipped sql database dump file.
 
 \033[1;33mFlags:\033[0m
-  --help    Display this information.
+  --help    Displays this information.
 "
     exit 0
 }
@@ -2712,6 +2712,15 @@ m2c_sign() {
     then
         m2c_log="$m2c_global_dir"/log
     fi
+
+    for i in "${!m2c_domains[@]}"
+    do
+        if ! m2c_validate_domain "${m2c_domains[$i]}"
+        then
+            m2c_error "Invalid domain name: \`${m2c_domains[$i]}\`!\nOnly valid domain names with \`.test\` tld are supported!\n"
+            exit 1
+        fi
+    done
 
     for i in "${!m2c_domains[@]}"
     do
