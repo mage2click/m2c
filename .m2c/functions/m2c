@@ -366,7 +366,7 @@ m2c_db_help() {
   Import/Export database commands and mysql cli tool access.
 
 \033[1;33mUsage:\033[0m
-  m2c db [command] [--help]
+  m2c db <command|--help>
 
 \033[1;33mCommands:\033[0m
   mysql     Run mysql CLI command or open mysql command prompt.
@@ -856,22 +856,29 @@ m2c_help() {
   m2c <command> [arguments...] [--help]
 
 \033[1;33mCommands:\033[0m
-  add           Adds optional service to the project.
+  add           Adds optional Docker service to the project.
                 Run \`m2c add --help\` for command usage information.
-  bash          Opens the bash prompt on the project's php docker service.
+  bash          Opens the bash prompt on the project's php Docker service.
                 With \`--debug\` flag, the bash prompt will be opened on the
-                project's xdebug  docker service.
+                project's xdebug Docker service.
   cli           Runs any CLI command without going into the bash prompt.
-  composer      Runs Composer specific commands.
+  composer      Composer command-line interface. Runs Composer specific
+                commands.
   db            Database related commands. Import/Export database commands and
                 MySQL CLI tool access. Run \`m2c db --help\` for command usage
                 information.
-  down          Remove project docker containers, volumes, and networks.
-  grunt         Run grunt specific commands.
-  info          Print project info and status.
-  init          Initialize project in the current directory.
-  magento, m    Run bin/magento specific commands.
-  magerun, mr   Run n98-magerun specific commands.
+  down          Removes project Docker containers, volumes, and networks.
+                Project sources on the host will be untouched. Don't forget to
+                create a database backup before running this command.
+  grunt         The grunt command-line interface. Runs grunt specific commands
+                at projects Docker containers.
+  info          Prints project info and Docker containers status.
+  init          Initializes project in the current directory. Run
+                \`m2c init --help\` for command usage information.
+  magento, m    Magento command-line tool interface. Runs bin/magento specific
+                commands.
+  magerun, mr   n98-magerun command-line tool interface. Runs n98-magerun
+                specific commands.
   node          Run node specific commands.
   npm           Run npm specific commands.
   redis         Run redis specific commands.
@@ -896,24 +903,29 @@ m2c_help() {
   m2c <command> [args...] [--help]
 
 \033[1;33mCommands:\033[0m
-  add           Adds optional service to the project.
+  add           Adds optional Docker service to the project.
                 Run \`m2c add --help\` for command usage information.
-  bash          Opens the bash prompt on the project's php service.
+  bash          Opens the bash prompt on the project's php Docker service.
                 With \`--debug\` flag, the bash prompt will be opened on the
-                project's xdebug service.
-  cli           Runs any CLI command without going into the bash prompt of the
-                project's php service. With \`--debug\` flag, the CLI command
-                will run on the project's xdebug service.
-  composer      Runs Composer specific commands.
+                project's xdebug Docker service.
+  cli           Runs any CLI command without going into the bash prompt.
+  composer      Composer command-line interface. Runs Composer specific
+                commands.
   db            Database related commands. Import/Export database commands and
                 MySQL CLI tool access. Run \`m2c db --help\` for command usage
                 information.
-  down          Remove project docker containers, volumes, and networks.
-  grunt         Run grunt specific commands.
-  info          Print project info and status.
-  init          Initialize project in the current directory.
-  magento, m    Run bin/magento specific commands.
-  magerun, mr   Run n98-magerun specific commands.
+  down          Removes project Docker containers, volumes, and networks.
+                Project sources on the host will be untouched. Don't forget to
+                create a database backup before running this command.
+  grunt         The grunt command-line interface. Runs grunt specific commands
+                at projects Docker containers.
+  info          Prints project info and Docker containers status.
+  init          Initializes project in the current directory. Run
+                \`m2c init --help\` for command usage information.
+  magento, m    Magento command-line tool interface. Runs bin/magento specific
+                commands.
+  magerun, mr   n98-magerun command-line tool interface. Runs n98-magerun
+                specific commands.
   mutagen       Run mutagen.io sync related commands.
   node          Run node specific commands.
   npm           Run npm specific commands.
