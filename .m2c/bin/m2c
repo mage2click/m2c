@@ -583,15 +583,15 @@ else
         *)
             case "$1" in
                 up|down)
-                    m2c_local_project_check_dir
+                    ! m2c_in_array "--help" $@ && m2c_local_project_check_dir
                     m2c_local $@
                 ;;
                 add|info|remove|restart|start|status|stop|update)
-                    m2c_local_project_check
+                    ! m2c_in_array "--help" $@ && m2c_local_project_check
                     m2c_local $@
                 ;;
                 bash|cli|composer|db|grunt|magento|m|magerun|mr|mutagen|node|npm|pull|push|redis|share|sync|varnish|urn)
-                    m2c_local_active_project_check
+                    ! m2c_in_array "--help" $@ && m2c_local_active_project_check
 
                     m2c_res=$1
                     shift
