@@ -188,51 +188,71 @@ m2c_set_opt_version() {
 }
 
 m2c_cli() {
+    local tty user
+
     if m2c_in_array "--notty" $@
     then
         shift
-        m2c_tty=
+        tty=
     else
-        m2c_tty=1
+        tty=1
+    fi
+
+    if m2c_in_array "--root" $@
+    then
+        shift
+        user=root
+    else
+        user=app
     fi
 
     if m2c_in_array "--debug" $@
     then
         shift
-        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__xdebug" "$@"
+        docker exec -u ${user} -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__xdebug" "$@"
     else
-        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" "$@"
+        docker exec -u ${user} -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" "$@"
     fi
 }
 
 m2c_bash() {
+    local tty user
+
     if m2c_in_array "--notty" $@
     then
         shift
-        m2c_tty=
     else
-        m2c_tty=1
+        tty=1
+    fi
+
+    if m2c_in_array "--root" $@
+    then
+        shift
+        user=root
+    else
+        user=app
     fi
 
     if m2c_in_array "--debug" $@
     then
         shift
-        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__xdebug" bash "$@"
+        docker exec -u ${user} -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__xdebug" bash "$@"
     else
-        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" bash "$@"
+        docker exec -u ${user} -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" bash "$@"
     fi
 }
 
 m2c_composer() {
+    local tty
+
     if m2c_in_array "--notty" $@
     then
         shift
-        m2c_tty=
     else
-        m2c_tty=1
+        tty=1
     fi
 
-    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" composer "$@"
+    docker exec -u app -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" composer "$@"
 
     if [[ "$m2c_os" == "darwin" ]]
     then
@@ -267,29 +287,31 @@ m2c_db() {
 }
 
 m2c_db_mysql() {
+    local tty
+
     if m2c_in_array "--notty" $@
     then
         shift
-        m2c_tty=
     else
-        m2c_tty=1
+        tty=1
     fi
 
-    docker exec -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__db" mysql \
+    docker exec -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__db" mysql \
         -h"${M2C_CFG_DOMAIN_NAME}__db" -u"$M2C_CFG_MYSQL_USER" \
         -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "$@"
 }
 
 m2c_db_mysqldump() {
+    local tty
+
     if m2c_in_array "--notty" $@
     then
         shift
-        m2c_tty=
     else
-        m2c_tty=1
+        tty=1
     fi
 
-    docker exec -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__db" mysqldump \
+    docker exec -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__db" mysqldump \
         -h"${M2C_CFG_DOMAIN_NAME}__db" -u"$M2C_CFG_MYSQL_USER" \
         -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "$@"
 }
@@ -782,39 +804,42 @@ m2c_global_help() {
 }
 
 m2c_grunt() {
+    local tty
+
     if m2c_in_array "--notty" $@
     then
         shift
-        m2c_tty=
     else
-        m2c_tty=1
+        tty=1
     fi
 
-    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" grunt "$@"
+    docker exec -u app -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" grunt "$@"
 }
 
 m2c_npm() {
+    local tty
+
     if m2c_in_array "--notty" $@
     then
         shift
-        m2c_tty=
     else
-        m2c_tty=1
+        tty=1
     fi
 
-    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" npm "$@"
+    docker exec -u app -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" npm "$@"
 }
 
 m2c_node() {
+    local tty
+
     if m2c_in_array "--notty" $@
     then
         shift
-        m2c_tty=
     else
-        m2c_tty=1
+        tty=1
     fi
 
-    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" node "$@"
+    docker exec -u app -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" node "$@"
 }
 
 m2c_redis() {
@@ -2312,33 +2337,35 @@ m2c_local_down() {
 }
 
 m2c_magento() {
+    local tty
+
     if m2c_in_array "--notty" $@
     then
         shift
-        m2c_tty=
     else
-        m2c_tty=1
+        tty=1
     fi
 
     if m2c_in_array "--debug" $@
     then
         shift
-        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__xdebug" php bin/magento $@
+        docker exec -u app -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__xdebug" php bin/magento $@
     else
-        docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" php bin/magento $@
+        docker exec -u app -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" php bin/magento $@
     fi
 }
 
 m2c_magerun() {
+    local tty
+
     if m2c_in_array "--notty" $@
     then
         shift
-        m2c_tty=
     else
-        m2c_tty=1
+        tty=1
     fi
 
-    docker exec -u app -${m2c_tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" \
+    docker exec -u app -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" \
         "n98-magerun$([[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && echo "2")" "$@"
 }
 
