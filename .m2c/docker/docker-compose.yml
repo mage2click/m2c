@@ -39,7 +39,7 @@ services:
 
   portainer:
     container_name: m2c.test__portainer
-    image: portainer/portainer:1.22.0
+    image: portainer/portainer:1.22.2
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer:/data
