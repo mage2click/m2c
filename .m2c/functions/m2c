@@ -885,8 +885,10 @@ m2c_help() {
                 Run \`m2c add --help\` for command usage information.
   bash          Opens the bash prompt on the project's php Docker service.
                 With \`--debug\` flag, the bash prompt will be opened on the
-                project's xdebug Docker service.
-  cli           Runs any CLI command without going into the bash prompt.
+                project's xdebug Docker service. With \`--root\` flag, the root
+                user will be used.
+  cli           Runs any CLI command without going into the bash prompt. With
+                \`--root\` flag, the root user will be used.
   composer      Composer command-line interface. Runs Composer specific
                 commands.
   db            Database related commands. Import/Export database commands and
@@ -932,8 +934,10 @@ m2c_help() {
                 Run \`m2c add --help\` for command usage information.
   bash          Opens the bash prompt on the project's php Docker service.
                 With \`--debug\` flag, the bash prompt will be opened on the
-                project's xdebug Docker service.
-  cli           Runs any CLI command without going into the bash prompt.
+                project's xdebug Docker service. With \`--root\` flag, the root
+                user will be used.
+  cli           Runs any CLI command without going into the bash prompt. With
+                \`--root\` flag, the root user will be used.
   composer      Composer command-line interface. Runs Composer specific
                 commands.
   db            Database related commands. Import/Export database commands and
