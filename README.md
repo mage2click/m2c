@@ -141,12 +141,12 @@ Adds optional service to the project. Available optional services are: `elastics
 ```bash
 m2c bash [--debug] ...
 ```
-Opens the bash prompt on the project's php Docker service.  With `--debug` flag, the bash prompt will be opened on the project's xdebug Docker service.
+Opens the bash prompt on the project's php Docker service.  With `--debug` flag, the bash prompt will be opened on the project's xdebug Docker service. With `--root` flag, the root user will be used.
 
 ```bash
 m2c cli [--debug] ...
 ```
-Runs any CLI command without going into the bash prompt of the project's php service. With \`--debug\` flag, the CLI command will run on the project's xdebug service.
+Runs any CLI command without going into the bash prompt of the project's php service. With \`--debug\` flag, the CLI command will run on the project's xdebug service. With `--root` flag, the root user will be used.
 
 ```bash
 m2c composer ...
