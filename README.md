@@ -134,27 +134,27 @@ m2c init --help
 #### Project area commands 
 
 ```bash
-m2c add <service|--help>
+m2c add [service] [--help]
 ``` 
 Adds optional service to the project. Available optional services are: `elasticsearch`, `phpmyadmin`, `rabbitmq` and `varnish`. Run `m2c add --help` for command usage information.
 
 ```bash
-m2c bash [--debug] ...
+m2c bash [--debug] [--root] ...
 ```
 Opens the bash prompt on the project's php Docker service.  With `--debug` flag, the bash prompt will be opened on the project's xdebug Docker service. With `--root` flag, the root user will be used.
 
 ```bash
-m2c cli [--debug] ...
+m2c cli [--debug] [--root] ...
 ```
-Runs any CLI command without going into the bash prompt of the project's php service. With \`--debug\` flag, the CLI command will run on the project's xdebug service. With `--root` flag, the root user will be used.
+Runs any CLI command without going into the bash prompt of the project's php service. With `--debug` flag, the CLI command will run on the project's xdebug service. With `--root` flag, the root user will be used.
 
 ```bash
-m2c composer ...
+m2c composer <command> [options] [arguments]
 ```
-Runs [Composer](https://getcomposer.org) specific commands.
+Runs [Composer](https://getcomposer.org) specific commands. Run `m2c composer` for command usage information.
 
 ```bash
-m2c db <command|--help>
+m2c db [command] [--help]
 ```
 Database related commands. Import/Export database commands and MySQL CLI tool access. Available optional services are: `export`, `import` and `mysql`. Run `m2c db --help` for command usage information.
 
@@ -166,7 +166,7 @@ Removes project Docker containers, volumes, and networks. Project sources on the
 ```bash
 m2c grunt
 ```
-The grunt command-line interface. Runs grunt specific commands at projects Docker containers.
+The grunt command-line interface. Runs grunt specific commands at projects Docker container. Run `m2c grunt --help` for command usage information.
 
 ```bash
 m2c info
@@ -176,18 +176,47 @@ Prints project info and Docker containers status.
 ```bash
 m2c init
 ```
-Initializes project in the current directory. Run \`m2c init --help\` for command usage information.
+Initializes project in the current directory. Run `m2c init --help` for command usage information.
 
 ```bash
 m2c m
 ```
-Magento command-line tool interface. Runs bin/magento specific commands.  Its is shortened alias of `m2c magento` command.
+Magento command-line tool interface. Runs `bin/magento` specific commands at projects Docker container.  Its is shortened alias of `m2c magento` command.
 
 ```bash
 m2c mr
 ```
-n98-magerun command-line tool interface. Runs n98-magerun specific commands. It is shortened alias of `m2c magerun` command.
+N98-magerun command-line tool interface. Runs `n98-magerun` specific commands at projects Docker container. It is shortened alias of `m2c magerun` command. Run `m2c mr --help` for command usage information.
 
+```bash
+m2c node 
+```
+Node command-line tool interface. Runs `node` specific commands at projects Docker container. Run `m2c node --help` for command usage information.
+
+```bash
+m2c npm
+```
+NPM command-line tool interface. Runs `npm` specific commands at projects Docker container. Run `m2c npm --help` for command usage information.
+
+```bash
+m2c redis [options] [cmd [arg [arg ...]]]
+```
+Redis command-line tool interface. Runs `redis-cli` specific commands at projects Redis Docker container. Run `m2c redis --help` for command usage information.
+
+```bash
+m2c remove [service] [--help]
+```
+Removes optional service from the project. Available optional services are: `elasticsearch`, `phpmyadmin`, `rabbitmq` and `varnish`. Run `m2c remove --help` for command usage information.
+
+```bash
+m2c restart [service [service ...]]
+```
+Restarts running project Docker services and starts all stopped ones. If services explicitly specified, only those will be restarted.
+
+```bash
+m2c share [region] [--help]
+```
+Starts sharing session over [ngrok](https://ngrok.com) secure tunnels. Command accepts an optional parameter to specify a region. Ex. `m2c share eu`. Available regions are `us`, `eu`, `ap`, `au`, `sa`, `jp`, and `in`. By default, region is `us`. For proper functioning of this command, required dependencies will be installed. Please, visit [https://github.com/shkoliar/magento-ngrok](https://github.com/shkoliar/magento-ngrok) and [https://github.com/shkoliar/docker-ngrok](https://github.com/shkoliar/docker-ngrok) for more information. Run `m2c share --help` for command usage information. 
 
 
 _Adding information about other CLI commands is in progress..._
