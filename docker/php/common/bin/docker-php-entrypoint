@@ -1,12 +1,12 @@
 #!/bin/sh
 set -e
 
-if [[ ! -z $GID && $(id -g) != $GID ]]; then
+if [[ ! -z $GID ]] && [[ $(id -g) != "$GID" ]]; then
     groupmod -g $GID app
     echo "groupmod to $GID"
 fi
 
-if [[ ! -z $UID && $(id -u) != $UID ]]; then
+if [[ ! -z $UID ]] && [[ $(id -u) != "$UID" ]]; then
     usermod -u $UID app
     chown -R app:app  /var/www/.config \
              /etc/php7/conf.d /sock /var/log
