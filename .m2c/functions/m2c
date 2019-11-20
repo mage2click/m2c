@@ -388,7 +388,7 @@ m2c_db_help() {
   Import/Export database commands and MySQL CLI tool access.
 
 \033[1;33mUsage:\033[0m
-  m2c db <command|--help>
+  m2c db [command] [--help]
 
 \033[1;33mCommands:\033[0m
   mysql     Runs mysql CLI command or open mysql command prompt.
@@ -1783,7 +1783,7 @@ m2c_local_add_help() {
   Adds optional service to the project.
 
 \033[1;33mUsage:\033[0m
-  m2c add <service|--help>
+  m2c add [service] [--help]
 
 \033[1;33mServices:\033[0m
   elasticsearch     Elasticsearch service.
@@ -1798,10 +1798,9 @@ m2c_local_add_help() {
 }
 
 m2c_local_add() {
+    m2c_in_array "--help" $@ && m2c_local_add_help
+
     case "$@" in
-        --help)
-            m2c_local_add_help
-        ;;
         varnish)
             m2c_ask_bool "Add Varnish service?"
             M2C_CFG_VARNISH=${m2c_res}
@@ -1882,7 +1881,7 @@ m2c_local_remove_help() {
   Removes optional service from the project.
 
 \033[1;33mUsage:\033[0m
-  m2c remove <service|--help>
+  m2c remove [service] [--help]
 
 \033[1;33mServices:\033[0m
   elasticsearch     Elasticsearch service.
@@ -1899,10 +1898,9 @@ m2c_local_remove_help() {
 m2c_local_remove() {
     local service=
 
+    m2c_in_array "--help" $@ && m2c_local_remove_help
+
     case "$@" in
-        --help)
-            m2c_local_remove_help
-        ;;
         varnish)
             service="$1"
             m2c_ask_bool "Remove Varnish service?"
@@ -2707,9 +2705,9 @@ m2c_share_exec() {
 m2c_share_help() {
     echo -e "
 \033[1;33mInformation:\033[0m
-  Start share session over ngrok secure tunnels. Command accepts optional
-  parameter to specify a region. Ex. \`m2c share eu\`. Available regions are
-  \`us\`, \`eu\`, \`ap\`, \`au\`, \`sa\`, \`jp\`, \`in\`. By default region is \`us\`.
+  Starts sharing session over ngrok secure tunnels. Command accepts an optional
+  parameter to specify the region. Ex. \`m2c share eu\`. Available regions are
+  \`us\`, \`eu\`, \`ap\`, \`au\`, \`sa\`, \`jp\`, and \`in\`. By default region is \`us\`.
   For proper functioning of this command, required dependencies will be
   installed. Please, visit https://github.com/shkoliar/magento-ngrok and
   https://github.com/shkoliar/docker-ngrok for more information.
