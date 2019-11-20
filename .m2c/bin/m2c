@@ -65,7 +65,16 @@ m2c_trim() {
 }
 
 m2c_msg() {
-    echo -en "\033[0;32m$@\033[0m"
+    local text="$1"
+    local chars=$((${#text}))
+    local cols=$(tput cols)
+
+    if [[ $chars -gt $cols ]]
+    then
+        text="$(echo "$text" | fold -s -w"$cols")"
+    fi
+
+    echo -en "\033[0;32m$text\033[0m"
 }
 
 m2c_info() {
@@ -74,6 +83,24 @@ m2c_info() {
 
 m2c_info_bold() {
     echo -en "\033[1;33m$@\033[0m"
+}
+
+m2c_dots() {
+    local text="$1"
+    local chars=$((${#text} + 3))
+    local cols=$(tput cols)
+    local last
+
+    cols=$(( cols > 80 ? 80 : cols ))
+
+    if [[ $chars -gt $cols ]]
+    then
+        text="$(echo "$text" | fold -s -w"$cols")"
+        last="${text##*$'\n'}"
+        chars=$((${#last} + 3))
+    fi
+
+    m2c_msg "$text$(printf %$((cols - chars))s | tr " " ".")  "
 }
 
 m2c_error() {
@@ -109,10 +136,12 @@ m2c_result() {
 }
 
 m2c_ask_bool() {
-    local message=$(m2c_msg "$1") \
+    local message=$1 \
           only_y=$2 \
           opts \
-          res
+          res \
+          text \
+          lines
 
     tput cnorm
     stty echo
@@ -126,8 +155,11 @@ m2c_ask_bool() {
 
     while :
     do
-        read -n 1 -srp "$(m2c_msg "$message $(m2c_info_bold "$opts")") " res
-        m2c_erase_current_line
+        text="$(m2c_msg "$message $(m2c_info_bold "$opts")") "
+        lines=$(echo "$text" | wc -l)
+        read -n 1 -srp "$text" res
+        echo
+        m2c_erase_prev_lines ${lines}
         if [[ "$res" = "Y" || "$res" = "y" ]]
         then
             m2c_msg "$message $(m2c_info_bold "[$res]")\n"
@@ -257,7 +289,7 @@ m2c_requirements() {
 
     m2c_info_bold "\n[Checking requirements]\n\n"
 
-    m2c_msg "OS compatibility check.................................................  "
+    m2c_dots "OS compatibility check"
     m2c_loading
 
     case ${m2c_os} in
@@ -271,7 +303,7 @@ m2c_requirements() {
         ;;
     esac
 
-    m2c_msg "Docker installation check..............................................  "
+    m2c_dots "Docker installation check"
     m2c_loading
     hash docker 2>/dev/null
     test=$?
@@ -282,7 +314,7 @@ m2c_requirements() {
 
     [[ ${test} -eq 0 ]] || pass=0
 
-    m2c_msg "Docker-compose installation check......................................  "
+    m2c_dots "Docker-compose installation check"
     m2c_loading
     hash docker-compose 2>/dev/null
     test=$?
@@ -295,7 +327,7 @@ m2c_requirements() {
     [[ ${test} -eq 0 ]] || pass=0
 
     test=0
-    m2c_msg "Ports 80, 443, 33060 and 53 availability check.........................  "
+    m2c_dots "Ports 80, 443, 33060 and 53 availability check"
     m2c_loading
 
     local ports=
@@ -359,7 +391,7 @@ m2c_requirements() {
         exit 1
     fi
 
-    m2c_msg "Password required to trust the CA certificate and create symlinks......  "
+    m2c_dots "Password required to trust the CA certificate and create symlinks"
     m2c_loading
     m2c_result 0
     tput cnorm
@@ -376,13 +408,13 @@ m2c_install() {
 
     m2c_info_bold "\n[Installing commands]\n\n"
 
-    m2c_msg "Locating archive.......................................................  "
+    m2c_dots "Locating archive"
     m2c_loading
     archive=$(awk '/^__ARCHIVED__/ {print NR + 1; exit 0; }' "${0}")
     test=$?
     m2c_result ${test}
 
-    m2c_msg "Extracting data........................................................  "
+    m2c_dots "Extracting data"
     m2c_loading 2
     tail -n+${archive} "${0}" | tar -xzp -C ~ && >"$m2c_log" 2>&1
     test=$?
@@ -410,14 +442,14 @@ m2c_install() {
             pass="m2c0"
         fi
 
-        m2c_msg "Generating private key for CA certificate..............................  "
+        m2c_dots "Generating private key for CA certificate"
         m2c_loading
         mkdir -p "$m2c_global_dir"/ssl/{certs,crl,new,private,serial} >"$m2c_log" 2>&1 && \
         openssl genrsa -aes256 -passout pass:${pass} -out "$m2c_global_dir"/ssl/private/rootCA.key 4096 >"$m2c_log" 2>&1
         test=$?
         m2c_result ${test}
 
-        m2c_msg "Signing CA certificate.................................................  "
+        m2c_dots "Signing CA certificate"
         m2c_loading
         openssl req -new -x509 -nodes -sha256 -days 825 \
             -passin pass:${pass} -subj "/O=Mage2click/OU=IT/CN=m2c.local" \
@@ -427,7 +459,7 @@ m2c_install() {
         test=$?
         m2c_result ${test}
 
-        m2c_msg "Trusting root CA certificate...........................................  "
+        m2c_dots "Trusting root CA certificate"
         m2c_loading
         case "$m2c_os" in
             darwin)
@@ -466,7 +498,7 @@ m2c_install() {
             then
                 m2c_info_bold "\n[Configuring .test domains resolver]\n\n"
 
-                m2c_msg "Creating the resolver file.............................................  "
+                m2c_dots "Creating the resolver file"
                 m2c_loading
                 sudo mkdir -p /etc/resolver && \
                 sudo bash -c 'echo "nameserver 127.0.0.1" > /etc/resolver/test'
