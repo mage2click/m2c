@@ -574,7 +574,10 @@ then
     m2c_global up
 
     m2c_info_bold "\n[Installation finished]\n\n"
-    m2c_msg "Mage2click toolset is successfully installed! \n\nRun \`m2c --help\` command for usage information. \nVisit local https://m2c.test to check useful links to included services.\n\n"
+
+    m2c_msg "Mage2click toolset is successfully installed!\n"
+    m2c_msg "Run \`m2c --help\` command for usage information.\n"
+    m2c_msg "Visit local https://m2c.test to check useful links to included services.\n\n"
 
     if [[ -z ${m2c_is_update} ]]
     then
