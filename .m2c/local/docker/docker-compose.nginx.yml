@@ -12,7 +12,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.port=8080
-      - traefik.frontend.rule=Host:${M2C_CFG_DOMAIN_NAME}
+      - traefik.frontend.rule=Host:${M2C_CFG_DOMAIN_NAME}${M2C_CFG_EXTRA_DOMAIN_NAMES}
     networks:
       - m2c
       - default
