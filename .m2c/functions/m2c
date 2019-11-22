@@ -2935,7 +2935,7 @@ m2c_sync_help() {
 
 m2c_varnish() {
     if [[ -z "$@" ]]; then
-        m2c_error "Please specify a varnish command. e.g. varnishstat\n"
+        m2c_error "Please specify a varnish command. e.g. varnishstat.\n"
         return 1
     fi
 
