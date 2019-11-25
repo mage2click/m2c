@@ -1807,7 +1807,7 @@ m2c_local_add() {
         ;;
         domain)
             shift
-            #TODO: add extra domain func
+            m2c_local_add_domain "$@"
         ;;
         *)
             if [[ "$@" == "" ]]
@@ -1894,6 +1894,27 @@ m2c_local_add_service() {
             fi
         ;;
     esac
+}
+
+m2c_local_add_domain() {
+    local domain="$@"
+
+    if ! m2c_validate_domain "$domain"
+    then
+        m2c_error "Invalid domain name: \`$domain\`!\nOnly valid domain names with \`.test\` tld are supported!\n"
+        exit 1
+    fi
+
+    if [[ "$M2C_CFG_EXTRA_DOMAIN_NAMES" != *",$domain"* ]]
+    then
+        M2C_CFG_EXTRA_DOMAIN_NAMES="$M2C_CFG_EXTRA_DOMAIN_NAMES,$domain"
+    fi
+
+    m2c_sign $domain
+
+    m2c_save_project_env
+
+    m2c_local_up $([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx")
 }
 
 m2c_local_remove_help() {
