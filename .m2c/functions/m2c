@@ -1799,6 +1799,27 @@ m2c_local_add_help() {
 m2c_local_add() {
     m2c_in_array "--help" $@ && m2c_local_add_help
 
+    case "$1" in
+        service)
+            shift
+            m2c_local_add_service "$@"
+        ;;
+        domain)
+            shift
+            #TODO: add extra domain func
+        ;;
+        *)
+            if [[ "$@" == "" ]]
+            then
+                m2c_local_add_help
+            else
+                m2c_local_error "$*" "add"
+            fi
+        ;;
+    esac
+}
+
+m2c_local_add_service() {
     case "$@" in
         varnish)
             m2c_ask_bool "Add Varnish service?"
@@ -1895,6 +1916,29 @@ m2c_local_remove_help() {
 }
 
 m2c_local_remove() {
+    m2c_in_array "--help" $@ && m2c_local_add_help
+
+    case "$1" in
+        service)
+            shift
+            m2c_local_remove_service "$@"
+        ;;
+        domain)
+            shift
+            #TODO: remove extra domain func
+        ;;
+        *)
+            if [[ "$@" == "" ]]
+            then
+                m2c_local_remove_help
+            else
+                m2c_local_error "$*" "remove"
+            fi
+        ;;
+    esac
+}
+
+m2c_local_remove_service() {
     local service=
 
     m2c_in_array "--help" $@ && m2c_local_remove_help
