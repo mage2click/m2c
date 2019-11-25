@@ -1971,11 +1971,12 @@ m2c_local_remove_service() {
 
     case "$@" in
         varnish)
-            service="$1"
             m2c_ask_bool "Remove Varnish service?"
 
-            if [[ "$m2c_res" == "1" ]]
+            if [[ -n ${m2c_res} ]]
             then
+                service="$1"
+
                 m2c_info_bold "\n[Configuring services]\n\n"
 
                 m2c_dots "Resetting Varnish configuration"
@@ -1987,11 +1988,12 @@ m2c_local_remove_service() {
             fi
         ;;
         elasticsearch)
-            service="$1"
             m2c_ask_bool "Remove Elasticsearch service?"
 
-            if [[ "$m2c_res" == "1" ]]
+            if [[ -n ${m2c_res} ]]
             then
+                service="$1"
+
                 m2c_info_bold "\n[Configuring services]\n\n"
 
                 m2c_dots "Resetting Elasticsearch configuration"
@@ -2003,20 +2005,22 @@ m2c_local_remove_service() {
             fi
         ;;
         rabbitmq)
-            service="$1"
             m2c_ask_bool "Remove RabbitMQ service?"
 
-            if [[ "$m2c_res" == "1" ]]
+            if [[ -n ${m2c_res} ]]
             then
+                service="$1"
+
                 M2C_CFG_RABBITMQ=
             fi
         ;;
         phpmyadmin)
-            service="$1"
             m2c_ask_bool "Remove phpMyAdmin service?"
 
-            if [[ "$m2c_res" == "1" ]]
+            if [[ -n ${m2c_res} ]]
             then
+                service="$1"
+
                 M2C_CFG_PHPMYADMIN=
             fi
         ;;
