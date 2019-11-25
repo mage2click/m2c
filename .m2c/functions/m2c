@@ -1779,10 +1779,11 @@ m2c_local() {
 m2c_local_add_help() {
     echo -e "
 \033[1;33mInformation:\033[0m
-  Adds optional service to the project.
+  Adds optional service or extra domain to the project.
 
 \033[1;33mUsage:\033[0m
-  m2c add [service] [--help]
+  m2c add service <service> [--help]
+  m2c add domain <domain> [--help]
 
 \033[1;33mServices:\033[0m
   elasticsearch     Elasticsearch service.
@@ -1898,10 +1899,11 @@ m2c_local_add_service() {
 m2c_local_remove_help() {
     echo -e "
 \033[1;33mInformation:\033[0m
-  Removes optional service from the project.
+  Removes optional service or extra domain from the project.
 
 \033[1;33mUsage:\033[0m
-  m2c remove [service] [--help]
+  m2c remove service <service> [--help]
+  m2c remove domain <domain> [--help]
 
 \033[1;33mServices:\033[0m
   elasticsearch     Elasticsearch service.
