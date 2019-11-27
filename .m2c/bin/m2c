@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r m2c_version="0.6.0"
+declare -r m2c_version="0.6.1"
 declare -r m2c_os="$(uname -s | awk '{print tolower($0)}')"
 declare -r m2c_global_dir="$(echo ~/.m2c)"
 declare m2c_loading_pid=
