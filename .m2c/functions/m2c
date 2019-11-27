@@ -1537,6 +1537,12 @@ m2c_init() {
         sleep 15
         m2c_result $?
     fi
+
+    m2c_info_bold "\n[Installation finished]\n\n"
+
+    m2c_msg "The project successfully initialized with Mage2click toolset!\n"
+    m2c_msg "Run \`m2c status\` command to get project status information.\n"
+    m2c_msg "Magento instance is now available at https://${M2C_CFG_DOMAIN_NAME}\n\n"
 }
 
 m2c_init_check_version() {
