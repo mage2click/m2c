@@ -880,7 +880,7 @@ m2c_help() {
   m2c <command> [arguments...] [--help]
 
 \033[1;33mCommands:\033[0m
-  add           Adds optional Docker service to the project.
+  add           Adds optional service or extra domain to the project.
                 Run \`m2c add --help\` for command usage information.
   bash          Opens the bash prompt on the project's php Docker service.
                 With \`--debug\` flag, the bash prompt will be opened on the
@@ -929,7 +929,7 @@ m2c_help() {
   m2c <command> [args...] [--help]
 
 \033[1;33mCommands:\033[0m
-  add           Adds optional Docker service to the project.
+  add           Adds optional service or extra domain to the project.
                 Run \`m2c add --help\` for command usage information.
   bash          Opens the bash prompt on the project's php Docker service.
                 With \`--debug\` flag, the bash prompt will be opened on the
@@ -1782,8 +1782,9 @@ m2c_local_add_help() {
   Adds optional service or extra domain to the project.
 
 \033[1;33mUsage:\033[0m
-  m2c add service <service> [--help]
-  m2c add domain <domain> [--help]
+  m2c add service <service>
+  m2c add domain <domain>
+  m2c add --help
 
 \033[1;33mServices:\033[0m
   elasticsearch     Elasticsearch service.
