@@ -1398,7 +1398,9 @@ m2c_init() {
     m2c_info_bold "\n[Cleanup]\n\n"
     m2c_dots "Cleanup before creating containers"
     m2c_loading
-    m2c_local_project_down >/dev/null 2>&1
+    m2c_local_project_down >/dev/null 2>&1 && \
+    [[ -f "$m2c_magento_db_import" ]] || rm -rf \
+        "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php"
     m2c_result 0
 
     m2c_local up
@@ -1415,23 +1417,21 @@ m2c_init() {
         m2c_dots "Started magento installation, it may take a while"
         m2c_loading
 
-        rm -rf "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php"
-
         m2c_magento --notty setup:install \
-                --db-host=${M2C_CFG_DOMAIN_NAME}__db \
-                --db-name=${M2C_CFG_MYSQL_DATABASE} \
-                --db-user=${M2C_CFG_MYSQL_USER} \
-                --db-password=${M2C_CFG_MYSQL_PASSWORD} \
-                --base-url=https://${M2C_CFG_DOMAIN_NAME}/ \
-                --admin-firstname=${M2C_CFG_ADMIN_FIRSTNAME} \
-                --admin-lastname=${M2C_CFG_ADMIN_LASTNAME} \
-                --admin-email=${M2C_CFG_ADMIN_EMAIL} \
-                --admin-user=${M2C_CFG_ADMIN_USERNAME} \
-                --admin-password=${M2C_CFG_ADMIN_PASSWORD} \
-                --backend-frontname=${M2C_CFG_ADMIN_URL} \
-                --language=${M2C_CFG_LOCALE} \
-                --currency=${M2C_CFG_CURRENCY} \
-                --timezone=${M2C_CFG_TIMEZONE} \
+                --db-host="${M2C_CFG_DOMAIN_NAME}__db" \
+                --db-name="${M2C_CFG_MYSQL_DATABASE}" \
+                --db-user="${M2C_CFG_MYSQL_USER}" \
+                --db-password="${M2C_CFG_MYSQL_PASSWORD}" \
+                --base-url="https://${M2C_CFG_DOMAIN_NAME}/" \
+                --admin-firstname="${M2C_CFG_ADMIN_FIRSTNAME}" \
+                --admin-lastname="${M2C_CFG_ADMIN_LASTNAME}" \
+                --admin-email="${M2C_CFG_ADMIN_EMAIL}" \
+                --admin-user="${M2C_CFG_ADMIN_USERNAME}" \
+                --admin-password="${M2C_CFG_ADMIN_PASSWORD}" \
+                --backend-frontname="${M2C_CFG_ADMIN_URL}" \
+                --language="${M2C_CFG_LOCALE}" \
+                --currency="${M2C_CFG_CURRENCY}" \
+                --timezone="${M2C_CFG_TIMEZONE}" \
                 --use-rewrites=1 >"$m2c_log" 2>&1 && \
         m2c_magento --notty config:set trans_email/ident_general/email \
             "owner@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
@@ -1444,7 +1444,9 @@ m2c_init() {
         m2c_magento --notty config:set trans_email/ident_custom2/email \
             "custom2@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
         m2c_magento --notty config:set contact/email/recipient_email \
-            "hello@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1
+            "hello@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
+        docker cp "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/nginx.conf \
+            "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" >"$m2c_log" 2>&1
         m2c_result $?
     fi
 
