@@ -1,4 +1,4 @@
-<h1 align="center">Mage2click Docker Magento Toolset</h1> 
+<h1 align="center">Mage2click - Magento Docker Toolset</h1> 
 
 <p align="center"><img src="assets/images/install.png" width="600" align="center" alt="Mage2click Docker Magento environment and toolset" /></p>
 
@@ -134,9 +134,11 @@ m2c init --help
 #### Project area commands 
 
 ```bash
-m2c add [service] [--help]
+m2c add service <service> [--help]
+m2c add domain <domain> [--help]
+m2c add [--help]
 ``` 
-Adds optional service to the project. Available optional services are: `elasticsearch`, `phpmyadmin`, `rabbitmq` and `varnish`. Run `m2c add --help` for command usage information.
+Adds optional service or extra domain to the project. Available optional services are: `elasticsearch`, `phpmyadmin`, `rabbitmq` and `varnish`. Run `m2c add --help` for command usage information.
 
 ```bash
 m2c bash [--debug] [--root] ...
