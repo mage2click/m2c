@@ -392,7 +392,7 @@ m2c_db_help() {
 
 \033[1;33mCommands:\033[0m
   mysql     Runs mysql CLI command or open mysql command prompt.
-  export    Exports magento database to gzip compressed sql dump.
+  export    Exports Magento database to gzip compressed sql dump.
   import    Imports plain sql or gzipped sql database dump file.
 
 \033[1;33mFlags:\033[0m
@@ -1380,7 +1380,7 @@ m2c_init() {
 
     if [[ -z ${m2c_magento_exists} ]]
     then
-        m2c_info_bold "\n[Downloading magento sources]\n\n"
+        m2c_info_bold "\n[Downloading Magento sources]\n\n"
 
         url="http://pubfiles.nexcess.net/magento/ce-packages/magento$([[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && \
             echo "2")$([[ -n ${m2c_magento_sample_data} && "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && \
@@ -1414,8 +1414,8 @@ m2c_init() {
     else
         m2c_info_bold "\n[Installing Magento]\n\n"
 
-        m2c_dots "Started magento installation, it may take a while"
-        m2c_loading
+        m2c_dots "Started Magento installation, it may take a while"
+        m2c_loading_install
 
         m2c_magento --notty setup:install \
                 --db-host="${M2C_CFG_DOMAIN_NAME}__db" \
@@ -1433,6 +1433,7 @@ m2c_init() {
                 --currency="${M2C_CFG_CURRENCY}" \
                 --timezone="${M2C_CFG_TIMEZONE}" \
                 --use-rewrites=1 >"$m2c_log" 2>&1 && \
+                sleep 2 && \
         m2c_magento --notty config:set trans_email/ident_general/email \
             "owner@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
         m2c_magento --notty config:set trans_email/ident_sales/email \
@@ -1445,7 +1446,7 @@ m2c_init() {
             "custom2@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
         m2c_magento --notty config:set contact/email/recipient_email \
             "hello@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
-        docker cp "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/nginx.conf \
+        docker cp "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/app/etc/env.php \
             "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" >"$m2c_log" 2>&1
         m2c_result $?
     fi
@@ -1571,7 +1572,7 @@ m2c_init_detect_magento() {
 
     if [[ -f "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/pub/index.php" && -f "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" ]]
     then
-        m2c_dots "Checking magento source files"
+        m2c_dots "Checking Magento source files"
         m2c_loading && m2c_result 0
 
         version=$(echo $(grep version "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" | cut -c 17- | rev | cut -c 3- | rev 2>/dev/null))
@@ -1690,7 +1691,7 @@ m2c_init_help() {
   --phpmyadmin                      Use phpMyAdmin database manager.
   --rabbitmq                        Use RabbitMQ message-broker.
   --varnish                         Use Varnish cache.
-  --magento-sample-data             Install magento with sample data included,
+  --magento-sample-data             Install Magento with sample data included,
                                     applicable only for clean installs.
   --help                            Display this information.
 "
@@ -2545,7 +2546,7 @@ m2c_pull_exec() {
 m2c_pull_help() {
     echo -e "
 \033[1;33mInformation:\033[0m
-  Pull file or directory from php docker container to magento src root. To
+  Pull file or directory from php docker container to Magento src root. To
   pull multiple files or directories, specify paths as list divided by spaces.
   To pull all files, use --all flag. e.g. \`m2c pull -all\`. Specified
   paths must be relative to docker container /var/www/html directory.
@@ -2554,7 +2555,7 @@ m2c_pull_help() {
   m2c pull [<path1> [<path2>...]] [flags...]
 
 \033[1;33mFlags:\033[0m
-  --all     Pull all files from php docker container to magento src root.
+  --all     Pull all files from php docker container to Magento src root.
   --help    Display this information.
 "
     exit 0
@@ -2673,16 +2674,16 @@ m2c_push_exec() {
 m2c_push_help() {
     echo -e "
 \033[1;33mInformation:\033[0m
-  Push local file or directory from magento src root to php docker container.
+  Push local file or directory from Magento src root to php docker container.
   To push multiple files or directories, specify paths as list divided by
   spaces. To push all files, use --all flag. e.g. \`m2c push -all\`.
-  Specified paths must be relative to magento src root directory.
+  Specified paths must be relative to Magento src root directory.
 
 \033[1;33mUsage:\033[0m
   m2c push [<path1> [<path2>...]] [flags...]
 
 \033[1;33mFlags:\033[0m
-  --all     Push all files from magento src root to php docker container.
+  --all     Push all files from Magento src root to php docker container.
   --help    Display this information.
 "
     exit 0
