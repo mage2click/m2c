@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r m2c_version="0.6.2"
+declare -r m2c_version="0.6.3"
 declare -r m2c_os="$(uname -s | awk '{print tolower($0)}')"
 declare -r m2c_global_dir="$(echo ~/.m2c)"
 declare m2c_loading_pid=
@@ -577,6 +577,12 @@ trap m2c_on_exit EXIT
 
 m2c_log="$m2c_global_dir"/log
 touch "$m2c_log"
+
+if ! docker info > /dev/null 2>&1
+then
+    m2c_error "Docker is not running or Docker service is not reachable.\n"
+    exit 1
+fi
 
 if [[ "$0" != "/usr/local/bin/m2c" ]]
 then
