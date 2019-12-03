@@ -576,6 +576,7 @@ m2c_on_exit() {
 trap m2c_on_exit EXIT
 
 m2c_log="${m2c_global_dir}/log"
+mkdir -p "${m2c_global_dir}"
 touch "${m2c_log}"
 
 if ! docker info > /dev/null 2>&1
