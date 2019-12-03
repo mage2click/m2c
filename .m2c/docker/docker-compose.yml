@@ -61,11 +61,9 @@ services:
 
   dnsmasq:
     container_name: m2c.test__dnsmasq
-    image: jpillora/dnsmasq:1.1
+    image: mage2click/m2c:dnsmasq
     ports:
       - "127.0.0.1:53:53/udp"
-    volumes:
-      - ~/.m2c/dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf
     labels:
       - traefik.enable=true
       - traefik.frontend.rule=Host:dnsmasq.m2c.test
