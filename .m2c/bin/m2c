@@ -513,14 +513,12 @@ m2c_install() {
             linux)
                 if [[ -d /usr/local/share/ca-certificates ]]
                 then
-                    sudo rm -f /usr/local/share/ca-certificates/m2c-root-ca.crt >"${m2c_log}" 2>&1 && \
                     yes | sudo cp -rf "${m2c_global_dir}/ssl/certs/rootCA.crt" \
                         /usr/local/share/ca-certificates/m2c-root-ca.crt >"${m2c_log}" 2>&1 && \
                     sudo update-ca-certificates >"${m2c_log}" 2>&1
                     test=$?
                 elif [[ -d /etc/pki/ca-trust/source/anchors ]]
                 then
-                    sudo rm -f /etc/pki/ca-trust/source/anchors/m2c-root-ca.crt >"${m2c_log}" 2>&1 && \
                     yes | sudo cp -rf "${m2c_global_dir}/ssl/certs/rootCA.crt" \
                         /etc/pki/ca-trust/source/anchors/m2c-root-ca.crt >"${m2c_log}" 2>&1 && \
                     sudo update-ca-trust >"${m2c_log}" 2>&1 && \
