@@ -1655,7 +1655,7 @@ m2c_init_error() {
 m2c_init_help() {
     echo -e "
 \033[1;33mInformation:\033[0m
-  Initializes Docker Magento project in the current directory. If no arguments
+  Initializes Magento Docker project in the current directory. If no arguments
   defined, interactive setup mode will be started. If at least one argument
   is defined, automated setup will be started. All undefined parameters will
   be set with default values.
