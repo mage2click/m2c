@@ -16,12 +16,12 @@ declare -r m2c_rabbitmq_versions=("3.7" "3.6" "3.5" "3.4" "3.3" "3.2" "3.1" "3.0
 m2c_get_project_dir() {
     local current_dir="$(pwd)"
 
-    while [[ ! -f "$current_dir/.m2c/docker/.env" ]] && [[ "$current_dir" != ~ ]] && [[ "$current_dir" != "/" ]]
+    while [[ ! -f "${current_dir}/.m2c/docker/.env" ]] && [[ "${current_dir}" != ~ ]] && [[ "${current_dir}" != "/" ]]
     do
-        current_dir="$(cd "$current_dir"/.. >/dev/null 2>&1 && pwd)"
+        current_dir="$(cd "${current_dir}/.." >/dev/null 2>&1 && pwd)"
     done
 
-    [[ "$current_dir" != ~ ]] && [[ "$current_dir" != "/" ]] && echo "$current_dir" || echo "$(pwd)"
+    [[ "${current_dir}" != ~ ]] && [[ "${current_dir}" != "/" ]] && echo "${current_dir}" || echo "$(pwd)"
 }
 
 m2c_load_env() {
@@ -30,27 +30,27 @@ m2c_load_env() {
 }
 
 m2c_save_project_env() {
-    local config_env="$m2c_project_dir/.m2c/docker/.env"
+    local config_env="${m2c_project_dir}/.m2c/docker/.env"
 
-    [[ -f "$config_env" ]] || mkdir -p "$(dirname "$config_env")" && touch "$config_env"
+    [[ -f "${config_env}" ]] || mkdir -p "$(dirname "${config_env}")" && touch "${config_env}"
 
-    set | grep '^M2C_CFG_' > "$config_env"
+    set | grep '^M2C_CFG_' > "${config_env}"
 }
 
 m2c_load_project_env() {
-    local config_env="$m2c_project_dir/.m2c/docker/.env"
+    local config_env="${m2c_project_dir}/.m2c/docker/.env"
 
-    if [[ -f "$config_env" ]]
+    if [[ -f "${config_env}" ]]
     then
         set -a
-        . "$config_env"
+        . "${config_env}"
         set +a
     fi
 
     export DOCKER_CLIENT_TIMEOUT=600
     export COMPOSE_HTTP_TIMEOUT=600
 
-    export M2C_PROJECT_PATH="$m2c_project_dir"
+    export M2C_PROJECT_PATH="${m2c_project_dir}"
 
     if [[ "$m2c_os" != "darwin" ]]
     then
@@ -66,9 +66,9 @@ m2c_load_project_env() {
 }
 
 m2c_load_project_defaults_env() {
-    local config_env="$m2c_global_dir/local/docker/.env"
+    local config_env="${m2c_global_dir}/local/docker/.env"
 
-    [[ -f "$config_env" ]] && . "$config_env"
+    [[ -f "${config_env}" ]] && . "${config_env}"
 }
 
 m2c_validate_domain() {
@@ -94,7 +94,7 @@ m2c_validate_in_array() {
 m2c_validate_file() {
     local value=$1
 
-    [[ -n ${value} && -f "$value" ]] && return 0 || return 1
+    [[ -n ${value} && -f "${value}" ]] && return 0 || return 1
 }
 
 m2c_validate_url_path() {
@@ -119,7 +119,7 @@ m2c_elasticsearch_configure() {
         m2c_magento --notty config:set --scope=default --scope-code=0 \
             catalog/search/elasticsearch${version/2/}_server_hostname \
             ${M2C_CFG_DOMAIN_NAME}__elasticsearch
-    ) >"$m2c_log" 2>&1
+    ) >"${m2c_log}" 2>&1
 
     return $?
 }
@@ -131,7 +131,7 @@ m2c_elasticsearch_reset() {
         m2c_magento --notty config:set --scope=default --scope-code=0 catalog/search/engine mysql && \
         m2c_magento --notty config:set --scope=default --scope-code=0 \
             catalog/search/elasticsearch${version/2/}_server_hostname ""
-    ) >"$m2c_log" 2>&1
+    ) >"${m2c_log}" 2>&1
 
     return $?
 }
@@ -319,37 +319,37 @@ m2c_db_mysqldump() {
 m2c_db_import() {
     local file="$1"
 
-    if [[ -f "$file" ]]
+    if [[ -f "${file}" ]]
     then
         m2c_info_bold "\n[Importing database]\n\n"
         m2c_info "$file "
         m2c_info_bold "→"
         m2c_info " DB\n\n"
 
-        if file --mime-type "$file" | grep -q gzip$; then
+        if file --mime-type "${file}" | grep -q gzip$; then
             m2c_dots "Unpacking and importing database dump file"
             m2c_loading
             (
-                gunzip -c "$file" | \
+                gunzip -c "${file}" | \
                     LANG=C LC_CTYPE=C LC_ALL=C sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | \
                     m2c_db_mysql --notty
-            ) >"$m2c_log" 2>&1
+            ) >"${m2c_log}" 2>&1
             m2c_result $?
         else
             m2c_dots "Importing database dump file"
             m2c_loading
             (
-                cat "$file" | \
+                cat "${file}" | \
                     LANG=C LC_CTYPE=C LC_ALL=C sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | \
                     m2c_db_mysql --notty
-            ) >"$m2c_log" 2>&1
+            ) >"${m2c_log}" 2>&1
             m2c_result $?
         fi
 
         m2c_dots "Setting the project domain name"
         m2c_loading
-        m2c_magento --notty config:set web/secure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1 && \
-        m2c_magento --notty config:set web/unsecure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"$m2c_log" 2>&1
+        m2c_magento --notty config:set web/secure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"${m2c_log}" 2>&1 && \
+        m2c_magento --notty config:set web/unsecure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"${m2c_log}" 2>&1
         m2c_result $?
     elif [[ -n ${file} ]]
     then
@@ -360,7 +360,7 @@ m2c_db_import() {
 }
 
 m2c_db_export() {
-    local file="$m2c_project_dir/db.$(date +%F.%H%M%S).sql.gz"
+    local file="${m2c_project_dir}/db.$(date +%F.%H%M%S).sql.gz"
 
     m2c_info_bold "\n[Exporting database]\n\n"
     m2c_info "DB "
@@ -372,8 +372,8 @@ m2c_db_export() {
     (
         m2c_db_mysqldump --single-transaction --quick | \
             LANG=C LC_CTYPE=C LC_ALL=C sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | \
-            gzip > "$file"
-    ) >"$m2c_log" 2>&1
+            gzip > "${file}"
+    ) >"${m2c_log}" 2>&1
     m2c_result $?
 }
 
@@ -472,17 +472,17 @@ m2c_global_error() {
 }
 
 m2c_global_load_env() {
-    local config_env="$m2c_global_dir/docker/.env"
+    local config_env="${m2c_global_dir}/docker/.env"
 
-    [[ -f "$config_env" ]] && . "$config_env"
+    [[ -f "${config_env}" ]] && . "${config_env}"
 }
 
 m2c_global_save_env() {
-    local config_env="$m2c_global_dir/docker/.env"
+    local config_env="${m2c_global_dir}/docker/.env"
 
-    [[ -f "$config_env" ]] || mkdir -p "$(dirname "$config_env")" && touch "$config_env"
+    [[ -f "${config_env}" ]] || mkdir -p "$(dirname "${config_env}")" && touch "${config_env}"
 
-    set | grep '^M2C_GLOBAL_' > "$config_env"
+    set | grep '^M2C_GLOBAL_' > "${config_env}"
 }
 
 m2c_global_print_service() {
@@ -519,7 +519,7 @@ m2c_global_up() {
             yes | docker-compose --project-name m2c \
                 --file docker-compose.yml up \
                 --detach --force-recreate --no-color --no-deps ${service[$i]}
-        ) >"$m2c_log" 2>&1
+        ) >"${m2c_log}" 2>&1
         m2c_result $?
     done
 }
@@ -536,7 +536,7 @@ m2c_global_start() {
         docker start $(docker ps \
             --filter "label=com.docker.compose.project=m2c" \
             --filter "label=com.docker.compose.service=${service[$i]}" \
-            -qa) >"$m2c_log" 2>&1
+            -qa) >"${m2c_log}" 2>&1
         m2c_result $?
     done
 }
@@ -553,7 +553,7 @@ m2c_global_restart() {
         docker restart $(docker ps \
             --filter "label=com.docker.compose.project=m2c" \
             --filter "label=com.docker.compose.service=${service[$i]}" \
-            -qa) >"$m2c_log" 2>&1
+            -qa) >"${m2c_log}" 2>&1
         m2c_result $?
     done
 }
@@ -570,7 +570,7 @@ m2c_global_stop() {
         docker stop $(docker ps \
             --filter "label=com.docker.compose.project=m2c" \
             --filter "label=com.docker.compose.service=${service[$i]}" \
-            -qa) >"$m2c_log" 2>&1
+            -qa) >"${m2c_log}" 2>&1
         m2c_result $?
     done
 }
@@ -679,7 +679,7 @@ m2c_global_info() {
 }
 
 m2c_global_update() {
-    local build="$(cat "$m2c_global_dir"/build)" \
+    local build="$(<"${m2c_global_dir}/build")" \
           remote_version
 
     m2c_info_bold "\n[Update]\n\n"
@@ -746,19 +746,19 @@ m2c_global_uninstall() {
                 -q)"
 
             (
-                [[ -n ${containers} ]] && docker rm --force --volumes ${containers} >"$m2c_log" 2>&1 || true
+                [[ -n ${containers} ]] && docker rm --force --volumes ${containers} >"${m2c_log}" 2>&1 || true
             ) && \
             (
-                [[ -n ${volumes} ]] && docker volume rm --force ${volumes} >"$m2c_log" 2>&1 || true
+                [[ -n ${volumes} ]] && docker volume rm --force ${volumes} >"${m2c_log}" 2>&1 || true
             ) && \
             (
-                [[ -n ${networks} ]] && docker network rm --force ${networks} >"$m2c_log" 2>&1 || true
+                [[ -n ${networks} ]] && docker network rm --force ${networks} >"${m2c_log}" 2>&1 || true
             )
 
             m2c_result $?
         done
 
-        rm -rf "$m2c_global_dir" >/dev/null 2>&1
+        rm -rf "${m2c_global_dir}" >/dev/null 2>&1
         rm -rf /usr/local/bin/m2c
         rm -rf /usr/local/etc/bash_completion.d/m2c
     fi
@@ -850,18 +850,18 @@ m2c_urn() {
     m2c_dots "Creating PhpStorm configuration"
     m2c_loading
     m2c_cli --notty mkdir .idea >/dev/null 2>&1 && \
-    m2c_magento dev:urn-catalog:generate .idea/misc.xml >"$m2c_log" 2>&1
+    m2c_magento dev:urn-catalog:generate .idea/misc.xml >"${m2c_log}" 2>&1
     m2c_result $?
 
-    mkdir -p "$m2c_project_dir"/.idea
+    mkdir -p "${m2c_project_dir}/.idea"
     m2c_pull .idea/misc.xml
 
-    sed -i .prev -e 's?/var/www/html?'$m2c_project_dir'?g' \
-            "$m2c_project_dir/.idea/misc.xml"
+    sed -i .prev -e 's?/var/www/html?'${m2c_project_dir}'?g' \
+            "${m2c_project_dir}/.idea/misc.xml"
 
-    if [[ -n ${M2C_CFG_MAGENTO_SRC} ]] && [[ -d "$m2c_project_dir/${M2C_CFG_MAGENTO_SRC}/.idea" ]]
+    if [[ -n ${M2C_CFG_MAGENTO_SRC} ]] && [[ -d "${m2c_project_dir}/${M2C_CFG_MAGENTO_SRC}/.idea" ]]
     then
-        yes | cp -rf "$m2c_project_dir/.idea/misc.xml" "$m2c_project_dir/${M2C_CFG_MAGENTO_SRC}/.idea"
+        yes | cp -rf "${m2c_project_dir}/.idea/misc.xml" "${m2c_project_dir}/${M2C_CFG_MAGENTO_SRC}/.idea"
     fi
 
     m2c_cli --notty rm -rf .idea >/dev/null 2>&1
@@ -1235,7 +1235,7 @@ m2c_init() {
         m2c_dots "Scanning current directory"
         m2c_loading && m2c_result 0
 
-        if [[ ! -f "$m2c_project_dir/.m2c/docker/.env" ]]
+        if [[ ! -f "${m2c_project_dir}/.m2c/docker/.env" ]]
         then
             m2c_load_project_defaults_env
 
@@ -1245,7 +1245,7 @@ m2c_init() {
             m2c_info_bold "\n[Configure project]\n\n"
 
             m2c_ask_text "Set the domain name for your project:" \
-                         "$(basename "$m2c_project_dir" | awk '{print tolower($0)}').test" \
+                         "$(basename "${m2c_project_dir}" | awk '{print tolower($0)}').test" \
                          "Invalid domain name: %s!\nOnly valid domain names with .test tld are supported!\n" \
                          "" \
                          m2c_validate_domain
@@ -1372,11 +1372,11 @@ m2c_init() {
 
     local url
 
-    mkdir -p "$m2c_project_dir"/.m2c/mutagen "$m2c_project_dir"/.m2c/mysql
-    yes | cp -rf "$m2c_global_dir"/local/docker/* "$m2c_project_dir"/.m2c/docker/
-    yes | cp -rf "$m2c_global_dir"/local/mutagen/mutagen.yml "$m2c_project_dir"/.m2c/mutagen/mutagen.yml
-    yes | cp -rf "$m2c_global_dir"/local/mysql/custom.cnf "$m2c_project_dir"/.m2c/mysql/custom.cnf
-    rm -rf "$m2c_project_dir"/.m2c/mutagen/mutagen.yml.lock >/dev/null 2>&1
+    mkdir -p "${m2c_project_dir}/.m2c/mutagen" "${m2c_project_dir}/.m2c/mysql"
+    yes | cp -rf "${m2c_global_dir}/local/docker"/* "${m2c_project_dir}/.m2c/docker/"
+    yes | cp -rf "${m2c_global_dir}/local/mutagen/mutagen.yml" "${m2c_project_dir}/.m2c/mutagen/mutagen.yml"
+    yes | cp -rf "${m2c_global_dir}/local/mysql/custom.cnf" "${m2c_project_dir}/.m2c/mysql/custom.cnf"
+    rm -rf "${m2c_project_dir}/.m2c/mutagen/mutagen.yml.lock" >/dev/null 2>&1
 
     if [[ -z ${m2c_magento_exists} ]]
     then
@@ -1388,10 +1388,10 @@ m2c_init() {
 
         if [[ -n ${M2C_CFG_MAGENTO_SRC} ]]
         then
-            mkdir -p "$m2c_project_dir/$M2C_CFG_MAGENTO_SRC"
-            curl -L "$url" | tar xzf - -o -C "$m2c_project_dir/$M2C_CFG_MAGENTO_SRC"
+            mkdir -p "${m2c_project_dir}/$M2C_CFG_MAGENTO_SRC"
+            curl -L "$url" | tar xzf - -o -C "${m2c_project_dir}/$M2C_CFG_MAGENTO_SRC"
         else
-            curl -L "$url" | tar xzf - -o -C "$m2c_project_dir"
+            curl -L "$url" | tar xzf - -o -C "${m2c_project_dir}"
         fi
     fi
 
@@ -1399,17 +1399,17 @@ m2c_init() {
     m2c_dots "Cleanup before creating containers"
     m2c_loading
     m2c_local_project_down >/dev/null 2>&1 && \
-    [[ -f "$m2c_magento_db_import" ]] || rm -rf \
-        "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php"
+    [[ -f "${m2c_magento_db_import}" ]] || rm -rf \
+        "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php"
     m2c_result 0
 
     m2c_local up
 
     [[ "$m2c_os" == "darwin" ]] && m2c_push --all
 
-    if [[ -f "$m2c_magento_db_import" ]]
+    if [[ -f "${m2c_magento_db_import}" ]]
     then
-        m2c_db_import "$m2c_magento_db_import"
+        m2c_db_import "${m2c_magento_db_import}"
         m2c_info_bold "\n[Installing Magento]\n\n"
     else
         m2c_info_bold "\n[Installing Magento]\n\n"
@@ -1432,22 +1432,22 @@ m2c_init() {
                 --language="${M2C_CFG_LOCALE}" \
                 --currency="${M2C_CFG_CURRENCY}" \
                 --timezone="${M2C_CFG_TIMEZONE}" \
-                --use-rewrites=1 >"$m2c_log" 2>&1 && \
+                --use-rewrites=1 >"${m2c_log}" 2>&1 && \
                 sleep 2 && \
         m2c_magento --notty config:set trans_email/ident_general/email \
-            "owner@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
+            "owner@$M2C_CFG_DOMAIN_NAME" >"${m2c_log}" 2>&1 && \
         m2c_magento --notty config:set trans_email/ident_sales/email \
-            "sales@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
+            "sales@$M2C_CFG_DOMAIN_NAME" >"${m2c_log}" 2>&1 && \
         m2c_magento --notty config:set trans_email/ident_support/email \
-            "support@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
+            "support@$M2C_CFG_DOMAIN_NAME" >"${m2c_log}" 2>&1 && \
         m2c_magento --notty config:set trans_email/ident_custom1/email \
-            "custom1@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
+            "custom1@$M2C_CFG_DOMAIN_NAME" >"${m2c_log}" 2>&1 && \
         m2c_magento --notty config:set trans_email/ident_custom2/email \
-            "custom2@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
+            "custom2@$M2C_CFG_DOMAIN_NAME" >"${m2c_log}" 2>&1 && \
         m2c_magento --notty config:set contact/email/recipient_email \
-            "hello@$M2C_CFG_DOMAIN_NAME" >"$m2c_log" 2>&1 && \
+            "hello@$M2C_CFG_DOMAIN_NAME" >"${m2c_log}" 2>&1 && \
         docker cp "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/app/etc/env.php \
-            "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" >"$m2c_log" 2>&1
+            "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" >"${m2c_log}" 2>&1
         m2c_result $?
     fi
 
@@ -1456,26 +1456,26 @@ m2c_init() {
         m2c_dots "Configuring composer authentication for docker containers"
         m2c_loading
         m2c_cli --notty composer config http-basic.repo.magento.com \
-            ${m2c_composer_public_key} ${m2c_composer_private_key} >"$m2c_log" 2>&1
+            ${m2c_composer_public_key} ${m2c_composer_private_key} >"${m2c_log}" 2>&1
         m2c_result $?
     fi
 
     m2c_dots "Turning on developer mode"
     m2c_loading
-    m2c_magento --notty deploy:mode:set developer >"$m2c_log" 2>&1
+    m2c_magento --notty deploy:mode:set developer >"${m2c_log}" 2>&1
     m2c_result $?
 
     m2c_dots "Configuring Nginx"
     m2c_loading
     (
         sed -e 's/fastcgi_backend/$fastcgi_backend/g' \
-            "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf.sample" > \
-            "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf" && \
-        docker cp "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf" \
+            "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf.sample" > \
+            "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf" && \
+        docker cp "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf" \
             "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/nginx.conf && \
         docker exec "${M2C_CFG_DOMAIN_NAME}__php" chown -R app:app nginx.conf && \
         m2c_local_container_restart nginx
-    ) >"$m2c_log" 2>&1
+    ) >"${m2c_log}" 2>&1
     m2c_result $?
 
     m2c_dots "Configuring Redis for caching"
@@ -1503,19 +1503,19 @@ m2c_init() {
     then
         m2c_dots "Forcing deploy of static content"
         m2c_loading
-        m2c_magento --notty setup:static-content:deploy -f >"$m2c_log" 2>&1
+        m2c_magento --notty setup:static-content:deploy -f >"${m2c_log}" 2>&1
         m2c_result $?
 
         m2c_dots "Installing Magento node modules dependencies"
         m2c_loading
         (
-            yes | cp -rf "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json.sample" \
-                "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json" && \
-            docker cp "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json" \
+            yes | cp -rf "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json.sample" \
+                "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json" && \
+            docker cp "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json" \
                 "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/package.json && \
             docker exec "${M2C_CFG_DOMAIN_NAME}__php" chown -R app:app package.json && \
             m2c_npm install
-        ) >"$m2c_log" 2>&1
+        ) >"${m2c_log}" 2>&1
         m2c_result $?
 
         m2c_dots "Clearing the cache for good measure"
@@ -1523,7 +1523,7 @@ m2c_init() {
         (
             m2c_magento --notty cache:flush && \
             m2c_magento --notty cache:enable
-        ) >"$m2c_log" 2>&1
+        ) >"${m2c_log}" 2>&1
         m2c_result $?
     fi
 
@@ -1534,7 +1534,7 @@ m2c_init() {
         m2c_info_bold "\n[Mutagen]\n\n"
         m2c_dots "Starting sync sessions"
         m2c_loading
-        m2c_sync start >"$m2c_log" 2>&1 && \
+        m2c_sync start >"${m2c_log}" 2>&1 && \
         sleep 15
         m2c_result $?
     fi
@@ -1570,12 +1570,12 @@ m2c_init_check_version() {
 m2c_init_detect_magento() {
     local exists=
 
-    if [[ -f "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/pub/index.php" && -f "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" ]]
+    if [[ -f "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/pub/index.php" && -f "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" ]]
     then
         m2c_dots "Checking Magento source files"
         m2c_loading && m2c_result 0
 
-        version=$(echo $(grep version "$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" | cut -c 17- | rev | cut -c 3- | rev 2>/dev/null))
+        version=$(grep version "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" | cut -c 17- | rev | cut -c 3- | rev 2>/dev/null)
 
         if [[ -n ${version} ]]
         then
@@ -1618,6 +1618,8 @@ m2c_init_composer_auth() {
 
         if [[ -z ${m2c_res} || -z ${m2c_composer_public_key} || -z ${m2c_composer_private_key} ]]
         then
+            m2c_msg "\nProvide authentication keys for Composer repository repo.magento.com.\n\n"
+
             m2c_ask_text "Public key:" \
                      "" \
                      "Public key cannot be empty!\n" \
@@ -2091,13 +2093,13 @@ m2c_local_update() {
 
     m2c_dots "\nUpdating project docker configuration"
     m2c_loading
-    mkdir -p "$m2c_project_dir"/.m2c/mutagen "$m2c_project_dir"/.m2c/docker "$m2c_project_dir"/.m2c/mysql \
-      >"$m2c_log" 2>&1 && \
-    yes | cp -rf "$m2c_global_dir"/local/docker/* "$m2c_project_dir"/.m2c/docker/ >"$m2c_log" 2>&1 && \
-    yes | cp -rf "$m2c_global_dir"/local/mutagen/mutagen.yml \
-        "$m2c_project_dir"/.m2c/mutagen/mutagen.yml >"$m2c_log" 2>&1 && \
-    yes | cp -rf "$m2c_global_dir"/local/mysql/custom.cnf "$m2c_project_dir"/.m2c/mysql/custom.cnf && \
-    rm -rf "$m2c_project_dir"/.m2c/mutagen/mutagen.yml.lock >"$m2c_log" 2>&1
+    mkdir -p "${m2c_project_dir}/.m2c/mutagen" "${m2c_project_dir}/.m2c/docker" "${m2c_project_dir}/.m2c/mysql" \
+      >"${m2c_log}" 2>&1 && \
+    yes | cp -rf "${m2c_global_dir}/local/docker"/* "${m2c_project_dir}/.m2c/docker/" >"${m2c_log}" 2>&1 && \
+    yes | cp -rf "${m2c_global_dir}/local/mutagen/mutagen.yml" \
+        "${m2c_project_dir}/.m2c/mutagen/mutagen.yml" >"${m2c_log}" 2>&1 && \
+    yes | cp -rf "${m2c_global_dir}/local/mysql/custom.cnf" "${m2c_project_dir}/.m2c/mysql/custom.cnf" && \
+    rm -rf "${m2c_project_dir}/.m2c/mutagen/mutagen.yml.lock" >"${m2c_log}" 2>&1
     m2c_result $?
 
     m2c_local up
@@ -2129,7 +2131,7 @@ m2c_local_container_start() {
         docker start $(docker ps \
             --filter "label=com.docker.compose.project=${M2C_CFG_DOMAIN_NAME/.test/}" \
             --filter "label=com.docker.compose.service=$service" \
-            -qa) >"$m2c_log" 2>&1
+            -qa) >"${m2c_log}" 2>&1
 
         return $?
     fi
@@ -2145,7 +2147,7 @@ m2c_local_container_restart() {
         docker restart $(docker ps \
             --filter "label=com.docker.compose.project=${M2C_CFG_DOMAIN_NAME/.test/}" \
             --filter "label=com.docker.compose.service=$service" \
-            -qa) >"$m2c_log" 2>&1
+            -qa) >"${m2c_log}" 2>&1
 
         return $?
     fi
@@ -2161,7 +2163,7 @@ m2c_local_container_stop() {
         docker stop $(docker ps \
             --filter "label=com.docker.compose.project=${M2C_CFG_DOMAIN_NAME/.test/}" \
             --filter "label=com.docker.compose.service=$service" \
-            -qa) >"$m2c_log" 2>&1
+            -qa) >"${m2c_log}" 2>&1
 
         return $?
     fi
@@ -2187,10 +2189,10 @@ m2c_local_container_remove() {
             -q | grep "${project}_${service}_data")"
 
         (
-            [[ -n ${containers} ]] && docker rm --force --volumes ${containers} >"$m2c_log" 2>&1 || true
+            [[ -n ${containers} ]] && docker rm --force --volumes ${containers} >"${m2c_log}" 2>&1 || true
         ) && \
         (
-            [[ -n ${volumes} ]] && docker volume rm --force ${volumes} >"$m2c_log" 2>&1 || true
+            [[ -n ${volumes} ]] && docker volume rm --force ${volumes} >"${m2c_log}" 2>&1 || true
         )
 
         return $?
@@ -2238,7 +2240,7 @@ m2c_local_project_up() {
     if [[ -n ${service} ]]
     then
         (
-            cd "$m2c_project_dir/.m2c/docker/" && \
+            cd "${m2c_project_dir}/.m2c/docker/" && \
             yes | docker-compose --project-name "${M2C_CFG_DOMAIN_NAME/.test/}" \
                 --file docker-compose.yml \
                 --file docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml \
@@ -2247,7 +2249,7 @@ m2c_local_project_up() {
                 ${M2C_CFG_RABBITMQ:+--file docker-compose.rabbitmq.yml} \
                 --file docker-compose.${m2c_os}.yml \
                 up --detach --force-recreate --no-color --no-deps "$service"
-        ) >"$m2c_log" 2>&1
+        ) >"${m2c_log}" 2>&1
         return $?
     fi
 
@@ -2256,7 +2258,7 @@ m2c_local_project_up() {
 
 m2c_local_list_services() {
     (
-        cd "$m2c_project_dir/.m2c/docker/" && \
+        cd "${m2c_project_dir}/.m2c/docker/" && \
         docker-compose --project-name "${M2C_CFG_DOMAIN_NAME/.test/}" \
             --file docker-compose.yml \
             --file docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml \
@@ -2285,20 +2287,20 @@ m2c_local_project_down() {
         -q)"
 
     (
-        [[ -n ${containers} ]] && docker rm --force --volumes ${containers} >"$m2c_log" 2>&1 || true
+        [[ -n ${containers} ]] && docker rm --force --volumes ${containers} >"${m2c_log}" 2>&1 || true
     ) && \
     (
-        [[ -n ${volumes} ]] && docker volume rm --force ${volumes} >"$m2c_log" 2>&1 || true
+        [[ -n ${volumes} ]] && docker volume rm --force ${volumes} >"${m2c_log}" 2>&1 || true
     ) && \
     (
-        [[ -n ${networks} ]] && docker network rm --force ${networks} >"$m2c_log" 2>&1 || true
+        [[ -n ${networks} ]] && docker network rm --force ${networks} >"${m2c_log}" 2>&1 || true
     )
 
     return $?
 }
 
 m2c_local_project_check_dir() {
-    if [[ ! -f "$m2c_project_dir/.m2c/docker/.env" ]]
+    if [[ ! -f "${m2c_project_dir}/.m2c/docker/.env" ]]
     then
         m2c_error "This command intended to be used within the project directory!\nChange the current working directory to project root or to any project's sub-directory.\n"
         exit 1
@@ -2481,14 +2483,13 @@ m2c_mutagen() {
         m2c_help
     fi
 
-    export MUTAGEN_DATA_DIRECTORY="$m2c_global_dir"/mutagen
-    "$MUTAGEN_DATA_DIRECTORY"/mutagen daemon start
-    "$MUTAGEN_DATA_DIRECTORY"/mutagen $@
+    export MUTAGEN_DATA_DIRECTORY="${m2c_global_dir}/mutagen"
+    "${MUTAGEN_DATA_DIRECTORY}/mutagen" daemon start
+    "${MUTAGEN_DATA_DIRECTORY}/mutagen" $@
 }
 
 m2c_pull_exec() {
-    local project_dir="${m2c_project_dir}" \
-          sub_dir=${M2C_CFG_MAGENTO_SRC:-} \
+    local sub_dir=${M2C_CFG_MAGENTO_SRC:-} \
           container="${M2C_CFG_DOMAIN_NAME}__php" \
           source_path error res
 
@@ -2499,33 +2500,33 @@ m2c_pull_exec() {
         m2c_dots "Pulling files from php docker container"
         m2c_loading
         m2c_sync pause >/dev/null 2>&1 && \
-        docker cp "$container":/var/www/html/. "$project_dir${sub_dir:+/${sub_dir}}/" >"$m2c_log" 2>&1 && \
+        docker cp "$container":/var/www/html/. "${m2c_project_dir}${sub_dir:+/${sub_dir}}/" >"${m2c_log}" 2>&1 && \
         m2c_sync resume >/dev/null 2>&1
         res=$?
         m2c_result ${res}
         return ${res}
     else
         source_path="${1%%+(/)}"
-        dest_path="$project_dir${sub_dir:+/${sub_dir}}/$source_path"
+        dest_path="${m2c_project_dir}${sub_dir:+/${sub_dir}}/${source_path}"
         m2c_info "$dest_path "
         m2c_info_bold "←\n\n"
 
-        if m2c_bash --notty -c "[[ -d "/var/www/html/${source_path}" ]]" >"$m2c_log" 2>&1
+        if m2c_bash --notty -c "[[ -d "/var/www/html/${source_path}" ]]" >"${m2c_log}" 2>&1
         then
             m2c_dots "Pulling directory from php docker container"
             m2c_loading
             m2c_sync pause >/dev/null 2>&1 && \
-            docker cp "$container":/var/www/html/"$source_path"/. "$dest_path" >"$m2c_log" 2>&1 && \
+            docker cp "$container":"/var/www/html/${source_path}"/. "${dest_path}" >"${m2c_log}" 2>&1 && \
             m2c_sync resume >/dev/null 2>&1
             res=$?
             m2c_result ${res}
             return ${res}
-        elif m2c_bash --notty -c "[[ -f "/var/www/html/${source_path}" ]]" >"$m2c_log" 2>&1
+        elif m2c_bash --notty -c "[[ -f "/var/www/html/${source_path}" ]]" >"${m2c_log}" 2>&1
         then
             m2c_dots "Pulling file from php docker container"
             m2c_loading
             m2c_sync pause >/dev/null 2>&1 && \
-            docker cp "$container":/var/www/html/"$source_path" "$(dirname "$dest_path")" >"$m2c_log" 2>&1 && \
+            docker cp "$container":"/var/www/html/${source_path}" "$(dirname "${dest_path}")" >"${m2c_log}" 2>&1 && \
             m2c_sync resume >/dev/null 2>&1
             res=$?
             m2c_result ${res}
@@ -2590,8 +2591,7 @@ m2c_pull() {
 }
 
 m2c_push_exec() {
-    local project_dir="${m2c_project_dir}" \
-          sub_dir=${M2C_CFG_MAGENTO_SRC:-} \
+    local sub_dir=${M2C_CFG_MAGENTO_SRC:-} \
           container="${M2C_CFG_DOMAIN_NAME}__php" \
           source_path error res
 
@@ -2602,57 +2602,57 @@ m2c_push_exec() {
         m2c_dots "Pushing all files to php docker container"
         m2c_loading
         m2c_sync pause >/dev/null 2>&1 && \
-        docker cp "$project_dir${sub_dir:+/${sub_dir}}"/. "$container":/var/www/html/ >"$m2c_log" 2>&1 && \
-        docker exec "$container" chown -R app:app /var/www/ >"$m2c_log" 2>&1 && \
-        docker exec "$container" chmod u+x ./bin/magento >"$m2c_log" 2>&1 && \
-        docker exec "$container" chmod u+w -R ./var ./vendor ./pub/static ./pub/media ./app/etc >"$m2c_log" 2>&1 && \
+        docker cp "${m2c_project_dir}${sub_dir:+/${sub_dir}}"/. "$container":/var/www/html/ >"${m2c_log}" 2>&1 && \
+        docker exec "$container" chown -R app:app /var/www/ >"${m2c_log}" 2>&1 && \
+        docker exec "$container" chmod u+x ./bin/magento >"${m2c_log}" 2>&1 && \
+        docker exec "$container" chmod u+w -R ./var ./vendor ./pub/static ./pub/media ./app/etc >"${m2c_log}" 2>&1 && \
         m2c_sync resume >/dev/null 2>&1
         res=$?
         m2c_result ${res}
         return ${res}
     else
         dest_path="${1%%+(/)}"
-        source_path="$project_dir${sub_dir:+/${sub_dir}}/$dest_path"
+        source_path="${m2c_project_dir}${sub_dir:+/${sub_dir}}/${dest_path}"
 
-        if [[ -d "$source_path" || -f "$source_path" ]]
+        if [[ -d "${source_path}" || -f "${source_path}" ]]
         then
             m2c_info "$source_path "
             m2c_info_bold "→\n\n"
 
-            if [[ -d "$source_path" ]]
+            if [[ -d "${source_path}" ]]
             then
                 m2c_dots "Pushing directory to php docker container"
                 m2c_loading
-                m2c_sync pause >"$m2c_log" 2>&1 && \
-                docker cp "$source_path"/. "$container":/var/www/html/"$dest_path" >"$m2c_log" 2>&1 && \
-                docker exec "$container" chown -R app:app "$dest_path" >"$m2c_log" 2>&1 && \
+                m2c_sync pause >"${m2c_log}" 2>&1 && \
+                docker cp "${source_path}"/. "$container":"/var/www/html/${dest_path}" >"${m2c_log}" 2>&1 && \
+                docker exec "$container" chown -R app:app "${dest_path}" >"${m2c_log}" 2>&1 && \
                 case "$dest_path" in
                     var|vendor|pub/static|pub/media|app/etc|var/*|vendor/*|pub/static/*|pub/media/*|app/etc/*)
-                        docker exec "$container" chmod u+w -R ./"$dest_path" >"$m2c_log" 2>&1
+                        docker exec "$container" chmod u+w -R ./"${dest_path}" >"${m2c_log}" 2>&1
                     ;;
                     *)
                         true
                     ;;
                 esac && \
-                m2c_sync resume >"$m2c_log" 2>&1
+                m2c_sync resume >"${m2c_log}" 2>&1
             else
                 m2c_dots "Pushing file to php docker container"
                 m2c_loading
-                m2c_sync pause >"$m2c_log" 2>&1 && \
-                docker cp "$source_path" "$container":/var/www/html/"$(dirname "$dest_path")" >"$m2c_log" 2>&1 && \
-                docker exec "$container" chown -R app:app "$dest_path" >"$m2c_log" 2>&1 && \
+                m2c_sync pause >"${m2c_log}" 2>&1 && \
+                docker cp "${source_path}" "$container":/var/www/html/"$(dirname "${dest_path}")" >"${m2c_log}" 2>&1 && \
+                docker exec "$container" chown -R app:app "${dest_path}" >"${m2c_log}" 2>&1 && \
                 case "$dest_path" in
                     bin/magento)
-                        docker exec "$container" chmod u+x ./"$source_path" >"$m2c_log" 2>&1
+                        docker exec "$container" chmod u+x ./"${source_path}" >"${m2c_log}" 2>&1
                     ;;
                     var/*|vendor/*|pub/static/*|pub/media/*|app/etc/*)
-                        docker exec "$container" chmod u+w -R ./"$dest_path" >"$m2c_log" 2>&1
+                        docker exec "$container" chmod u+w -R ./"${dest_path}" >"${m2c_log}" 2>&1
                     ;;
                     *)
                         true
                     ;;
                 esac && \
-                m2c_sync resume >"$m2c_log" 2>&1
+                m2c_sync resume >"${m2c_log}" 2>&1
             fi
 
             res=$?
@@ -2726,7 +2726,7 @@ m2c_redis_configure() {
         m2c_magento --notty setup:config:set --no-interaction --session-save=redis \
                 --session-save-redis-host=${M2C_CFG_DOMAIN_NAME}__redis --session-save-redis-log-level=4 \
                 --session-save-redis-db=2
-    ) >"$m2c_log" 2>&1
+    ) >"${m2c_log}" 2>&1
 
     return $?
 }
@@ -2771,9 +2771,9 @@ m2c_share_exec() {
     then
         m2c_dots "Installing required dependencies"
         m2c_loading
-        m2c_composer --notty require --dev shkoliar/magento-ngrok >"$m2c_log" 2>&1 && \
-        m2c_magento --notty module:enable Shkoliar_Ngrok >"$m2c_log" 2>&1 && \
-        m2c_magento --notty setup:upgrade >"$m2c_log" 2>&1
+        m2c_composer --notty require --dev shkoliar/magento-ngrok >"${m2c_log}" 2>&1 && \
+        m2c_magento --notty module:enable Shkoliar_Ngrok >"${m2c_log}" 2>&1 && \
+        m2c_magento --notty setup:upgrade >"${m2c_log}" 2>&1
         m2c_res=$?
         m2c_result ${m2c_res}
     else
@@ -2784,21 +2784,21 @@ m2c_share_exec() {
     then
         m2c_dots "Starting sharing session"
         m2c_loading
-        docker pull shkoliar/ngrok >"$m2c_log" 2>&1
+        docker pull shkoliar/ngrok >"${m2c_log}" 2>&1
         m2c_result ${m2c_res}
 
         docker run --rm -it -p 0.0.0.0:4551:4551/tcp --link ${container} --net ${network} \
                 --name ${M2C_CFG_DOMAIN_NAME}__ngrok shkoliar/ngrok ngrok http -region=${region} \
-                -bind-tls=true ${container}:${port} 2>"$m2c_log"
+                -bind-tls=true ${container}:${port} 2>"${m2c_log}"
         m2c_res=$?
 
         if [[ "$m2c_res" == "0" ]]
         then
             m2c_dots "Sharing session ended"
             m2c_result 0
-        elif [[ -f "$m2c_log" ]]
+        elif [[ -f "${m2c_log}" ]]
         then
-            error="$(echo $(cat "$m2c_log"))"
+            error="$(<"${m2c_log}")"
             [[ -n ${error} ]] && m2c_error "$error\n"
         fi
     fi
@@ -2835,15 +2835,15 @@ m2c_share_help() {
 }
 
 m2c_sign() {
-    local m2c_ssl_dir="$m2c_global_dir"/ssl
+    local m2c_ssl_dir="${m2c_global_dir}/ssl"
     local m2c_domains=($@)
     local m2c_alt_names=
-    local m2c_dns_index=$(echo "$(cat "$m2c_ssl_dir"/config/v3_ext.conf | grep 'DNS.*' | awk 'END { print NR }')")
+    local m2c_dns_index=$(echo "$(<"$m2c_ssl_dir"/config/v3_ext.conf)" | grep 'DNS.*' | awk 'END { print NR }')
     local m2c_dns_index=${m2c_dns_index:-0}
 
     if [[ "$m2c_dns_index" == "0" ]]
     then
-        m2c_log="$m2c_global_dir"/log
+        m2c_log="${m2c_global_dir}/log"
     fi
 
     for i in "${!m2c_domains[@]}"
@@ -2878,21 +2878,21 @@ m2c_sign() {
         m2c_loading
         m2c_result 0
     else
-        echo "$(cat "$m2c_ssl_dir"/config/v3_ext.conf)$m2c_alt_names" > "$m2c_ssl_dir"/config/v3_ext.conf
+        echo "$(<"${m2c_ssl_dir}/config/v3_ext.conf")${m2c_alt_names}" > "${m2c_ssl_dir}/config/v3_ext.conf"
 
         m2c_dots "Generating private key for SSL certificate"
         m2c_loading
-        [[ -f "$m2c_ssl_dir"/private/m2c.key ]] && rm -rf "$m2c_ssl_dir"/private/m2c.key
-        openssl genrsa -out "$m2c_ssl_dir"/private/m2c.key 2048 >"$m2c_log" 2>&1
+        [[ -f "${m2c_ssl_dir}/private/m2c.key" ]] && rm -rf "${m2c_ssl_dir}/private/m2c.key"
+        openssl genrsa -out "${m2c_ssl_dir}/private/m2c.key" 2048 >"${m2c_log}" 2>&1
         m2c_result $?
 
         m2c_dots "Creating signing request for SSL certificate"
         m2c_loading
         openssl req -new -sha256 \
-            -key "$m2c_ssl_dir"/private/m2c.key \
-            -out "$m2c_ssl_dir"/certs/m2c.csr \
-            -config "$m2c_ssl_dir"/config/openssl.conf \
-            -subj "/O=Mage2click/OU=IT/CN=${m2c_domains[0]}" >"$m2c_log" 2>&1
+            -key "${m2c_ssl_dir}/private/m2c.key" \
+            -out "${m2c_ssl_dir}/certs/m2c.csr" \
+            -config "${m2c_ssl_dir}/config/openssl.conf" \
+            -subj "/O=Mage2click/OU=IT/CN=${m2c_domains[0]}" >"${m2c_log}" 2>&1
         m2c_result $?
 
         if [[ "$m2c_os" == "darwin" ]]
@@ -2905,12 +2905,12 @@ m2c_sign() {
         m2c_dots "Signing SSL certificate"
         m2c_loading
         openssl x509 -req -days 825 -sha256 -extensions v3_req \
-            -CA "$m2c_ssl_dir"/certs/rootCA.crt \
-            -CAkey "$m2c_ssl_dir"/private/rootCA.key \
+            -CA "${m2c_ssl_dir}/certs/rootCA.crt" \
+            -CAkey "${m2c_ssl_dir}/private/rootCA.key" \
             -CAcreateserial -passin pass:${pass} \
-            -in "$m2c_ssl_dir"/certs/m2c.csr \
-            -out "$m2c_ssl_dir"/certs/m2c.crt \
-            -extfile "$m2c_ssl_dir"/config/v3_ext.conf >"$m2c_log" 2>&1
+            -in "${m2c_ssl_dir}/certs/m2c.csr" \
+            -out "${m2c_ssl_dir}/certs/m2c.crt" \
+            -extfile "${m2c_ssl_dir}/config/v3_ext.conf" >"${m2c_log}" 2>&1
         m2c_result $?
 
         if [[ -n "$(docker ps \
@@ -2997,24 +2997,24 @@ m2c_sync_error() {
 }
 
 m2c_sync_exec() {
-    local m2c_project_yml="$m2c_project_dir"/.m2c/mutagen/mutagen.yml
+    local m2c_project_yml="${m2c_project_dir}/.m2c/mutagen/mutagen.yml"
     m2c_sync_yml_expand #TODO: check new mutagen versions, temporary fix for https://github.com/mutagen-io/mutagen/issues/128
-    m2c_mutagen project $@ ${m2c_project_yml}
+    m2c_mutagen project $@ "${m2c_project_yml}"
     m2c_sync_yml_restore #TODO: check new mutagen versions, temporary fix for https://github.com/mutagen-io/mutagen/issues/128
 }
 
 m2c_sync_yml_expand() {
-    local m2c_project_yml="$m2c_project_dir"/.m2c/mutagen/mutagen.yml
-    mv ${m2c_project_yml} ${m2c_project_yml}.bak
+    local m2c_project_yml="${m2c_project_dir}/.m2c/mutagen/mutagen.yml"
+    mv "${m2c_project_yml}" "${m2c_project_yml}.bak"
     IFS=
-    echo "echo -e \"$(cat ${m2c_project_yml}.bak)\"" > ${m2c_project_yml}
-    echo -e $(source ${m2c_project_yml}) > ${m2c_project_yml}
+    echo "echo -e $(<\"${m2c_project_yml}.bak\")" > "${m2c_project_yml}"
+    echo -e $(. "${m2c_project_yml}") > "${m2c_project_yml}"
 }
 
 m2c_sync_yml_restore() {
-    local m2c_project_yml="$m2c_project_dir"/.m2c/mutagen/mutagen.yml
-    rm ${m2c_project_yml}
-    mv ${m2c_project_yml}.bak ${m2c_project_yml}
+    local m2c_project_yml="${m2c_project_dir}/.m2c/mutagen/mutagen.yml"
+    rm "${m2c_project_yml}"
+    mv "${m2c_project_yml}.bak" "${m2c_project_yml}"
 }
 
 m2c_sync_help() {
@@ -3050,7 +3050,7 @@ m2c_varnish() {
 
 m2c_varnish_configure() {
     local version=${M2C_CFG_VARNISH:0:1} \
-          dir="$m2c_project_dir${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}"
+          dir="${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}"
 
     [[ "$version" == "6" ]] && version=5
 
@@ -3070,21 +3070,21 @@ m2c_varnish_configure() {
             --backend-host ${M2C_CFG_DOMAIN_NAME}__nginx \
             --backend-port 8080 --export-version ${version} \
             --output-file ./var/default.vcl
-    ) >"$m2c_log" 2>&1 && \
+    ) >"${m2c_log}" 2>&1 && \
     (
         m2c_pull var/default.vcl >/dev/null 2>&1 && \
-        sed -e 's/pub\/health_check.php/health_check.php/g' "$dir/var/default.vcl" > "$dir/var/default.temp" && \
-        mv "$dir/var/default.temp" "$dir/var/default.vcl" && \
-        docker cp "$dir/var/default.vcl" "${M2C_CFG_DOMAIN_NAME}__varnish:/usr/local/share/"
-    ) >"$m2c_log" 2>&1 && \
+        sed -e 's/pub\/health_check.php/health_check.php/g' "${dir}/var/default.vcl" > "${dir}/var/default.temp" && \
+        mv "${dir}/var/default.temp" "${dir}/var/default.vcl" && \
+        docker cp "${dir}/var/default.vcl" "${M2C_CFG_DOMAIN_NAME}__varnish:/usr/local/share/"
+    ) >"${m2c_log}" 2>&1 && \
     (
         m2c_varnish varnishadm vcl.load default /usr/local/share/default.vcl && \
         m2c_varnish varnishadm vcl.use default
-    ) >"$m2c_log" 2>&1 && \
+    ) >"${m2c_log}" 2>&1 && \
     (
-        rm -rf "$dir/var/default.vcl" && \
+        rm -rf "${dir}/var/default.vcl" && \
         m2c_cli --notty rm -rf ./var/default.vcl
-    ) >"$m2c_log" 2>&1
+    ) >"${m2c_log}" 2>&1
 
     return $?
 }
@@ -3101,7 +3101,7 @@ m2c_varnish_reset() {
             system/full_page_cache/varnish/backend_port "" && \
         m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/varnish/grace_period ""
-    ) >"$m2c_log" 2>&1
+    ) >"${m2c_log}" 2>&1
 
     return $?
 }

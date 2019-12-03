@@ -167,9 +167,9 @@ m2c_result() {
     else
         m2c_error_bold "\b✘\n"
 
-        if [[ -f "$m2c_log" ]]
+        if [[ -f "${m2c_log}" ]]
         then
-            error="$(echo $(cat "$m2c_log"))"
+            error="$(<"${m2c_log}")"
             [[ -n ${error} ]] && m2c_error "$error\n"
         fi
 
@@ -339,7 +339,7 @@ m2c_requirements() {
             m2c_result 0
         ;;
         *)
-            echo "Currently we are not supporting $m2c_os based OS yet." >"$m2c_log"
+            echo "Currently we are not supporting $m2c_os based OS yet." >"${m2c_log}"
             m2c_result 1 1
             pass=0
         ;;
@@ -350,7 +350,7 @@ m2c_requirements() {
     hash docker 2>/dev/null
     test=$?
 
-    [[ "$test" == "1" ]] && echo "Docker command line interface was not found." >"$m2c_log"
+    [[ "$test" == "1" ]] && echo "Docker command line interface was not found." >"${m2c_log}"
 
     m2c_result ${test} 1
 
@@ -361,7 +361,7 @@ m2c_requirements() {
     hash docker-compose 2>/dev/null
     test=$?
 
-    [[ "$test" == "1" ]] && echo "Docker-compose command line interface was not found." >"$m2c_log"
+    [[ "$test" == "1" ]] && echo "Docker-compose command line interface was not found." >"${m2c_log}"
 
     m2c_result ${test} 1
 
@@ -421,7 +421,7 @@ m2c_requirements() {
     if [[ -n ${ports} ]]
     then
         test=1
-        echo "$ports already used by some other service(s).\n" >"$m2c_log"
+        echo "$ports already used by some other service(s).\n" >"${m2c_log}"
     fi
 
     m2c_result ${test} 1
@@ -458,22 +458,22 @@ m2c_install() {
 
     m2c_dots "Extracting data"
     m2c_loading 2
-    tail -n+${archive} "${0}" | tar -xzp -C ~ && >"$m2c_log" 2>&1
+    tail -n+${archive} "${0}" | tar -xzp -C ~ && >"${m2c_log}" 2>&1
     test=$?
     if [[ "$test" == "0" ]]
     then
-        sudo ln -sf "$m2c_global_dir"/bin/m2c /usr/local/bin/m2c
+        sudo ln -sf "${m2c_global_dir}/bin/m2c" /usr/local/bin/m2c
 
-        if [[ ! -f "$m2c_global_dir"/ssl/config/v3_ext.conf ]]
+        if [[ ! -f "${m2c_global_dir}/ssl/config/v3_ext.conf" ]]
         then
-            mv "$m2c_global_dir"/ssl/config/v3_ext.blank.conf "$m2c_global_dir"/ssl/config/v3_ext.conf
+            mv "${m2c_global_dir}/ssl/config/v3_ext.blank.conf" "${m2c_global_dir}/ssl/config/v3_ext.conf"
         else
-            rm -f "$m2c_global_dir"/ssl/config/v3_ext.blank.conf
+            rm -f "${m2c_global_dir}/ssl/config/v3_ext.blank.conf"
         fi
     fi
     m2c_result ${test}
 
-    if [[ ! -f "$m2c_global_dir"/ssl/certs/rootCA.crt ]] || [[ ! -f "$m2c_global_dir"/ssl/private/rootCA.key ]]
+    if [[ ! -f "${m2c_global_dir}/ssl/certs/rootCA.crt" ]] || [[ ! -f "${m2c_global_dir}/ssl/private/rootCA.key" ]]
     then
         m2c_info_bold "\n[Installing CA certificate]\n\n"
 
@@ -486,8 +486,8 @@ m2c_install() {
 
         m2c_dots "Generating private key for CA certificate"
         m2c_loading
-        mkdir -p "$m2c_global_dir"/ssl/{certs,crl,new,private,serial} >"$m2c_log" 2>&1 && \
-        openssl genrsa -aes256 -passout pass:${pass} -out "$m2c_global_dir"/ssl/private/rootCA.key 4096 >"$m2c_log" 2>&1
+        mkdir -p "${m2c_global_dir}/ssl"/{certs,crl,new,private,serial} >"${m2c_log}" 2>&1 && \
+        openssl genrsa -aes256 -passout pass:${pass} -out "${m2c_global_dir}/ssl/private/rootCA.key" 4096 >"${m2c_log}" 2>&1
         test=$?
         m2c_result ${test}
 
@@ -495,9 +495,9 @@ m2c_install() {
         m2c_loading
         openssl req -new -x509 -nodes -sha256 -days 825 \
             -passin pass:${pass} -subj "/O=Mage2click/OU=IT/CN=m2c.local" \
-            -config "$m2c_global_dir"/ssl/config/rootca.conf \
-            -key "$m2c_global_dir"/ssl/private/rootCA.key \
-            -out "$m2c_global_dir"/ssl/certs/rootCA.crt >"$m2c_log" 2>&1
+            -config "${m2c_global_dir}/ssl/config/rootca.conf" \
+            -key "${m2c_global_dir}/ssl/private/rootCA.key" \
+            -out "${m2c_global_dir}/ssl/certs/rootCA.crt" >"${m2c_log}" 2>&1
         test=$?
         m2c_result ${test}
 
@@ -507,25 +507,25 @@ m2c_install() {
             darwin)
                 sudo security delete-certificate -c 'm2c.local' >/dev/null 2>&1
                 sudo security add-trusted-cert -d -r trustRoot \
-                        -k /Library/Keychains/System.keychain "$m2c_global_dir"/ssl/certs/rootCA.crt >"$m2c_log" 2>&1
+                        -k /Library/Keychains/System.keychain "${m2c_global_dir}/ssl/certs/rootCA.crt" >"${m2c_log}" 2>&1
                 test=$?
             ;;
             linux)
                 if [[ -d /usr/local/share/ca-certificates ]] && [[ ! -f /usr/local/share/ca-certificates/m2c-root-ca.crt ]]
                 then
-                    yes | sudo cp -rf "$m2c_global_dir"/ssl/certs/rootCA.crt \
-                        /usr/local/share/ca-certificates/m2c-root-ca.crt >"$m2c_log" 2>&1 && \
-                    sudo update-ca-certificates >"$m2c_log" 2>&1
+                    yes | sudo cp -rf "${m2c_global_dir}/ssl/certs/rootCA.crt" \
+                        /usr/local/share/ca-certificates/m2c-root-ca.crt >"${m2c_log}" 2>&1 && \
+                    sudo update-ca-certificates >"${m2c_log}" 2>&1
                     test=$?
                 elif [[ -d /etc/pki/ca-trust/source/anchors ]] && [[ ! -f /etc/pki/ca-trust/source/anchors/m2c-root-ca.crt ]]
                 then
-                    yes | sudo cp -rf "$m2c_global_dir"/ssl/certs/rootCA.crt \
-                        /etc/pki/ca-trust/source/anchors/m2c-root-ca.crt >"$m2c_log" 2>&1 && \
-                    sudo update-ca-trust >"$m2c_log" 2>&1 && \
-                    sudo update-ca-trust enable >"$m2c_log" 2>&1
+                    yes | sudo cp -rf "${m2c_global_dir}/ssl/certs/rootCA.crt" \
+                        /etc/pki/ca-trust/source/anchors/m2c-root-ca.crt >"${m2c_log}" 2>&1 && \
+                    sudo update-ca-trust >"${m2c_log}" 2>&1 && \
+                    sudo update-ca-trust enable >"${m2c_log}" 2>&1
                     test=$?
                 else
-                    echo "Currently we are not supporting $m2c_os based OS yet." >"$m2c_log"
+                    echo "Currently we are not supporting $m2c_os based OS yet." >"${m2c_log}"
                     test=1
                 fi
             ;;
@@ -536,7 +536,7 @@ m2c_install() {
     case ${m2c_os} in
         darwin)
             if [[ ! -f /etc/resolver/test || \
-                "$(cat /etc/resolver/test)" != "nameserver 127.0.0.1" ]]
+                "$(</etc/resolver/test)" != "nameserver 127.0.0.1" ]]
             then
                 m2c_info_bold "\n[Configuring .test domains resolver]\n\n"
 
@@ -547,15 +547,15 @@ m2c_install() {
                 m2c_result $?
             fi
 
-            if [[ ! -f "$m2c_global_dir"/mutagen/mutagen || \
-                "$(echo "$("$m2c_global_dir"/mutagen/mutagen version)")" != "0.10.0" ]]
+            if [[ ! -f "${m2c_global_dir}/mutagen/mutagen" || \
+                "$("${m2c_global_dir}/mutagen/mutagen" version)" != "0.10.0" ]]
             then
                 m2c_info_bold "\n[Installing Mutagen for docker sync performance]\n\n"
-                mkdir -p "$m2c_global_dir"/mutagen >"$m2c_log" 2>&1
+                mkdir -p "${m2c_global_dir}/mutagen" >"${m2c_log}" 2>&1
                 curl -L \
                     "https://github.com/mutagen-io/mutagen/releases/download/v0.10.0/mutagen_darwin_amd64_v0.10.0.tar.gz" | \
-                    tar xzf - -o -C "$m2c_global_dir"/mutagen/
-                chmod 0755 "$m2c_global_dir"/mutagen/mutagen
+                    tar xzf - -o -C "${m2c_global_dir}/mutagen/"
+                chmod 0755 "${m2c_global_dir}/mutagen/mutagen"
             fi
         ;;
     esac
@@ -575,8 +575,14 @@ m2c_on_exit() {
 
 trap m2c_on_exit EXIT
 
-m2c_log="$m2c_global_dir"/log
-touch "$m2c_log"
+m2c_log="${m2c_global_dir}/log"
+touch "${m2c_log}"
+
+if ! docker info > /dev/null 2>&1
+then
+    m2c_error "Docker is not running or Docker service is not reachable.\n"
+    exit 1
+fi
 
 if ! docker info > /dev/null 2>&1
 then
@@ -588,7 +594,7 @@ if [[ "$0" != "/usr/local/bin/m2c" ]]
 then
     m2c_logo
 
-    if [[ ! -f "$m2c_global_dir"/build ]]
+    if [[ ! -f "${m2c_global_dir}/build" ]]
     then
         message="Install Mage2click Docker Magento environment and toolset to your system?"
     else
@@ -611,9 +617,9 @@ then
     fi
 
     m2c_requirements
-    rm -rf "$m2c_global_dir"/{bin,completions,dnsmasq,docker,functions,local,traefik,www,build} >/dev/null 2>&1
+    rm -rf "${m2c_global_dir}"/{bin,completions,dnsmasq,docker,functions,local,traefik,www,build} >/dev/null 2>&1
     m2c_install
-    . "$m2c_global_dir"/functions/m2c
+    . "${m2c_global_dir}/functions/m2c"
 
     m2c_global_load_env
 
@@ -637,16 +643,16 @@ then
         fi
     fi
 else
-    . "$m2c_global_dir"/functions/m2c
+    . "${m2c_global_dir}/functions/m2c"
     declare -r m2c_project_dir="$(m2c_get_project_dir)"
-    m2c_log="$m2c_project_dir"/.m2c/log
+    m2c_log="${m2c_project_dir}/.m2c/log"
 
     m2c_load_env
 
     case "$1" in
         global)
             shift
-            m2c_log="$m2c_global_dir"/log
+            m2c_log="${m2c_global_dir}/log"
             m2c_global $@
         ;;
         init)
