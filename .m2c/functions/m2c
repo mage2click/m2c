@@ -1618,7 +1618,8 @@ m2c_init_composer_auth() {
 
         if [[ -z ${m2c_res} || -z ${m2c_composer_public_key} || -z ${m2c_composer_private_key} ]]
         then
-            m2c_msg "\nProvide authentication keys for Composer repository repo.magento.com.\n\n"
+            m2c_erase_prev_lines 1
+            m2c_msg "Provide authentication keys.\n\n"
 
             m2c_ask_text "Public key:" \
                      "" \
