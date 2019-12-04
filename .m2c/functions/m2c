@@ -1883,7 +1883,7 @@ m2c_local_add_service() {
 
                 m2c_save_project_env
 
-                m2c_local up
+                m2c_local up varnish nginx
 
                 m2c_info_bold "\n[Configuring services]\n\n"
 
@@ -1903,7 +1903,7 @@ m2c_local_add_service() {
 
                 m2c_save_project_env
 
-                m2c_local up
+                m2c_local up elasticsearch
 
                 m2c_info_bold "\n[Configuring services]\n\n"
 
@@ -1923,7 +1923,7 @@ m2c_local_add_service() {
 
                 m2c_save_project_env
 
-                m2c_local up
+                m2c_local up rabbitmq
 
                 m2c_info_bold "\n[Configuring services]\n\n"
 
@@ -1940,7 +1940,7 @@ m2c_local_add_service() {
             if [[ -n ${M2C_CFG_PHPMYADMIN} ]]
             then
                 m2c_save_project_env
-                m2c_local up
+                m2c_local up phpmyadmin
             fi
         ;;
         *)
