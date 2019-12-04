@@ -2108,7 +2108,11 @@ m2c_local_remove_service() {
         m2c_result $?
 
         m2c_save_project_env
-        m2c_local up
+
+        if [[ "$service" == "varnish" ]]
+        then
+            m2c_local up nginx
+        fi
     fi
 }
 
