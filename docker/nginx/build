@@ -7,9 +7,7 @@ VERSIONS=("1.12" "1.13" "1.14" "1.15" "1.16" "1.17")
 for i in "${!VERSIONS[@]}"
 do
     docker build --build-arg NGINX_VERSION="${VERSIONS[$i]}" \
-            -t "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" "${HOME}/alpine/"
-    docker tag "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" \
-        "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine"
+        -t "mage2click/m2c:nginx-${VERSIONS[$i]}-alpine" "${HOME}/alpine/"
 done
 
 rm -rf "${HOME}/.docker"
