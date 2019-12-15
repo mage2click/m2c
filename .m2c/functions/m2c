@@ -1269,10 +1269,7 @@ m2c_init() {
         then
             m2c_load_project_defaults_env
 
-            m2c_dots "Project .env file is not found, starting interactive setup"
-            m2c_loading && m2c_result 0
-
-            m2c_info_bold "\n[Configure project]\n\n"
+            m2c_msg "\nProject .env file is not found, starting interactive setup\n\n"
 
             m2c_ask_text "Set the domain name for your project:" \
                          "$(basename "${m2c_project_dir}" | awk '{print tolower($0)}').test" \
@@ -1282,6 +1279,24 @@ m2c_init() {
 
             M2C_CFG_DOMAIN_NAME="$m2c_res"
 
+            m2c_info_bold "\n[Configure sources path]\n\n"
+
+            m2c_ask_bool "Set sub-directory for Magento installation?"
+            M2C_CFG_MAGENTO_SRC=${m2c_res}
+
+            if [[ -n ${M2C_CFG_MAGENTO_SRC} ]]
+            then
+                m2c_ask_text "Set the sub-directory name:" \
+                     "src" \
+                     "Invalid sub-directory name: %s!\n" \
+                     "" \
+                     m2c_validate_url_path
+
+                M2C_CFG_MAGENTO_SRC="$m2c_res"
+            fi
+
+            m2c_info_bold "\n[Configure environment]\n\n"
+
             m2c_set_opt_version "Nginx" "${m2c_nginx_versions[@]}"
 
             m2c_set_opt_version "PHP" "${m2c_php_versions[@]}"
@@ -1290,7 +1305,7 @@ m2c_init() {
 
             m2c_set_opt_version "Redis" "${m2c_redis_versions[@]}"
 
-            m2c_info_bold "\n[Configure project extras]\n\n"
+            m2c_info_bold "\n[Configure environment extras]\n\n"
 
             m2c_ask_bool "Include Varnish service?"
             M2C_CFG_VARNISH=${m2c_res}
@@ -1321,43 +1336,26 @@ m2c_init() {
 
             m2c_info_bold "\n[Configure Magento installation]\n\n"
 
-            m2c_ask_bool "Use sub-directory for Magento installation?"
-            M2C_CFG_MAGENTO_SRC=${m2c_res}
-
-            if [[ -n ${M2C_CFG_MAGENTO_SRC} ]]
-            then
-                m2c_ask_text "Set the sub-directory name:" \
-                     "src" \
-                     "Invalid sub-directory name: %s!\n" \
-                     "" \
-                     m2c_validate_url_path
-
-                M2C_CFG_MAGENTO_SRC="$m2c_res"
-            fi
-
             if m2c_init_detect_magento
             then
                 m2c_magento_exists=1
-            fi
-
-            if [[ -z ${M2C_CFG_MAGENTO} ]]
-            then
+            else
                 m2c_set_opt_version "Magento" "${m2c_magento_versions[@]}"
-            fi
 
-            if [[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]]
-            then
-                m2c_ask_bool "Include Magento sample data?"
-                m2c_magento_sample_data=${m2c_res}
-            fi
+                if [[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]]
+                then
+                    m2c_ask_bool "Include Magento sample data?"
+                    m2c_magento_sample_data=${m2c_res}
+                fi
 
-            m2c_ask_text "Set the Magento admin url path:" \
+                m2c_ask_text "Set the Magento admin url path:" \
                          "admin" \
                          "Invalid admin url path: %s!\n" \
                          "" \
                          m2c_validate_url_path
 
-            M2C_CFG_ADMIN_URL="$m2c_res"
+                M2C_CFG_ADMIN_URL="$m2c_res"
+            fi
 
             m2c_save_project_env
         else
@@ -1606,20 +1604,30 @@ m2c_init_check_version() {
 }
 
 m2c_init_detect_magento() {
-    local exists=
+    local exists \
+          version \
+          admin_url
 
-    if [[ -f "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/pub/index.php" && -f "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" ]]
+    if [[ -f "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/pub/index.php" && \
+          -f "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" && \
+          -f "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" ]]
     then
         m2c_dots "Checking Magento source files"
         m2c_loading && m2c_result 0
 
         version=$(grep version "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" | cut -c 17- | rev | cut -c 3- | rev 2>/dev/null)
+        admin_url=$(grep -A1 "'backend' => \[" "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" | grep frontName | cut -c 25- | rev | cut -c 2- | rev)
 
-        if [[ -n ${version} ]]
+        if [[ -n ${version} && -n ${admin_url} ]]
         then
-            m2c_dots "Detected Magento v$version"
+            m2c_msg "\nDetected Magento: "
+            m2c_info_bold "v$version\n"
             M2C_CFG_MAGENTO="$version"
-            m2c_loading && m2c_result 0
+
+            m2c_msg "Admin url path: "
+            m2c_info_bold "$admin_url\n"
+            M2C_CFG_ADMIN_URL="$admin_url"
+
             return 0
         else
             m2c_dots "Magento version is not detected, proceeding configuration"
@@ -2384,6 +2392,7 @@ m2c_local_active_project_check() {
     elif [[ -z "$(m2c_local_active_container_id php)" ]]
     then
         m2c_local start
+        echo
     fi
 }
 
