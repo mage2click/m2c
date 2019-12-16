@@ -18,6 +18,7 @@ sync:
         - .idea
         - .vscode
         - .m2c
+        - .env
         - /bin
         - /generated
         - /pub/media/catalog/product
