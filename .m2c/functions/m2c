@@ -792,7 +792,7 @@ m2c_global_uninstall() {
                 [[ -n ${volumes} ]] && docker volume rm --force ${volumes} >"${m2c_log}" 2>&1 || true
             ) && \
             (
-                [[ -n ${networks} ]] && docker network rm --force ${networks} >"${m2c_log}" 2>&1 || true
+                [[ -n ${networks} ]] && docker network rm ${networks} >"${m2c_log}" 2>&1 || true
             )
 
             m2c_result $?
@@ -1354,7 +1354,10 @@ m2c_init() {
                     m2c_ask_bool "Include Magento sample data?"
                     m2c_magento_sample_data=${m2c_res}
                 fi
+            fi
 
+            if [[ -z ${M2C_CFG_ADMIN_URL} ]]
+            then
                 m2c_ask_text "Set the Magento admin url path:" \
                          "admin" \
                          "Invalid admin url path: %s!\n" \
@@ -1616,24 +1619,30 @@ m2c_init_detect_magento() {
           admin_url
 
     if [[ -f "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/pub/index.php" && \
-          -f "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" && \
-          -f "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" ]]
+          -f "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" ]]
     then
         m2c_dots "Checking Magento source files"
         m2c_loading && m2c_result 0
 
         version=$(grep 'version' "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/composer.json" | cut -c 17- | rev | cut -c 3- | rev 2>/dev/null)
-        admin_url=$(grep -A1 "'backend' => \[" "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" | grep 'frontName' | cut -c 25- | rev | cut -c 2- | rev)
 
-        if [[ -n ${version} && -n ${admin_url} ]]
+        if [[ -n ${version} ]]
         then
             m2c_msg "\nDetected Magento: "
             m2c_info_bold "v$version\n"
             M2C_CFG_MAGENTO="$version"
 
-            m2c_msg "Admin url path: "
-            m2c_info_bold "$admin_url\n"
-            M2C_CFG_ADMIN_URL="$admin_url"
+            if [[ -f "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" ]]
+            then
+                admin_url=$(grep -A1 "'backend' => \[" "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" | grep 'frontName' | cut -c 25- | rev | cut -c 2- | rev)
+
+                if [[ -n ${admin_url} ]]
+                then
+                    m2c_msg "Admin url path: "
+                    m2c_info_bold "$admin_url\n"
+                    M2C_CFG_ADMIN_URL="$admin_url"
+                fi
+            fi
 
             return 0
         else
@@ -2308,10 +2317,6 @@ m2c_local_list_services() {
 m2c_local_project_down() {
     local project="${M2C_CFG_DOMAIN_NAME/.test/}"
 
-    local containers="$(docker ps \
-        --filter "label=com.docker.compose.project=$project" \
-        -qa)"
-
     local volumes="$(docker volume ls \
         --filter "label=com.docker.compose.project=$project" \
         -q)"
@@ -2320,14 +2325,12 @@ m2c_local_project_down() {
         --filter "label=com.docker.compose.project=$project" \
         -q)"
 
-    (
-        [[ -n ${containers} ]] && docker rm --force --volumes ${containers} >"${m2c_log}" 2>&1 || true
-    ) && \
+    docker-compose rm --force --stop -v >"${m2c_log}" 2>&1 && \
     (
         [[ -n ${volumes} ]] && docker volume rm --force ${volumes} >"${m2c_log}" 2>&1 || true
     ) && \
     (
-        [[ -n ${networks} ]] && docker network rm --force ${networks} >"${m2c_log}" 2>&1 || true
+        [[ -n ${networks} ]] && docker network rm ${networks} >"${m2c_log}" 2>&1 || true
     )
 
     return $?
