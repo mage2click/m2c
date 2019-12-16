@@ -2646,9 +2646,9 @@ m2c_push_exec() {
         m2c_loading
         m2c_sync pause >/dev/null 2>&1 && \
         docker cp "${m2c_project_dir}${sub_dir:+/${sub_dir}}"/. "$container":/var/www/html/ >"${m2c_log}" 2>&1 && \
-        docker exec "$container" chown -R app:app /var/www/ >"${m2c_log}" 2>&1 && \
-        docker exec "$container" chmod u+x ./bin/magento >"${m2c_log}" 2>&1 && \
-        docker exec "$container" chmod u+w -R ./var ./vendor ./pub/static ./pub/media ./app/etc >"${m2c_log}" 2>&1 && \
+        docker-compose exec -T php chown -R app:app /var/www/ >"${m2c_log}" 2>&1 && \
+        docker-compose exec -T php chmod u+x ./bin/magento >"${m2c_log}" 2>&1 && \
+        docker-compose exec -T php chmod u+w -R ./var ./vendor ./pub/static ./pub/media ./app/etc >"${m2c_log}" 2>&1 && \
         m2c_sync resume >/dev/null 2>&1
         res=$?
         m2c_result ${res}
@@ -2668,10 +2668,10 @@ m2c_push_exec() {
                 m2c_loading
                 m2c_sync pause >"${m2c_log}" 2>&1 && \
                 docker cp "${source_path}"/. "$container":"/var/www/html/${dest_path}" >"${m2c_log}" 2>&1 && \
-                docker exec "$container" chown -R app:app "${dest_path}" >"${m2c_log}" 2>&1 && \
+                docker-compose exec -T php chown -R app:app "${dest_path}" >"${m2c_log}" 2>&1 && \
                 case "$dest_path" in
                     var|vendor|pub/static|pub/media|app/etc|var/*|vendor/*|pub/static/*|pub/media/*|app/etc/*)
-                        docker exec "$container" chmod u+w -R ./"${dest_path}" >"${m2c_log}" 2>&1
+                        docker-compose exec -T php chmod u+w -R ./"${dest_path}" >"${m2c_log}" 2>&1
                     ;;
                     *)
                         true
@@ -2683,13 +2683,13 @@ m2c_push_exec() {
                 m2c_loading
                 m2c_sync pause >"${m2c_log}" 2>&1 && \
                 docker cp "${source_path}" "$container":/var/www/html/"$(dirname "${dest_path}")" >"${m2c_log}" 2>&1 && \
-                docker exec "$container" chown -R app:app "${dest_path}" >"${m2c_log}" 2>&1 && \
+                docker-compose exec -T php chown -R app:app "${dest_path}" >"${m2c_log}" 2>&1 && \
                 case "$dest_path" in
                     bin/magento)
-                        docker exec "$container" chmod u+x ./"${source_path}" >"${m2c_log}" 2>&1
+                        docker-compose exec -T php chmod u+x ./"${source_path}" >"${m2c_log}" 2>&1
                     ;;
                     var/*|vendor/*|pub/static/*|pub/media/*|app/etc/*)
-                        docker exec "$container" chmod u+w -R ./"${dest_path}" >"${m2c_log}" 2>&1
+                        docker-compose exec -T php chmod u+w -R ./"${dest_path}" >"${m2c_log}" 2>&1
                     ;;
                     *)
                         true
@@ -3088,7 +3088,7 @@ m2c_varnish() {
         return 1
     fi
 
-    docker exec -i "${M2C_CFG_DOMAIN_NAME}__varnish" "$@"
+    docker-compose exec varnish "$@"
 }
 
 m2c_varnish_configure() {
