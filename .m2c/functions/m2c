@@ -842,46 +842,43 @@ m2c_global_help() {
 }
 
 m2c_grunt() {
-    local tty
+    local notty
 
     if m2c_in_array "--notty" $@
     then
         shift
-    else
-        tty=1
+        notty=1
     fi
 
-    docker exec -u app -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" grunt "$@"
+    docker-compose exec -u app ${notty:+-T} php grunt "$@"
 }
 
 m2c_npm() {
-    local tty
+    local notty
 
     if m2c_in_array "--notty" $@
     then
         shift
-    else
-        tty=1
+        notty=1
     fi
 
-    docker exec -u app -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" npm "$@"
+    docker-compose exec -u app ${notty:+-T} php npm "$@"
 }
 
 m2c_node() {
-    local tty
+    local notty
 
     if m2c_in_array "--notty" $@
     then
         shift
-    else
-        tty=1
+        notty=1
     fi
 
-    docker exec -u app -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" node "$@"
+    docker-compose exec -u app ${notty:+-T} php node "$@"
 }
 
 m2c_redis() {
-    docker exec "${M2C_CFG_DOMAIN_NAME}__redis" redis-cli "$@"
+    docker-compose exec redis redis-cli "$@"
 }
 
 m2c_urn() {
