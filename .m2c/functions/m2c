@@ -2648,7 +2648,9 @@ m2c_push_exec() {
         docker cp "${m2c_project_dir}${sub_dir:+/${sub_dir}}"/. "$container":/var/www/html/ >"${m2c_log}" 2>&1 && \
         docker-compose exec -T php chown -R app:app /var/www/ >"${m2c_log}" 2>&1 && \
         docker-compose exec -T php chmod u+x ./bin/magento >"${m2c_log}" 2>&1 && \
-        docker-compose exec -T php chmod u+w -R ./var ./vendor ./pub/static ./pub/media ./app/etc >"${m2c_log}" 2>&1 && \
+        (
+            docker-compose exec -T php chmod u+w -R ./var ./vendor ./pub/static ./pub/media ./app/etc || true
+        ) >/dev/null 2>&1 && \
         m2c_sync resume >/dev/null 2>&1
         res=$?
         m2c_result ${res}
