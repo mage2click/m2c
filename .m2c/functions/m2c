@@ -253,30 +253,33 @@ m2c_cli() {
 }
 
 m2c_bash() {
-    local tty user
+    local notty \
+          user \
+          service
 
     if m2c_in_array "--notty" $@
     then
         shift
-    else
-        tty=1
+        notty=1
     fi
 
     if m2c_in_array "--root" $@
     then
         shift
-        user=root
+        user="root"
     else
-        user=app
+        user="app"
     fi
 
     if m2c_in_array "--debug" $@
     then
         shift
-        docker exec -u ${user} -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__xdebug" bash "$@"
+        service="xdebug"
     else
-        docker exec -u ${user} -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" bash "$@"
+        service="php"
     fi
+
+    docker-compose exec -u ${user} ${notty:+-T} ${service} bash "$@"
 }
 
 m2c_composer() {
