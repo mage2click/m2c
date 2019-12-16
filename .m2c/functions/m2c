@@ -16,7 +16,7 @@ declare -r m2c_rabbitmq_versions=("3.7" "3.6" "3.5" "3.4" "3.3" "3.2" "3.1" "3.0
 m2c_get_project_dir() {
     local current_dir="$(pwd)"
 
-    while [[ ! -f "${current_dir}/.m2c/docker/.env" ]] && [[ "${current_dir}" != ~ ]] && [[ "${current_dir}" != "/" ]]
+    while [[ ! -f "${current_dir}/.env" ]] && [[ "${current_dir}" != ~ ]] && [[ "${current_dir}" != "/" ]]
     do
         current_dir="$(cd "${current_dir}/.." >/dev/null 2>&1 && pwd)"
     done
@@ -30,17 +30,26 @@ m2c_load_env() {
 }
 
 m2c_save_project_env() {
-    local config_env="${m2c_project_dir}/.m2c/docker/.env"
+    local config_env="${m2c_project_dir}/.env"
 
     [[ -f "${config_env}" ]] || mkdir -p "$(dirname "${config_env}")" && touch "${config_env}"
 
     set | grep '^M2C_CFG_' > "${config_env}"
 
+    export DOCKER_CLIENT_TIMEOUT=600
+    export COMPOSE_FILE="./.m2c/docker/docker-compose.yml:./.m2c/docker/docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml${M2C_CFG_PHPMYADMIN:+:./.m2c/docker/docker-compose.phpmyadmin.yml}${M2C_CFG_ELASTICSEARCH:+:./.m2c/docker/docker-compose.elasticsearch.yml}${M2C_CFG_RABBITMQ:+:./.m2c/docker/docker-compose.rabbitmq.yml}:./.m2c/docker/docker-compose.${m2c_os}.yml"
+    export COMPOSE_HTTP_TIMEOUT=600
+    export COMPOSE_PATH_SEPARATOR=":"
+    export COMPOSE_PROJECT_NAME="${M2C_CFG_DOMAIN_NAME/.test/}"
+
+    set | grep '^DOCKER_' >> "${config_env}"
+    set | grep '^COMPOSE_' >> "${config_env}"
+
     m2c_load_project_env
 }
 
 m2c_load_project_env() {
-    local config_env="${m2c_project_dir}/.m2c/docker/.env"
+    local config_env="${m2c_project_dir}/.env"
 
     if [[ -f "${config_env}" ]]
     then
@@ -62,12 +71,6 @@ m2c_load_project_env() {
         --filter "label=com.docker.compose.service=traefik" \
         -qa | xargs docker inspect \
         --format="{{index .NetworkSettings.Networks.m2c.IPAddress}}")"
-
-    export DOCKER_CLIENT_TIMEOUT=600
-    export COMPOSE_FILE="${m2c_project_dir}/.m2c/docker/docker-compose.yml:${m2c_project_dir}/.m2c/docker/docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml${M2C_CFG_PHPMYADMIN:+:${m2c_project_dir}/.m2c/docker/docker-compose.phpmyadmin.yml}${M2C_CFG_ELASTICSEARCH:+:${m2c_project_dir}/.m2c/docker/docker-compose.elasticsearch.yml}${M2C_CFG_RABBITMQ:+:${m2c_project_dir}/.m2c/docker/docker-compose.rabbitmq.yml}:${m2c_project_dir}/.m2c/docker/docker-compose.${m2c_os}.yml"
-    export COMPOSE_HTTP_TIMEOUT=600
-    export COMPOSE_PATH_SEPARATOR=":"
-    export COMPOSE_PROJECT_NAME="${M2C_CFG_DOMAIN_NAME/.test/}"
 }
 
 m2c_load_project_defaults_env() {
@@ -1275,7 +1278,7 @@ m2c_init() {
         m2c_dots "Scanning current directory"
         m2c_loading && m2c_result 0
 
-        if [[ ! -f "${m2c_project_dir}/.m2c/docker/.env" ]]
+        if [[ ! -f "${m2c_project_dir}/.env" ]]
         then
             m2c_load_project_defaults_env
 
@@ -2337,7 +2340,7 @@ m2c_local_project_down() {
 }
 
 m2c_local_project_check_dir() {
-    if [[ ! -f "${m2c_project_dir}/.m2c/docker/.env" ]]
+    if [[ ! -f "${m2c_project_dir}/.env" ]]
     then
         m2c_error "This command intended to be used within the project directory!\nChange the current working directory to project root or to any project's sub-directory.\n"
         exit 1
