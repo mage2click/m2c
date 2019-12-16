@@ -1508,7 +1508,7 @@ m2c_init() {
             "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf" && \
         docker cp "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf" \
             "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/nginx.conf && \
-        docker exec "${M2C_CFG_DOMAIN_NAME}__php" chown -R app:app nginx.conf && \
+        docker-compose exec -T php chown -R app:app nginx.conf && \
         m2c_local_container_restart nginx
     ) >"${m2c_log}" 2>&1
     m2c_result $?
@@ -1556,7 +1556,7 @@ m2c_init() {
                 "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json" && \
             docker cp "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json" \
                 "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/package.json && \
-            docker exec "${M2C_CFG_DOMAIN_NAME}__php" chown -R app:app package.json && \
+            docker-compose exec -T php chown -R app:app package.json && \
             m2c_npm install
         ) >"${m2c_log}" 2>&1
         m2c_result $?
@@ -2488,36 +2488,36 @@ m2c_local_down() {
 }
 
 m2c_magento() {
-    local tty
+    local notty \
+          service
 
     if m2c_in_array "--notty" $@
     then
         shift
-    else
-        tty=1
+        notty=1
     fi
 
     if m2c_in_array "--debug" $@
     then
         shift
-        docker exec -u app -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__xdebug" php bin/magento $@
+        service="xdebug"
     else
-        docker exec -u app -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" php bin/magento $@
+        service="php"
     fi
+
+    docker-compose exec -u app ${notty:+-T} ${service} php bin/magento $@
 }
 
 m2c_magerun() {
-    local tty
+    local notty
 
     if m2c_in_array "--notty" $@
     then
         shift
-    else
-        tty=1
+        notty=1
     fi
 
-    docker exec -u app -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" \
-        "n98-magerun$([[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && echo "2")" "$@"
+    docker-compose exec -u app ${notty:+-T} php "n98-magerun$([[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && echo "2")" "$@"
 }
 
 m2c_mutagen() {
