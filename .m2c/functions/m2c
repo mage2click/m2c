@@ -2342,8 +2342,15 @@ m2c_local_project_down() {
 m2c_local_project_check_dir() {
     if [[ ! -f "${m2c_project_dir}/.env" ]]
     then
-        m2c_error "This command intended to be used within the project directory!\nChange the current working directory to project root or to any project's sub-directory.\n"
-        exit 1
+        if [[ -f "${m2c_project_dir}/.m2c/docker/.env" ]] && \
+           mv "${m2c_project_dir}/.m2c/docker/.env" "${m2c_project_dir}/.env" >/dev/null 2>&1
+        then
+            m2c_load_env
+            m2c_save_project_env
+        else
+            m2c_error "This command intended to be used within the project directory!\nChange the current working directory to project root or to any project's sub-directory.\n"
+            exit 1
+        fi
     fi
 }
 
