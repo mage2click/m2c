@@ -1407,8 +1407,8 @@ m2c_init() {
 
     local url
 
-    mkdir -p "${m2c_project_dir}/.m2c/mutagen" "${m2c_project_dir}/.m2c/mysql"
-    yes | cp -rf "${m2c_global_dir}/local/docker"/* "${m2c_project_dir}/.m2c/docker/"
+    mkdir -p "${m2c_project_dir}/.m2c/mutagen" "${m2c_project_dir}/.m2c/docker" "${m2c_project_dir}/.m2c/mysql"
+    yes | cp -rf "${m2c_global_dir}/local/docker/*" "${m2c_project_dir}/.m2c/docker/"
     yes | cp -rf "${m2c_global_dir}/local/mutagen/mutagen.yml" "${m2c_project_dir}/.m2c/mutagen/mutagen.yml"
     yes | cp -rf "${m2c_global_dir}/local/mysql/custom.cnf" "${m2c_project_dir}/.m2c/mysql/custom.cnf"
     rm -rf "${m2c_project_dir}/.m2c/mutagen/mutagen.yml.lock" >/dev/null 2>&1
@@ -2169,7 +2169,7 @@ m2c_local_update() {
     m2c_loading
     mkdir -p "${m2c_project_dir}/.m2c/mutagen" "${m2c_project_dir}/.m2c/docker" "${m2c_project_dir}/.m2c/mysql" \
       >"${m2c_log}" 2>&1 && \
-    yes | cp -rf "${m2c_global_dir}/local/docker"/* "${m2c_project_dir}/.m2c/docker/" >"${m2c_log}" 2>&1 && \
+    yes | cp -rf "${m2c_global_dir}/local/docker/*" "${m2c_project_dir}/.m2c/docker/" >"${m2c_log}" 2>&1 && \
     yes | cp -rf "${m2c_global_dir}/local/mutagen/mutagen.yml" \
         "${m2c_project_dir}/.m2c/mutagen/mutagen.yml" >"${m2c_log}" 2>&1 && \
     yes | cp -rf "${m2c_global_dir}/local/mysql/custom.cnf" "${m2c_project_dir}/.m2c/mysql/custom.cnf" && \
