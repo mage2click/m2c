@@ -329,31 +329,29 @@ m2c_db() {
 }
 
 m2c_db_mysql() {
-    local tty
+    local notty
 
     if m2c_in_array "--notty" $@
     then
         shift
-    else
-        tty=1
+        notty=1
     fi
 
-    docker exec -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__db" mysql \
+    docker-compose exec ${notty:+-T} db mysql \
         -h"${M2C_CFG_DOMAIN_NAME}__db" -u"$M2C_CFG_MYSQL_USER" \
         -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "$@"
 }
 
 m2c_db_mysqldump() {
-    local tty
+    local notty
 
     if m2c_in_array "--notty" $@
     then
         shift
-    else
-        tty=1
+        notty=1
     fi
 
-    docker exec -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__db" mysqldump \
+    docker-compose exec ${notty:+-T} db mysqldump \
         -h"${M2C_CFG_DOMAIN_NAME}__db" -u"$M2C_CFG_MYSQL_USER" \
         -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "$@"
 }
