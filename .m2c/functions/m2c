@@ -82,7 +82,7 @@ m2c_load_project_defaults_env() {
 m2c_validate_domain() {
     local domain=$1
 
-    if [[ -n ${domain} && -n $(echo "$domain" | grep -$([[ "$m2c_os" == "darwin" ]] && echo "E" || echo "P") \
+    if [[ -n ${domain} && "${domain}" != "m2c.test" && -n $(echo "$domain" | grep -$([[ "$m2c_os" == "darwin" ]] && echo "E" || echo "P") \
         '(^(?:[a-zA-Z0-9](?:(?:[a-zA-Z0-9\-]){0,61}[a-zA-Z0-9])?\.)+test$)') ]]
     then
         return 0
@@ -2891,7 +2891,7 @@ m2c_sign() {
 
     for i in "${!m2c_domains[@]}"
     do
-        if ! m2c_validate_domain "${m2c_domains[$i]}"
+        if [[ "${m2c_domains[$i]}" != "m2c.test" ]] && ! m2c_validate_domain "${m2c_domains[$i]}"
         then
             m2c_error "Invalid domain name: \`${m2c_domains[$i]}\`!\nOnly valid domain names with \`.test\` tld are supported!\n"
             exit 1
