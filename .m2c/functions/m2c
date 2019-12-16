@@ -286,16 +286,15 @@ m2c_bash() {
 }
 
 m2c_composer() {
-    local tty
+    local notty
 
     if m2c_in_array "--notty" $@
     then
         shift
-    else
-        tty=1
+        notty=1
     fi
 
-    docker exec -u app -${tty:+t}i "${M2C_CFG_DOMAIN_NAME}__php" composer "$@"
+    docker-compose exec -u app ${notty:+-T} php composer "$@"
 
     if [[ "$m2c_os" == "darwin" ]]
     then
