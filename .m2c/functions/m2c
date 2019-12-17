@@ -27,12 +27,27 @@ m2c_get_project_dir() {
 m2c_load_env() {
     m2c_global_load_env
     m2c_load_project_env
+    m2c_save_project_env
 }
 
 m2c_save_project_env() {
     local config_env="${m2c_project_dir}/.env"
 
     [[ -f "${config_env}" ]] || mkdir -p "$(dirname "${config_env}")" && touch "${config_env}"
+
+    export M2C_PROJECT_PATH="${m2c_project_dir}"
+
+    export M2C_TRAEFIK_IP="$(docker ps \
+        --filter "label=com.docker.compose.project=m2c" \
+        --filter "label=com.docker.compose.service=traefik" \
+        -qa | xargs docker inspect \
+        --format="{{index .NetworkSettings.Networks.m2c.IPAddress}}")"
+
+    if [[ "$m2c_os" != "darwin" ]]
+    then
+        export M2C_UID="$(id -u)"
+        export M2C_GID="$(id -g)"
+    fi
 
     set | grep '^M2C_CFG_' > "${config_env}"
 
@@ -57,20 +72,6 @@ m2c_load_project_env() {
         . "${config_env}"
         set +a
     fi
-
-    export M2C_PROJECT_PATH="${m2c_project_dir}"
-
-    if [[ "$m2c_os" != "darwin" ]]
-    then
-        export M2C_UID="$(id -u)"
-        export M2C_GID="$(id -g)"
-    fi
-
-    export M2C_TRAEFIK_IP="$(docker ps \
-        --filter "label=com.docker.compose.project=m2c" \
-        --filter "label=com.docker.compose.service=traefik" \
-        -qa | xargs docker inspect \
-        --format="{{index .NetworkSettings.Networks.m2c.IPAddress}}")"
 }
 
 m2c_load_project_defaults_env() {
@@ -1441,7 +1442,17 @@ m2c_init() {
         "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php"
     m2c_result 0
 
-    m2c_local up
+    local service=($(m2c_local_list_services))
+
+    m2c_info_bold "\n[Creating docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
+
+    for i in "${!service[@]}"
+    do
+        m2c_local_print_service "${service[$i]}"
+        m2c_loading
+        m2c_local_project_up "${service[$i]}"
+        m2c_result $?
+    done
 
     [[ "$m2c_os" == "darwin" ]] && m2c_push --all
 
@@ -1577,10 +1588,11 @@ m2c_init() {
 
     if [[ "$m2c_os" == "darwin" ]]
     then
-        m2c_info_bold "\n[Mutagen]\n\n"
-        m2c_dots "Starting sync sessions"
+        m2c_info_bold "\n[Mutagen sync]\n\n"
+        m2c_dots "Creating sync sessions"
         m2c_loading
-        m2c_sync start >"${m2c_log}" 2>&1 && \
+        m2c_sync stop >/dev/null 2>&1 && \
+        m2c_sync start >/dev/null 2>&1 && \
         sleep 15
         m2c_result $?
     fi
@@ -2430,6 +2442,8 @@ m2c_local_start() {
         m2c_local_container_start "${service[$i]}"
         m2c_result $?
     done
+
+    m2c_mutagen_create ${service[@]}
 }
 
 m2c_local_restart() {
@@ -2444,10 +2458,14 @@ m2c_local_restart() {
         m2c_local_container_restart "${service[$i]}"
         m2c_result $?
     done
+
+    m2c_mutagen_create ${service[@]}
 }
 
 m2c_local_stop() {
     local service=("$@")
+
+    m2c_mutagen_terminate ${service[@]}
 
     m2c_info_bold "\n[Stopping docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
@@ -2472,10 +2490,11 @@ m2c_local_up() {
         m2c_local_project_up "${service[$i]}"
         m2c_result $?
     done
+
+    m2c_mutagen_create ${service[@]}
 }
 
 m2c_local_down() {
-    m2c_info_bold "\n[Uninstalling]\n\n"
     m2c_ask_bool "Remove project docker containers and persistent volumes?"
 
     if [[ -z ${m2c_res} ]]
@@ -2483,7 +2502,9 @@ m2c_local_down() {
         exit 0
     fi
 
-    echo
+    m2c_mutagen_terminate php
+
+    m2c_info_bold "\n[Uninstalling]\n\n"
     m2c_dots "Removing project docker containers, volumes and network"
     m2c_loading
     m2c_local_project_down
@@ -2532,6 +2553,29 @@ m2c_mutagen() {
     export MUTAGEN_DATA_DIRECTORY="${m2c_global_dir}/mutagen"
     "${MUTAGEN_DATA_DIRECTORY}/mutagen" daemon start
     "${MUTAGEN_DATA_DIRECTORY}/mutagen" $@
+}
+
+m2c_mutagen_create() {
+    if [[ "$m2c_os" == "darwin" ]] && m2c_in_array php $@
+    then
+        m2c_info_bold "\n[Mutagen sync]\n\n"
+        m2c_dots "Creating sync sessions"
+        m2c_loading
+        m2c_sync stop >/dev/null 2>&1 && \
+        m2c_sync start >/dev/null 2>&1 && \
+        m2c_result $?
+    fi
+}
+
+m2c_mutagen_terminate() {
+    if [[ "$m2c_os" == "darwin" ]] && m2c_in_array php $@
+    then
+        m2c_info_bold "\n[Mutagen sync]\n\n"
+        m2c_dots "Terminating sync sessions"
+        m2c_loading
+        m2c_sync stop >/dev/null 2>&1
+        m2c_result $?
+    fi
 }
 
 m2c_pull_exec() {
