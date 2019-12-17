@@ -357,7 +357,8 @@ m2c_db_mysqldump() {
 }
 
 m2c_db_import() {
-    local file="$1"
+    local file="$1" \
+          is_init="$2"
 
     if [[ -f "${file}" ]]
     then
@@ -386,11 +387,7 @@ m2c_db_import() {
             m2c_result $?
         fi
 
-        m2c_dots "Setting the project domain name"
-        m2c_loading
-        m2c_magento --notty config:set web/secure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"${m2c_log}" 2>&1 && \
-        m2c_magento --notty config:set web/unsecure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"${m2c_log}" 2>&1
-        m2c_result $?
+        [[ -z ${is_init} ]] && m2c_domain_name
     elif [[ -n ${file} ]]
     then
         m2c_error "Cannot locate database dump file at specified path: $file!\n"
@@ -1457,7 +1454,7 @@ m2c_init() {
 
     if [[ -f "${m2c_magento_db_import}" ]]
     then
-        m2c_db_import "${m2c_magento_db_import}"
+        m2c_db_import "${m2c_magento_db_import}" "init"
         m2c_info_bold "\n[Installing Magento]\n\n"
     else
         m2c_info_bold "\n[Installing Magento]\n\n"
@@ -1554,6 +1551,8 @@ m2c_init() {
         m2c_rabbitmq_configure
         m2c_result $?
     fi
+
+    [[ -f "${m2c_magento_db_import}" ]] && m2c_domain_name
 
     if [[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]]
     then
@@ -2820,6 +2819,14 @@ m2c_redis_configure() {
     ) >"${m2c_log}" 2>&1
 
     return $?
+}
+
+m2c_domain_name() {
+    m2c_dots "Configuring the project domain name"
+    m2c_loading
+    m2c_magento --notty config:set web/secure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"${m2c_log}" 2>&1 && \
+    m2c_magento --notty config:set web/unsecure/base_url "https://$M2C_CFG_DOMAIN_NAME/" >"${m2c_log}" 2>&1
+    m2c_result $?
 }
 
 m2c_share() {
