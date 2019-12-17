@@ -52,7 +52,7 @@ m2c_save_project_env() {
     set | grep '^M2C_CFG_' > "${config_env}"
 
     export DOCKER_CLIENT_TIMEOUT=600
-    export COMPOSE_FILE="./.m2c/docker/docker-compose.yml:./.m2c/docker/docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml${M2C_CFG_PHPMYADMIN:+:./.m2c/docker/docker-compose.phpmyadmin.yml}${M2C_CFG_ELASTICSEARCH:+:./.m2c/docker/docker-compose.elasticsearch.yml}${M2C_CFG_RABBITMQ:+:./.m2c/docker/docker-compose.rabbitmq.yml}:./.m2c/docker/docker-compose.${m2c_os}.yml"
+    export COMPOSE_FILE=".m2c/docker/docker-compose.yml:.m2c/docker/docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml${M2C_CFG_PHPMYADMIN:+:.m2c/docker/docker-compose.phpmyadmin.yml}${M2C_CFG_ELASTICSEARCH:+:.m2c/docker/docker-compose.elasticsearch.yml}${M2C_CFG_RABBITMQ:+:.m2c/docker/docker-compose.rabbitmq.yml}:.m2c/docker/docker-compose.${m2c_os}.yml"
     export COMPOSE_HTTP_TIMEOUT=600
     export COMPOSE_PATH_SEPARATOR=":"
     export COMPOSE_PROJECT_NAME="${M2C_CFG_DOMAIN_NAME/.test/}"
