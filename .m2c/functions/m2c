@@ -27,6 +27,7 @@ m2c_get_project_dir() {
 m2c_load_env() {
     m2c_global_load_env
     m2c_load_project_env
+    m2c_save_project_env
 }
 
 m2c_save_project_env() {
