@@ -1457,7 +1457,7 @@ m2c_init() {
 
     m2c_info_bold "\n[Creating docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
-    for i in "${!service[@]}"
+    for i in ${!service[@]}
     do
         m2c_local_print_service "${service[$i]}"
         m2c_loading
@@ -2350,7 +2350,7 @@ m2c_local_project_down() {
         --filter "label=com.docker.compose.project=$project" \
         -q)"
 
-    docker-compose rm --force --stop -v >"${m2c_log}" 2>&1 && \
+    docker-compose rm --force --stop -v >"${m2c_log}" 2>&1 || true && \
     (
         [[ -n ${volumes} ]] && docker volume rm --force ${volumes} >"${m2c_log}" 2>&1 || true
     ) && \
@@ -2492,7 +2492,7 @@ m2c_local_stop() {
 }
 
 m2c_local_up() {
-    local service=("$@")
+    local service=($@)
 
     m2c_info_bold "\n[Creating docker container$( (("${#service[@]}" > 1)) && echo "s" )]\n\n"
 
@@ -2508,7 +2508,7 @@ m2c_local_up() {
 }
 
 m2c_local_down() {
-    m2c_ask_bool "Remove project docker containers and persistent volumes?"
+    m2c_ask_bool "\nRemove project docker containers and persistent volumes?"
 
     if [[ -z ${m2c_res} ]]
     then
@@ -3119,8 +3119,10 @@ m2c_sync_exec() {
 m2c_sync_yml_expand() {
     local m2c_project_yml="${m2c_project_dir}/.m2c/mutagen/mutagen.yml"
     yes | cp -rf "${m2c_project_yml}" "${m2c_project_yml}.bak"
-    IFS=
-    echo -e "cat <<MUTAGEN_YML\n$(< "${m2c_project_yml}.bak")\nMUTAGEN_YML" | bash > "${m2c_project_yml}"
+    (
+        IFS=
+        echo -e "cat <<MUTAGEN_YML\n$(< "${m2c_project_yml}.bak")\nMUTAGEN_YML" | bash > "${m2c_project_yml}"
+    )
 }
 
 m2c_sync_yml_restore() {
