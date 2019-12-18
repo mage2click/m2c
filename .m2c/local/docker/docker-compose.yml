@@ -11,7 +11,7 @@ services:
     depends_on:
       - db
     labels:
-      - m2c.project.path=${M2C_PROJECT_PATH}
+      - m2c.project.path=${M2C_CFG_PROJECT_PATH}
     networks:
       - default
       - m2c

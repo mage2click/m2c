@@ -4,16 +4,16 @@ services:
 
   nginx:
     environment:
-      - UID=${M2C_UID}
-      - GID=${M2C_GID}
+      - UID=${M2C_CFG_UID}
+      - GID=${M2C_CFG_GID}
     volumes:
       - ./../../${M2C_CFG_MAGENTO_SRC}/:/var/www/html:ro
       - sock_data:/sock
 
   php:
     environment:
-      - UID=${M2C_UID}
-      - GID=${M2C_GID}
+      - UID=${M2C_CFG_UID}
+      - GID=${M2C_CFG_GID}
     volumes:
       - ~/.composer:/var/www/.composer
       - ~/.m2c/ssl/certs:/usr/share/ca-certificates/m2c:ro
@@ -22,8 +22,8 @@ services:
 
   xdebug:
     environment:
-      - UID=${M2C_UID}
-      - GID=${M2C_GID}
+      - UID=${M2C_CFG_UID}
+      - GID=${M2C_CFG_GID}
     volumes:
       - ~/.composer:/var/www/.composer
       - ~/.m2c/ssl/certs:/usr/share/ca-certificates/m2c:ro
