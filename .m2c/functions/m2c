@@ -27,29 +27,21 @@ m2c_get_project_dir() {
 m2c_load_env() {
     m2c_global_load_env
     m2c_load_project_env
-    m2c_save_project_env
 }
 
-m2c_save_project_env() {
-    local config_env="${m2c_project_dir}/.env"
-
-    [[ -f "${config_env}" ]] || mkdir -p "$(dirname "${config_env}")" && touch "${config_env}"
-
-    export M2C_PROJECT_PATH="${m2c_project_dir}"
-
-    export M2C_TRAEFIK_IP="$(docker ps \
-        --filter "label=com.docker.compose.project=m2c" \
-        --filter "label=com.docker.compose.service=traefik" \
-        -qa | xargs docker inspect \
-        --format="{{index .NetworkSettings.Networks.m2c.IPAddress}}")"
+m2c_extra_env() {
+    export M2C_CFG_PROJECT_PATH="${m2c_project_dir}"
+    export M2C_CFG_TRAEFIK_IP="$(docker ps \
+            --filter "label=com.docker.compose.project=m2c" \
+            --filter "label=com.docker.compose.service=traefik" \
+            -qa | xargs docker inspect \
+            --format="{{index .NetworkSettings.Networks.m2c.IPAddress}}")"
 
     if [[ "$m2c_os" != "darwin" ]]
     then
-        export M2C_UID="$(id -u)"
-        export M2C_GID="$(id -g)"
+        export M2C_CFG_UID="$(id -u)"
+        export M2C_CFG_GID="$(id -g)"
     fi
-
-    set | grep '^M2C_CFG_' > "${config_env}"
 
     export DOCKER_CLIENT_TIMEOUT=600
     export COMPOSE_FILE=".m2c/docker/docker-compose.yml:.m2c/docker/docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml${M2C_CFG_PHPMYADMIN:+:.m2c/docker/docker-compose.phpmyadmin.yml}${M2C_CFG_ELASTICSEARCH:+:.m2c/docker/docker-compose.elasticsearch.yml}${M2C_CFG_RABBITMQ:+:.m2c/docker/docker-compose.rabbitmq.yml}:.m2c/docker/docker-compose.${m2c_os}.yml"
@@ -57,10 +49,28 @@ m2c_save_project_env() {
     export COMPOSE_PATH_SEPARATOR=":"
     export COMPOSE_PROJECT_NAME="${M2C_CFG_DOMAIN_NAME/.test/}"
 
+    # start of compatibility with pre 0.7.4 versions
+    export M2C_PROJECT_PATH="${M2C_CFG_PROJECT_PATH}"
+    export M2C_TRAEFIK_IP="${M2C_CFG_TRAEFIK_IP}"
+
+    if [[ "$m2c_os" != "darwin" ]]
+    then
+        export M2C_CFG_UID="${M2C_UID}"
+        export M2C_CFG_GID="${M2C_GID}"
+    fi
+    # end of compatibility with pre 0.7.4 versions
+}
+
+m2c_save_project_env() {
+    local config_env="${m2c_project_dir}/.env"
+
+    [[ -f "${config_env}" ]] || mkdir -p "$(dirname "${config_env}")" && touch "${config_env}"
+
+    m2c_extra_env
+
+    set | grep '^M2C_CFG_' > "${config_env}"
     set | grep '^DOCKER_' >> "${config_env}"
     set | grep '^COMPOSE_' >> "${config_env}"
-
-    m2c_load_project_env
 }
 
 m2c_load_project_env() {
@@ -72,6 +82,8 @@ m2c_load_project_env() {
         . "${config_env}"
         set +a
     fi
+
+    m2c_extra_env
 }
 
 m2c_load_project_defaults_env() {
@@ -1430,6 +1442,8 @@ m2c_init() {
             curl -L "$url" | tar xzf - -o -C "${m2c_project_dir}"
         fi
     fi
+
+    m2c_mutagen_terminate php
 
     m2c_info_bold "\n[Cleanup]\n\n"
     m2c_dots "Cleanup before creating containers"
