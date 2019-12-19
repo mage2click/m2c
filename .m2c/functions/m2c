@@ -138,7 +138,7 @@ m2c_rabbitmq_configure() {
             "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php.temp" && \
         mv "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php.temp" \
             "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" && \
-        docker cp "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" \
+        m2c_docker_cp "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" \
             "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/app/etc/env.php && \
         m2c_magento --notty setup:upgrade --no-interaction
     ) >"${m2c_log}" 2>&1
@@ -153,7 +153,7 @@ m2c_rabbitmq_reset() {
             "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php.temp" && \
         mv "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php.temp" \
             "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" && \
-        docker cp "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" \
+        m2c_docker_cp "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" \
             "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/app/etc/env.php && \
         m2c_magento --notty setup:upgrade --no-interaction
     ) >"${m2c_log}" 2>&1
@@ -1418,9 +1418,10 @@ m2c_init() {
         fi
     fi
 
-    local url
+    local url file_name cached_path temp_path
 
-    mkdir -p "${m2c_project_dir}/.m2c/mutagen" "${m2c_project_dir}/.m2c/docker" "${m2c_project_dir}/.m2c/mysql"
+    mkdir -p "${m2c_project_dir}/.m2c/mutagen" "${m2c_project_dir}/.m2c/docker" \
+         "${m2c_project_dir}/.m2c/mysql"
     yes | cp -rf "${m2c_global_dir}"/local/docker/* "${m2c_project_dir}/.m2c/docker/"
     yes | cp -rf "${m2c_global_dir}/local/mutagen/mutagen.yml" "${m2c_project_dir}/.m2c/mutagen/mutagen.yml"
     yes | cp -rf "${m2c_global_dir}/local/mysql/custom.cnf" "${m2c_project_dir}/.m2c/mysql/custom.cnf"
@@ -1428,19 +1429,42 @@ m2c_init() {
 
     if [[ -z ${m2c_magento_exists} ]]
     then
-        m2c_info_bold "\n[Downloading Magento sources]\n\n"
+        file_name="magento$([[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && \
+                echo "2")$([[ -n ${m2c_magento_sample_data} && "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && \
+                echo "-with-samples")-$M2C_CFG_MAGENTO.tar.gz"
+        temp_path="${m2c_global_dir}/cache/temp-${file_name}"
+        cached_path="${m2c_global_dir}/cache/${file_name}"
 
-        url="http://pubfiles.nexcess.net/magento/ce-packages/magento$([[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && \
-            echo "2")$([[ -n ${m2c_magento_sample_data} && "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && \
-            echo "-with-samples")-$M2C_CFG_MAGENTO.tar.gz"
+        url="http://pubfiles.nexcess.net/magento/ce-packages/${file_name}"
 
+        if [[ ! -d "${m2c_global_dir}/cache" ]]
+        then
+            mkdir -p "${m2c_global_dir}/cache"
+        fi
+
+        rm -rf "${m2c_global_dir}"/cache/temp-* >/dev/null 2>&1
+
+        if [[ ! -f "${cached_path}" ]]
+        then
+            m2c_info_bold "\n[Downloading Magento sources]\n\n"
+            curl -L -o "${temp_path}" "$url"
+        else
+            temp_path="${cached_path}"
+        fi
+
+        m2c_info_bold "\n[Extracting Magento sources]\n\n"
+        m2c_dots "Extracting sources from archive"
+        m2c_loading
         if [[ -n ${M2C_CFG_MAGENTO_SRC} ]]
         then
             mkdir -p "${m2c_project_dir}/$M2C_CFG_MAGENTO_SRC"
-            curl -L "$url" | tar xzf - -o -C "${m2c_project_dir}/$M2C_CFG_MAGENTO_SRC"
+            tar -zxf "${temp_path}" -C "${m2c_project_dir}/$M2C_CFG_MAGENTO_SRC"
+            m2c_res=$?
         else
-            curl -L "$url" | tar xzf - -o -C "${m2c_project_dir}"
+            tar -zxf "${temp_path}" -C "${m2c_project_dir}"
+            m2c_res=$?
         fi
+        m2c_result ${m2c_res}
     fi
 
     m2c_mutagen_terminate php
@@ -1505,9 +1529,7 @@ m2c_init() {
         m2c_magento --notty config:set trans_email/ident_custom2/email \
             "custom2@$M2C_CFG_DOMAIN_NAME" >"${m2c_log}" 2>&1 && \
         m2c_magento --notty config:set contact/email/recipient_email \
-            "hello@$M2C_CFG_DOMAIN_NAME" >"${m2c_log}" 2>&1 && \
-        docker cp "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/app/etc/env.php \
-            "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" >"${m2c_log}" 2>&1
+            "hello@$M2C_CFG_DOMAIN_NAME" >"${m2c_log}" 2>&1 >"${m2c_log}" 2>&1
         m2c_result $?
     fi
 
@@ -1531,7 +1553,7 @@ m2c_init() {
         sed -e 's/fastcgi_backend/$fastcgi_backend/g' \
             "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf.sample" > \
             "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf" && \
-        docker cp "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf" \
+        m2c_docker_cp "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/nginx.conf" \
             "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/nginx.conf && \
         docker-compose exec -T php chown -R app:app nginx.conf && \
         m2c_local_container_restart nginx
@@ -1581,7 +1603,7 @@ m2c_init() {
         (
             yes | cp -rf "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json.sample" \
                 "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json" && \
-            docker cp "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json" \
+            m2c_docker_cp "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/package.json" \
                 "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/package.json && \
             docker-compose exec -T php chown -R app:app package.json && \
             m2c_npm install
@@ -1599,11 +1621,18 @@ m2c_init() {
 
     m2c_sign ${M2C_CFG_DOMAIN_NAME}
 
+    if [[ ! -f "${cached_path}" && -f ${temp_path} ]]
+    then
+        mv "${temp_path}" "${cached_path}" >/dev/null 2>&1
+    fi
+
     if [[ "$m2c_os" == "darwin" ]]
     then
         m2c_info_bold "\n[Mutagen sync]\n\n"
         m2c_dots "Creating sync sessions"
         m2c_loading
+        m2c_docker_cp "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/app/etc/. \
+            "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/" >/dev/null 2>&1 && \
         m2c_sync stop >/dev/null 2>&1 && \
         m2c_sync start >/dev/null 2>&1 && \
         sleep 15
@@ -2201,8 +2230,8 @@ m2c_local_update() {
     echo
     m2c_dots "Updating project docker configuration"
     m2c_loading
-    mkdir -p "${m2c_project_dir}/.m2c/mutagen" "${m2c_project_dir}/.m2c/docker" "${m2c_project_dir}/.m2c/mysql" \
-      >"${m2c_log}" 2>&1 && \
+    mkdir -p "${m2c_project_dir}/.m2c/mutagen" "${m2c_project_dir}/.m2c/docker" \
+         "${m2c_project_dir}/.m2c/mysql" >"${m2c_log}" 2>&1 && \
     yes | cp -rf "${m2c_global_dir}"/local/docker/* "${m2c_project_dir}/.m2c/docker/" >"${m2c_log}" 2>&1 && \
     yes | cp -rf "${m2c_global_dir}/local/mutagen/mutagen.yml" \
         "${m2c_project_dir}/.m2c/mutagen/mutagen.yml" >"${m2c_log}" 2>&1 && \
@@ -3218,4 +3247,9 @@ m2c_varnish_reset() {
     ) >"${m2c_log}" 2>&1
 
     return $?
+}
+
+m2c_docker_cp() {
+    local source="$1" destination="$2"
+    [[ "$m2c_os" == "darwin" ]] && docker cp "${source}" "${destination}" || true
 }
