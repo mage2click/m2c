@@ -77,7 +77,11 @@ RUN         curl -sL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash \
                 --install-dir=/usr/local/bin --filename=composer \
             \
             \
-            && curl -sS -o /usr/local/bin/n98-magerun https://files.magerun.net/n98-magerun2.phar \
+            && curl -sS -o /usr/local/bin/n98-magerun2 https://files.magerun.net/n98-magerun2.phar \
+            && chmod +x /usr/local/bin/n98-magerun2 \
+            \
+            \
+            && curl -sS -o /usr/local/bin/n98-magerun https://files.magerun.net/n98-magerun.phar \
             && chmod +x /usr/local/bin/n98-magerun \
             \
             \
