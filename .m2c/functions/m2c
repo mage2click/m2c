@@ -133,6 +133,8 @@ m2c_validate_not_empty() {
 
 m2c_rabbitmq_configure() {
     (
+        m2c_docker_cp "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/app/etc/env.php \
+            "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" >/dev/null 2>&1 && \
         awk ";/downloadable_domains/{ print \"    \'queue\' => [\n        \'amqp\' => [\n            \'host\' => \'luma.test__rabbitmq\',\n            \'port\' => \'5672\',\n            \'user\' => \'guest\',\n            \'password\' => \'guest\',\n            \'virtualhost\' => \'/\'\n        ]\n    ],\"}1" \
             "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php">\
             "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php.temp" && \
@@ -148,6 +150,8 @@ m2c_rabbitmq_configure() {
 
 m2c_rabbitmq_reset() {
     (
+        m2c_docker_cp "${M2C_CFG_DOMAIN_NAME}__php":/var/www/html/app/etc/env.php \
+            "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php" >/dev/null 2>&1 && \
         sed -e "/\'queue\' => \[/{N;N;N;N;N;N;N;N;d;}" \
             "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php">\
             "${m2c_project_dir}${M2C_CFG_MAGENTO_SRC:+/${M2C_CFG_MAGENTO_SRC}}/app/etc/env.php.temp" && \
@@ -1952,7 +1956,7 @@ m2c_local_add() {
 m2c_local_add_service() {
     case "$@" in
         varnish)
-            m2c_ask_bool "Add Varnish service?"
+            m2c_ask_bool "\nAdd Varnish service?"
             M2C_CFG_VARNISH=${m2c_res}
 
             if [[ -n ${M2C_CFG_VARNISH} ]]
@@ -1972,7 +1976,7 @@ m2c_local_add_service() {
             fi
         ;;
         elasticsearch)
-            m2c_ask_bool "Add Elasticsearch service?"
+            m2c_ask_bool "\nAdd Elasticsearch service?"
             M2C_CFG_ELASTICSEARCH=${m2c_res}
 
             if [[ -n ${M2C_CFG_ELASTICSEARCH} ]]
@@ -1992,7 +1996,7 @@ m2c_local_add_service() {
             fi
         ;;
         rabbitmq)
-            m2c_ask_bool "Add RabbitMQ service?"
+            m2c_ask_bool "\nAdd RabbitMQ service?"
             M2C_CFG_RABBITMQ=${m2c_res}
 
             if [[ -n ${M2C_CFG_RABBITMQ} ]]
@@ -2012,7 +2016,7 @@ m2c_local_add_service() {
             fi
         ;;
         phpmyadmin)
-            m2c_ask_bool "Add phpMyAdmin service?"
+            m2c_ask_bool "\nAdd phpMyAdmin service?"
             M2C_CFG_PHPMYADMIN=${m2c_res}
 
             if [[ -n ${M2C_CFG_PHPMYADMIN} ]]
@@ -2108,7 +2112,7 @@ m2c_local_remove_service() {
 
     case "$@" in
         varnish)
-            m2c_ask_bool "Remove Varnish service?"
+            m2c_ask_bool "\nRemove Varnish service?"
 
             if [[ -n ${m2c_res} ]]
             then
@@ -2125,7 +2129,7 @@ m2c_local_remove_service() {
             fi
         ;;
         elasticsearch)
-            m2c_ask_bool "Remove Elasticsearch service?"
+            m2c_ask_bool "\nRemove Elasticsearch service?"
 
             if [[ -n ${m2c_res} ]]
             then
@@ -2142,7 +2146,7 @@ m2c_local_remove_service() {
             fi
         ;;
         rabbitmq)
-            m2c_ask_bool "Remove RabbitMQ service?"
+            m2c_ask_bool "\nRemove RabbitMQ service?"
 
             if [[ -n ${m2c_res} ]]
             then
@@ -2159,7 +2163,7 @@ m2c_local_remove_service() {
             fi
         ;;
         phpmyadmin)
-            m2c_ask_bool "Remove phpMyAdmin service?"
+            m2c_ask_bool "\nRemove phpMyAdmin service?"
 
             if [[ -n ${m2c_res} ]]
             then
