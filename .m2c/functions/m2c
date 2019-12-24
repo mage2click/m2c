@@ -2251,16 +2251,16 @@ m2c_local_update() {
     m2c_local up
 }
 
-m2c_local_container_id() {
-    local service="$1"
+m2c_local_container_exists() {
+    docker-compose ps --quiet --all "$1" >/dev/null 2>&1
 
-    echo "$(docker-compose ps --quiet --all "$service")"
+    return $?
 }
 
-m2c_local_active_container_id() {
-    local service="$1"
+m2c_local_container_inactive() {
+    docker-compose ps "$1" | grep 'Exit' >/dev/null 2>&1
 
-    echo "$(docker-compose ps --quiet "$service")"
+    return $?
 }
 
 m2c_local_container_start() {
@@ -2412,7 +2412,7 @@ m2c_local_project_check_dir() {
 m2c_local_project_check() {
     m2c_local_project_check_dir
 
-    if [[ -z "$(m2c_local_container_id php)" ]]
+    if ! m2c_local_container_exists php
     then
         m2c_error "This command intended to be used with the initialized projects only!\nTo initialize a new project in the current directory, run \`m2c init\` command.\n"
         exit 1
@@ -2422,11 +2422,11 @@ m2c_local_project_check() {
 m2c_local_active_project_check() {
     m2c_local_project_check_dir
 
-    if [[ -z "$(m2c_local_container_id php)" ]]
+    if ! m2c_local_container_exists php
     then
         m2c_error "This command intended to be used with the initialized projects only!\nTo initialize a new project in the current directory, run \`m2c init\` command.\n"
         exit 1
-    elif [[ -z "$(m2c_local_active_container_id php)" ]]
+    elif m2c_local_container_inactive php
     then
         m2c_local start
         echo
