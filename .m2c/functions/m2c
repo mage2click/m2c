@@ -185,7 +185,7 @@ m2c_elasticsearch_reset() {
     (
         m2c_magento --notty config:set --scope=default --scope-code=0 catalog/search/engine mysql && \
         m2c_magento --notty config:set --scope=default --scope-code=0 \
-            catalog/search/elasticsearch${version/2/}_server_hostname ""
+            catalog/search/elasticsearch${version/2/}_server_hostname "localhost"
     ) >"${m2c_log}" 2>&1
 
     return $?
