@@ -757,8 +757,9 @@ m2c_global_update() {
 }
 
 m2c_global_uninstall() {
-    m2c_info_bold "\n[Uninstall]\n\n"
-    m2c_msg "Attention!\n\n"
+    local message
+
+    m2c_msg "\nAttention!\n\n"
     m2c_msg "All projects docker containers and its volumes will be removed!\n"
     m2c_msg "Projects files on the host will not be touched. Make sure that you backed up projects databases. Use \`m2c db export\` per project to create database dump file as backup.\n\n"
 
@@ -772,18 +773,22 @@ m2c_global_uninstall() {
 
         projects=(${projects})
 
+        m2c_info_bold "\n[Uninstall]\n\n"
+
         m2c_mutagen daemon stop >/dev/null 2>&1
 
         for i in "${!projects[@]}"
         do
+            message="Uninstalling"
             if [[ "${projects[$i]}" == "m2c" ]]
             then
-                m2c_info "\nMage2click: "
+                message="$message Mage2click"
             else
-                m2c_info "\nProject: "
+                message="$message project"
             fi
-            m2c_info_bold "$(echo "${projects[$i]}" | sed 's/.*/https:\/\/&.test/')\n"
-            m2c_dots "Uninstalling"
+            message="$message $(echo "${projects[$i]}" | sed 's/.*/https:\/\/&.test/')"
+
+            m2c_dots "$message"
             m2c_loading
             true
 
@@ -812,9 +817,12 @@ m2c_global_uninstall() {
             m2c_result $?
         done
 
-        rm -rf "${m2c_global_dir}" >/dev/null 2>&1
-        rm -rf /usr/local/bin/m2c
+        m2c_dots "Removing Mage2click files and directories"
+        m2c_loading
+        rm -rf "${m2c_global_dir}" >/dev/null 2>&1 && \
+        rm -rf /usr/local/bin/m2c && \
         rm -rf /usr/local/etc/bash_completion.d/m2c
+        m2c_result $?
     fi
 
     exit 0
@@ -1061,8 +1069,7 @@ m2c_init() {
 
     m2c_in_array "--help" $@ && m2c_init_help
 
-    echo
-    m2c_ask_bool "Initialize project in the current directory?"
+    m2c_ask_bool "n\Initialize project in the current directory?"
 
     if [[ -z ${m2c_res} ]]
     then
@@ -2222,16 +2229,14 @@ m2c_local_remove_domain() {
 }
 
 m2c_local_update() {
-    m2c_info_bold "\n[Update]\n\n"
-
-    m2c_ask_bool "Update project docker configuration to latest?"
+    m2c_ask_bool "\nUpdate project docker configuration to latest?"
 
     if [[ -z ${m2c_res} ]]
     then
         exit 0
     fi
 
-    echo
+    m2c_info_bold "\n[Updating]\n\n"
     m2c_dots "Updating project docker configuration"
     m2c_loading
     mkdir -p "${m2c_project_dir}/.m2c/mutagen" "${m2c_project_dir}/.m2c/docker" \
