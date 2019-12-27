@@ -2480,7 +2480,6 @@ m2c_local_container_remove() {
 
         local volumes="$(docker volume ls \
             --filter "label=com.docker.compose.project=$project" \
-            --filter "label=com.docker.compose.service=$service" \
             -q | grep "${project}_${service}_data")"
 
         docker-compose rm --force --stop -v "${service}" >"${m2c_log}" 2>&1 && \
