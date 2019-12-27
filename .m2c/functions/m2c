@@ -690,7 +690,7 @@ m2c_global_remove() {
 m2c_global_remove_help() {
     echo -e "
 \033[1;33mInformation:\033[0m
-  Removes optional service from the Mage2click toolset.
+  Removes optional service from Mage2click toolset.
 
 \033[1;33mUsage:\033[0m
   m2c global remove <service> [--help]
