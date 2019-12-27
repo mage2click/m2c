@@ -37,28 +37,6 @@ services:
       - traefik.port=8080
     restart: ${M2C_GLOBAL_SERVICES_AUTO_START}
 
-  portainer:
-    container_name: m2c.test__portainer
-    image: portainer/portainer:1.22.2
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer:/data
-    labels:
-      - traefik.enable=true
-      - traefik.frontend.rule=Host:portainer.m2c.test
-      - traefik.port=9000
-    restart: ${M2C_GLOBAL_SERVICES_AUTO_START}
-
-  mailhog:
-    container_name: m2c.test__mailhog
-    hostname: mailhog
-    image: mailhog/mailhog:v1.0.0
-    labels:
-      - traefik.enable=true
-      - traefik.frontend.rule=Host:mailhog.m2c.test
-      - traefik.port=8025
-    restart: ${M2C_GLOBAL_SERVICES_AUTO_START}
-
   dnsmasq:
     container_name: m2c.test__dnsmasq
     image: mage2click/m2c:dnsmasq
@@ -69,9 +47,6 @@ services:
       - traefik.frontend.rule=Host:dnsmasq.m2c.test
       - traefik.port=8080
     restart: ${M2C_GLOBAL_SERVICES_AUTO_START}
-
-volumes:
-  portainer:
 
 networks:
   default:
