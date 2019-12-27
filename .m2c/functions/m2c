@@ -55,8 +55,8 @@ m2c_extra_env() {
 
     if [[ "$m2c_os" != "darwin" ]]
     then
-        export M2C_CFG_UID="${M2C_UID}"
-        export M2C_CFG_GID="${M2C_GID}"
+        export M2C_UID="${M2C_CFG_GID}"
+        export M2C_GID="${M2C_CFG_GID}"
     fi
     # end of compatibility with pre 0.7.4 versions
 }
