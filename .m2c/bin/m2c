@@ -470,6 +470,11 @@ m2c_install() {
         else
             rm -f "${m2c_global_dir}/ssl/config/v3_ext.blank.conf"
         fi
+
+        if [[ ! -f "${m2c_global_dir}/.env" ]]
+        then
+            yes | cp -rf "${m2c_global_dir}/docker/.env" "${m2c_global_dir}/" >/dev/null 2>&1
+        fi
     fi
     m2c_result ${test}
 
@@ -623,6 +628,7 @@ then
     . "${m2c_global_dir}/functions/m2c"
 
     m2c_global_load_env
+    m2c_global_save_env
 
     m2c_sign "m2c.test"
 
@@ -653,6 +659,7 @@ else
     case "$1" in
         global)
             shift
+            m2c_global_load_env
             m2c_log="${m2c_global_dir}/log"
             m2c_global $@
         ;;

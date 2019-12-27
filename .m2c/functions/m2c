@@ -459,6 +459,10 @@ m2c_global() {
     m2c_in_array "--help" $@ && m2c_global_help
 
     case "$1" in
+        add)
+            shift
+            m2c_global_add "$@"
+        ;;
         autostart)
             shift
             m2c_global_autostart "$@"
@@ -469,6 +473,10 @@ m2c_global() {
         projects)
             m2c_global_projects
         ;;
+        remove)
+            shift
+            m2c_global_remove "$@"
+        ;;
         uninstall)
             m2c_global_uninstall
         ;;
@@ -476,7 +484,7 @@ m2c_global() {
             m2c_global_update
         ;;
         *)
-            local m2c_global_services=("portainer" "mailhog" "dnsmasq" "traefik" "mage2click")
+            local m2c_global_services=($(m2c_global_list_services))
             local m2c_global_service=()
             local m2c_global_command=
 
@@ -490,8 +498,22 @@ m2c_global() {
                         m2c_global_service+=($1)
                         shift
                     ;;
+                    portainer|mailhog|dnsmasq|traefik|mage2click)
+                        if ! [[ "$1" == "portainer" && -z ${M2C_GLOBAL_PORTAINER} || \
+                                "$1" == "mailhog" && -z ${M2C_GLOBAL_MAILHOG} ]]
+                        then
+                            m2c_global_service+=("$1")
+                        fi
+                        shift
+                    ;;
                     *)
-                        m2c_global_error "$1"
+                        if m2c_in_array "$1" ${m2c_global_services[@]}
+                        then
+                            m2c_global_service+=("$1")
+                            shift
+                        else
+                            m2c_global_error "$1" "$m2c_global_command"
+                        fi
                     ;;
                 esac
             done
@@ -511,52 +533,198 @@ m2c_global() {
                 stop)
                     m2c_global_stop "${m2c_global_service[@]}"
                 ;;
-                *)
-                    m2c_global_help
-                ;;
             esac
         ;;
     esac
+}
 
+m2c_global_list_services() {
+    echo "$(
+        cd "${m2c_global_dir}/" && \
+        yes | docker-compose ps --services --all
+    )"
+    return $?
 }
 
 m2c_global_error() {
-    m2c_error "Unknown argument \`$1\`. Run \`m2c global --help\` for usage information.\n"
+    m2c_error "Unknown argument \`$1\`. Run \`m2c global$([[ "$2" != "" ]] && \
+        echo " $2") --help\` for usage information.\n"
     exit 1
 }
 
 m2c_global_load_env() {
-    local config_env="${m2c_global_dir}/docker/.env"
+    local config_env="${m2c_global_dir}/.env"
 
     [[ -f "${config_env}" ]] && . "${config_env}"
+
+    m2c_global_extra_env
 }
 
 m2c_global_save_env() {
-    local config_env="${m2c_global_dir}/docker/.env"
+    local config_env="${m2c_global_dir}/.env"
 
     [[ -f "${config_env}" ]] || mkdir -p "$(dirname "${config_env}")" && touch "${config_env}"
 
+    m2c_global_extra_env
+
     set | grep '^M2C_GLOBAL_' > "${config_env}"
+    set | grep '^DOCKER_' >> "${config_env}"
+    set | grep '^COMPOSE_' >> "${config_env}"
+
+    if [[ -f "${m2c_global_dir}/docker/.env" ]]
+    then
+        rm -f "${m2c_global_dir}/docker/.env" >/dev/null 2>&1
+    fi
 }
 
-m2c_global_print_service() {
-    case "$1" in
+m2c_global_extra_env() {
+    export DOCKER_CLIENT_TIMEOUT=600
+    export COMPOSE_FILE="docker/docker-compose.yml${M2C_GLOBAL_PORTAINER:+:docker/docker-compose.portainer.yml}${M2C_GLOBAL_MAILHOG:+:docker/docker-compose.mailhog.yml}"
+    export COMPOSE_HTTP_TIMEOUT=600
+    export COMPOSE_PATH_SEPARATOR=":"
+    export COMPOSE_PROJECT_NAME="m2c"
+}
+
+m2c_global_add() {
+    m2c_in_array "--help" $@ && m2c_global_add_help
+
+    case "$@" in
         portainer)
-            m2c_dots "Portainer"
+            m2c_ask_bool "\nAdd Portainer service to Mage2click toolset?"
+            M2C_GLOBAL_PORTAINER=${m2c_res}
+
+            if [[ -n ${M2C_GLOBAL_PORTAINER} ]]
+            then
+                M2C_GLOBAL_PORTAINER="1.23.0"
+                m2c_global_save_env
+                m2c_global_up portainer
+            fi
         ;;
         mailhog)
-            m2c_dots "Mailhog"
+            m2c_ask_bool "\nAdd Mailhog service to Mage2click toolset?"
+            M2C_GLOBAL_MAILHOG=${m2c_res}
+
+            if [[ -n ${M2C_GLOBAL_MAILHOG} ]]
+            then
+                M2C_GLOBAL_MAILHOG="v1.0.0"
+                m2c_global_save_env
+                m2c_global_up mailhog
+            fi
         ;;
-        dnsmasq)
-            m2c_dots "Dnsmasq"
-        ;;
-        traefik)
-            m2c_dots "Traefik"
-        ;;
-        mage2click)
-            m2c_dots "Mage2click"
+        *)
+            if [[ "$@" == "" ]]
+            then
+                m2c_global_add_help
+            else
+                m2c_global_error "$*" "add"
+            fi
         ;;
     esac
+}
+
+m2c_global_add_help() {
+    echo -e "
+\033[1;33mInformation:\033[0m
+  Adds optional service to Mage2click toolset.
+
+\033[1;33mUsage:\033[0m
+  m2c global add <service> [--help]
+  m2c global add [--help]
+
+\033[1;33mServices:\033[0m
+  portainer         Portainer service.
+  mailhog           Mailhog service.
+
+\033[1;33mFlags:\033[0m
+  --help            Displays this information.
+"
+    exit 0
+}
+
+m2c_global_remove() {
+    local service=
+
+    m2c_in_array "--help" $@ && m2c_global_remove_help
+
+    case "$@" in
+        portainer)
+            m2c_ask_bool "\nRemove Portainer service from Mage2click toolset?"
+
+            if [[ -n ${m2c_res} ]]
+            then
+                service="$1"
+                M2C_GLOBAL_PORTAINER=
+            fi
+        ;;
+        mailhog)
+            m2c_ask_bool "\nRemove Mailhog service from Mage2click toolset?"
+
+            if [[ -n ${m2c_res} ]]
+            then
+                service="$1"
+                M2C_GLOBAL_MAILHOG=
+            fi
+        ;;
+        *)
+            if [[ "$@" == "" ]]
+            then
+                m2c_global_remove_help
+            else
+                m2c_global_error "$*" "remove"
+            fi
+        ;;
+    esac
+
+    if [[ -n ${service} ]]
+    then
+        m2c_info_bold "\n[Removing docker container]\n\n"
+        m2c_print_service "$service"
+        m2c_loading
+        m2c_global_container_remove "$service"
+        m2c_result $?
+
+        m2c_global_save_env
+    fi
+}
+
+m2c_global_remove_help() {
+    echo -e "
+\033[1;33mInformation:\033[0m
+  Removes optional service from the Mage2click toolset.
+
+\033[1;33mUsage:\033[0m
+  m2c global remove <service> [--help]
+  m2c global remove [--help]
+
+\033[1;33mServices:\033[0m
+  portainer         Portainer service.
+  mailhog           Mailhog service.
+
+\033[1;33mFlags:\033[0m
+  --help            Displays this information.
+"
+    exit 0
+}
+
+m2c_global_container_remove() {
+    local service="$1"
+
+    if [[ -n ${service} ]]
+    then
+        local volumes="$(docker volume ls \
+            --filter "label=com.docker.compose.project=m2c" \
+            -q | grep "m2c_${service}")"
+
+        cd "${m2c_global_dir}/" && \
+        docker-compose rm --force --stop -v "${service}" >"${m2c_log}" 2>&1 && \
+        (
+            [[ -n "${volumes}" ]] && docker volume rm --force "${volumes}" >"${m2c_log}" 2>&1 || true
+        )
+
+        return $?
+    fi
+
+    return 1
 }
 
 m2c_global_up() {
@@ -566,12 +734,11 @@ m2c_global_up() {
 
     for i in "${!service[@]}"
     do
-        m2c_global_print_service ${service[$i]}
+        m2c_print_service ${service[$i]}
         m2c_loading
         (
-            cd "$m2c_global_dir/docker/" && \
-            yes | docker-compose --project-name m2c \
-                --file docker-compose.yml up \
+            cd "${m2c_global_dir}/" && \
+            yes | docker-compose --project-name m2c up \
                 --detach --force-recreate --no-color --no-deps ${service[$i]}
         ) >"${m2c_log}" 2>&1
         m2c_result $?
@@ -585,7 +752,7 @@ m2c_global_start() {
 
     for i in "${!service[@]}"
     do
-        m2c_global_print_service ${service[$i]}
+        m2c_print_service ${service[$i]}
         m2c_loading
         docker start $(docker ps \
             --filter "label=com.docker.compose.project=m2c" \
@@ -602,7 +769,7 @@ m2c_global_restart() {
 
     for i in "${!service[@]}"
     do
-        m2c_global_print_service ${service[$i]}
+        m2c_print_service ${service[$i]}
         m2c_loading
         docker restart $(docker ps \
             --filter "label=com.docker.compose.project=m2c" \
@@ -619,7 +786,7 @@ m2c_global_stop() {
 
     for i in "${!service[@]}"
     do
-        m2c_global_print_service ${service[$i]}
+        m2c_print_service ${service[$i]}
         m2c_loading
         docker stop $(docker ps \
             --filter "label=com.docker.compose.project=m2c" \
@@ -1494,7 +1661,7 @@ m2c_init() {
 
     for i in ${!service[@]}
     do
-        m2c_local_print_service "${service[$i]}"
+        m2c_print_service "${service[$i]}"
         m2c_loading
         m2c_local_project_up "${service[$i]}"
         m2c_result $?
@@ -2192,7 +2359,7 @@ m2c_local_remove_service() {
     if [[ -n ${service} ]]
     then
         m2c_info_bold "\n[Removing docker container]\n\n"
-        m2c_local_print_service "$service"
+        m2c_print_service "$service"
         m2c_loading
         m2c_local_container_remove "$service"
         m2c_result $?
@@ -2444,8 +2611,23 @@ m2c_local_error() {
     exit 1
 }
 
-m2c_local_print_service() {
+m2c_print_service() {
     case "$1" in
+        portainer)
+            m2c_dots "Portainer"
+        ;;
+        mailhog)
+            m2c_dots "Mailhog"
+        ;;
+        dnsmasq)
+            m2c_dots "Dnsmasq"
+        ;;
+        traefik)
+            m2c_dots "Traefik"
+        ;;
+        mage2click)
+            m2c_dots "Mage2click"
+        ;;
         nginx)
             m2c_dots "Nginx"
         ;;
@@ -2475,7 +2657,6 @@ m2c_local_print_service() {
         ;;
         *)
             local service=$(echo "$1" | awk '{ print toupper( substr( $0, 1, 1 ) ) substr( $0, 2 ); }')
-
             m2c_dots "$service"
         ;;
     esac
@@ -2488,7 +2669,7 @@ m2c_local_start() {
 
     for i in "${!service[@]}"
     do
-        m2c_local_print_service "${service[$i]}"
+        m2c_print_service "${service[$i]}"
         m2c_loading
         m2c_local_container_start "${service[$i]}"
         m2c_result $?
@@ -2504,7 +2685,7 @@ m2c_local_restart() {
 
     for i in "${!service[@]}"
     do
-        m2c_local_print_service "${service[$i]}"
+        m2c_print_service "${service[$i]}"
         m2c_loading
         m2c_local_container_restart "${service[$i]}"
         m2c_result $?
@@ -2522,7 +2703,7 @@ m2c_local_stop() {
 
     for i in "${!service[@]}"
     do
-        m2c_local_print_service "${service[$i]}"
+        m2c_print_service "${service[$i]}"
         m2c_loading
         m2c_local_container_stop "${service[$i]}"
         m2c_result $?
@@ -2536,7 +2717,7 @@ m2c_local_up() {
 
     for i in "${!service[@]}"
     do
-        m2c_local_print_service "${service[$i]}"
+        m2c_print_service "${service[$i]}"
         m2c_loading
         m2c_local_project_up "${service[$i]}"
         m2c_result $?
