@@ -484,56 +484,61 @@ m2c_global() {
             m2c_global_update
         ;;
         *)
-            local m2c_global_services=($(m2c_global_list_services))
-            local m2c_global_service=()
-            local m2c_global_command=
+            if [[ "$@" == "" ]]
+            then
+                m2c_global_help
+            else
+                local m2c_global_services=($(m2c_global_list_services))
+                local m2c_global_service=()
+                local m2c_global_command=
 
-            while (("$#")); do
-                case "$1" in
-                    up|start|restart|stop)
-                        m2c_global_command="$1"
-                        shift
-                    ;;
-                    portainer|mailhog|dnsmasq|traefik|mage2click)
-                        m2c_global_service+=($1)
-                        shift
-                    ;;
-                    portainer|mailhog|dnsmasq|traefik|mage2click)
-                        if ! [[ "$1" == "portainer" && -z ${M2C_GLOBAL_PORTAINER} || \
-                                "$1" == "mailhog" && -z ${M2C_GLOBAL_MAILHOG} ]]
-                        then
-                            m2c_global_service+=("$1")
-                        fi
-                        shift
-                    ;;
-                    *)
-                        if m2c_in_array "$1" ${m2c_global_services[@]}
-                        then
-                            m2c_global_service+=("$1")
+                while (("$#")); do
+                    case "$1" in
+                        up|start|restart|stop)
+                            m2c_global_command="$1"
                             shift
-                        else
-                            m2c_global_error "$1" "$m2c_global_command"
-                        fi
+                        ;;
+                        portainer|mailhog|dnsmasq|traefik|mage2click)
+                            m2c_global_service+=($1)
+                            shift
+                        ;;
+                        portainer|mailhog|dnsmasq|traefik|mage2click)
+                            if ! [[ "$1" == "portainer" && -z ${M2C_GLOBAL_PORTAINER} || \
+                                    "$1" == "mailhog" && -z ${M2C_GLOBAL_MAILHOG} ]]
+                            then
+                                m2c_global_service+=("$1")
+                            fi
+                            shift
+                        ;;
+                        *)
+                            if m2c_in_array "$1" ${m2c_global_services[@]}
+                            then
+                                m2c_global_service+=("$1")
+                                shift
+                            else
+                                m2c_global_error "$1" "$m2c_global_command"
+                            fi
+                        ;;
+                    esac
+                done
+
+                (("${#m2c_global_service[@]}")) || m2c_global_service+=${m2c_global_services[@]}
+
+                case ${m2c_global_command} in
+                    up)
+                        m2c_global_up "${m2c_global_service[@]}"
+                    ;;
+                    start)
+                        m2c_global_start "${m2c_global_service[@]}"
+                    ;;
+                    restart)
+                        m2c_global_restart "${m2c_global_service[@]}"
+                    ;;
+                    stop)
+                        m2c_global_stop "${m2c_global_service[@]}"
                     ;;
                 esac
-            done
-
-            (("${#m2c_global_service[@]}")) || m2c_global_service+=${m2c_global_services[@]}
-
-            case ${m2c_global_command} in
-                up)
-                    m2c_global_up "${m2c_global_service[@]}"
-                ;;
-                start)
-                    m2c_global_start "${m2c_global_service[@]}"
-                ;;
-                restart)
-                    m2c_global_restart "${m2c_global_service[@]}"
-                ;;
-                stop)
-                    m2c_global_stop "${m2c_global_service[@]}"
-                ;;
-            esac
+            fi
         ;;
     esac
 }
@@ -1004,11 +1009,15 @@ m2c_global_help() {
   m2c global <command> [--help]
 
   m2c global <restart|start|stop|up> [service...]
-  m2c global autostart [on|off]
+  m2c global add <service> [--help]
+  m2c global autostart <on|off> [--help]
+  m2c global remove <service> [--help]
 
 \033[1;33mCommands:\033[0m
+  add           Adds optional service to Mage2click toolset.
   autostart     Configure autostart of toolset docker services.
   projects      Show existing Mage2click-backed projects.
+  remove        Removes optional service from Mage2click toolset.
   restart       Restart Mage2click toolset docker services.
   start         Start stopped Mage2click toolset docker services.
   stop          Stop running Mage2click toolset docker services.
@@ -1236,7 +1245,7 @@ m2c_init() {
 
     m2c_in_array "--help" $@ && m2c_init_help
 
-    m2c_ask_bool "n\Initialize project in the current directory?"
+    m2c_ask_bool "\nInitialize project in the current directory?"
 
     if [[ -z ${m2c_res} ]]
     then
