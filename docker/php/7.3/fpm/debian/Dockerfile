@@ -48,6 +48,7 @@ RUN         curl -sL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash \
                 bcmath \
                 gd \
                 intl \
+                sockets \
                 opcache \
                 pdo_mysql \
                 soap \
