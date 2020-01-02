@@ -1137,7 +1137,8 @@ m2c_help() {
   init          Initializes project in the current directory. Run
                 \`m2c init --help\` for command usage information.
   magento, m    Magento command-line tool interface. Runs bin/magento specific
-                commands.
+                commands. With \`--debug\` flag, commands will be executed on
+                the project's xdebug Docker service.
   magerun, mr   n98-magerun command-line tool interface. Runs n98-magerun
                 specific commands.
   node          Run node specific commands.
@@ -1186,7 +1187,8 @@ m2c_help() {
   init          Initializes project in the current directory. Run
                 \`m2c init --help\` for command usage information.
   magento, m    Magento command-line tool interface. Runs bin/magento specific
-                commands.
+                commands. With \`--debug\` flag, commands will be executed on
+                the project's xdebug Docker service.
   magerun, mr   n98-magerun command-line tool interface. Runs n98-magerun
                 specific commands.
   mutagen       Run mutagen.io sync related commands.
