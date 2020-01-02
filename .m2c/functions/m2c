@@ -299,7 +299,7 @@ m2c_bash() {
         service="php"
     fi
 
-    docker-compose exec -u ${user} ${notty:+-T} ${service} bash "$@"
+    docker-compose exec -u ${user} ${notty:+-T} ${service} env TERM=xterm-256color bash -l "$@"
 }
 
 m2c_composer() {
