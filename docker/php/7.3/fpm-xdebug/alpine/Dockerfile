@@ -50,6 +50,7 @@ RUN         apk update && \
                 busybox-suid \
                 gnupg \
                 gzip \
+                htop \
                 lsof && \
             \
             \

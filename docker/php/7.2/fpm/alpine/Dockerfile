@@ -53,6 +53,7 @@ RUN         apk update && \
                 git \
                 gnupg \
                 gzip \
+                htop \
                 lsof \
                 npm && \
             \
