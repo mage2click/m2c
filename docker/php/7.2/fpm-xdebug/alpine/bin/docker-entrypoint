@@ -1,0 +1,31 @@
+#!/bin/bash
+
+: ${UID:=1000}
+: ${GID:=1000}
+
+[[ "$GID" != "1000" ]] && \
+    groupmod -g $GID app
+[[ "$GID" != "1000" || "$UID" != "1000" ]] && \
+    usermod -u $UID -g $GID -d /var/www -s /bin/bash app
+
+[[ ! -d /sock ]] && \
+    mkdir -p /sock
+
+chown -R app:app /var/www /sock /var/log
+
+ping -q -c1 "host.docker.internal" > /dev/null 2>&1
+if [[ $? -ne 0 ]]
+then
+    echo -e "$(ip route | awk 'NR==1 {print $3}')\thost.docker.internal" >> /etc/hosts
+fi
+
+if [[ -f /usr/share/ca-certificates/m2c/rootCA.crt && -f /etc/ca-certificates.conf ]] && \
+    ! grep -q "m2c/rootCA.crt" /etc/ca-certificates.conf
+then
+    echo "m2c/rootCA.crt" >> /etc/ca-certificates.conf
+    update-ca-certificates
+fi
+
+su - app
+
+php-fpm --nodaemonize
