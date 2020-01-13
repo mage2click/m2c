@@ -1636,7 +1636,21 @@ m2c_init() {
         if [[ ! -f "${cached_path}" ]]
         then
             m2c_info_bold "\n[Downloading Magento sources]\n\n"
-            curl -L -o "${temp_path}" "$url"
+
+            local curl_res=18
+
+            while [[ ${curl_res} -eq 18 ]]
+            do
+                curl -L -o "${temp_path}" -C - "$url"
+                curl_res=$?
+            done
+
+            if [[ ${curl_res} -ne 0 ]]
+            then
+                echo -ne "\n\n"
+                m2c_error_bold "An error occurred while downloading Magento sources. Check your network connection and retry with the \`m2c init\` command.\n"
+                exit 1
+            fi
         else
             temp_path="${cached_path}"
         fi
