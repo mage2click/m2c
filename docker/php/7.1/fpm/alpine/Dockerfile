@@ -20,6 +20,7 @@ RUN         apk update && \
                 git \
                 gnupg \
                 gzip \
+                openssh \
                 lsof \
                 nodejs-npm \
                 wget \
