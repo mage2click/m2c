@@ -54,6 +54,7 @@ RUN         apk update && \
                 gnupg \
                 gzip \
                 htop \
+                openssh \
                 lsof \
                 npm && \
             \
