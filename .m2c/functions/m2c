@@ -244,74 +244,82 @@ m2c_set_opt_version() {
 
 m2c_cli() {
     local notty \
-          user \
-          service
+          user="app" \
+          service="php" \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            --root)
+                user="root"
+                shift
+            ;;
+            --debug)
+                service="xdebug"
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+            ;;
+        esac
+    done
 
-    if m2c_in_array "--root" $@
-    then
-        shift
-        user="root"
-    else
-        user="app"
-    fi
-
-    if m2c_in_array "--debug" $@
-    then
-        shift
-        service="xdebug"
-    else
-        service="php"
-    fi
-
-    docker-compose exec -u ${user} ${notty:+-T} ${service} "$@"
+    docker-compose exec -u ${user} ${notty:+-T} ${service} "${args[@]}"
 }
 
 m2c_bash() {
     local notty \
-          user \
-          service
+          user="app" \
+          service="php" \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            --root)
+                user="root"
+                shift
+            ;;
+            --debug)
+                service="xdebug"
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+            ;;
+        esac
+    done
 
-    if m2c_in_array "--root" $@
-    then
-        shift
-        user="root"
-    else
-        user="app"
-    fi
-
-    if m2c_in_array "--debug" $@
-    then
-        shift
-        service="xdebug"
-    else
-        service="php"
-    fi
-
-    docker-compose exec -u ${user} ${notty:+-T} ${service} env TERM=xterm-256color bash -l "$@"
+    docker-compose exec -u ${user} ${notty:+-T} ${service} env TERM=xterm-256color bash -l "${args[@]}"
 }
 
 m2c_composer() {
-    local notty
+    local notty \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+            ;;
+        esac
+    done
 
-    docker-compose exec -u app ${notty:+-T} php composer "$@"
+    docker-compose exec -u app ${notty:+-T} php composer "${args[@]}"
 
     if [[ "$m2c_os" == "darwin" ]]
     then
