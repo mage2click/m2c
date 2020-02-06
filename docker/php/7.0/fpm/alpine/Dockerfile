@@ -53,6 +53,7 @@ RUN         apk update && \
                 gettext \
                 iconv \
                 intl \
+                fileinfo \
                 json \
                 mbstring \
                 mcrypt \
