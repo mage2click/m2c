@@ -1064,39 +1064,66 @@ m2c_global_help() {
 }
 
 m2c_grunt() {
-    local notty
+    local notty \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
-    docker-compose exec -u app ${notty:+-T} php grunt "$@"
+    docker-compose exec -u app ${notty:+-T} php grunt "${args[@]}"
 }
 
 m2c_npm() {
-    local notty
+    local notty \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
-    docker-compose exec -u app ${notty:+-T} php npm "$@"
+    docker-compose exec -u app ${notty:+-T} php npm "${args[@]}"
 }
 
 m2c_node() {
-    local notty
+    local notty \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
-    docker-compose exec -u app ${notty:+-T} php node "$@"
+    docker-compose exec -u app ${notty:+-T} php node "${args[@]}"
 }
 
 m2c_redis() {
