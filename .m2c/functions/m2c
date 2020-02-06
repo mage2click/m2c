@@ -244,74 +244,85 @@ m2c_set_opt_version() {
 
 m2c_cli() {
     local notty \
-          user \
-          service
+          user="app" \
+          service="php" \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            --root)
+                user="root"
+                shift
+            ;;
+            --debug)
+                service="xdebug"
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
-    if m2c_in_array "--root" $@
-    then
-        shift
-        user="root"
-    else
-        user="app"
-    fi
-
-    if m2c_in_array "--debug" $@
-    then
-        shift
-        service="xdebug"
-    else
-        service="php"
-    fi
-
-    docker-compose exec -u ${user} ${notty:+-T} ${service} "$@"
+    docker-compose exec -u ${user} ${notty:+-T} ${service} "${args[@]}"
 }
 
 m2c_bash() {
     local notty \
-          user \
-          service
+          user="app" \
+          service="php" \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            --root)
+                user="root"
+                shift
+            ;;
+            --debug)
+                service="xdebug"
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
-    if m2c_in_array "--root" $@
-    then
-        shift
-        user="root"
-    else
-        user="app"
-    fi
-
-    if m2c_in_array "--debug" $@
-    then
-        shift
-        service="xdebug"
-    else
-        service="php"
-    fi
-
-    docker-compose exec -u ${user} ${notty:+-T} ${service} env TERM=xterm-256color bash -l "$@"
+    docker-compose exec -u ${user} ${notty:+-T} ${service} env TERM=xterm-256color bash -l "${args[@]}"
 }
 
 m2c_composer() {
-    local notty
+    local notty \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
-    docker-compose exec -u app ${notty:+-T} php composer "$@"
+    docker-compose exec -u app ${notty:+-T} php composer "${args[@]}"
 
     if [[ "$m2c_os" == "darwin" ]]
     then
@@ -346,31 +357,49 @@ m2c_db() {
 }
 
 m2c_db_mysql() {
-    local notty
+    local notty \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
     docker-compose exec ${notty:+-T} db mysql \
         -h"${M2C_CFG_DOMAIN_NAME}__db" -u"$M2C_CFG_MYSQL_USER" \
-        -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "$@"
+        -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "${args[@]}"
 }
 
 m2c_db_mysqldump() {
-    local notty
+    local notty \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
     docker-compose exec ${notty:+-T} db mysqldump \
         -h"${M2C_CFG_DOMAIN_NAME}__db" -u"$M2C_CFG_MYSQL_USER" \
-        -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "$@"
+        -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "${args[@]}"
 }
 
 m2c_db_import() {
@@ -1040,39 +1069,66 @@ m2c_global_help() {
 }
 
 m2c_grunt() {
-    local notty
+    local notty \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
-    docker-compose exec -u app ${notty:+-T} php grunt "$@"
+    docker-compose exec -u app ${notty:+-T} php grunt "${args[@]}"
 }
 
 m2c_npm() {
-    local notty
+    local notty \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
-    docker-compose exec -u app ${notty:+-T} php npm "$@"
+    docker-compose exec -u app ${notty:+-T} php npm "${args[@]}"
 }
 
 m2c_node() {
-    local notty
+    local notty \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
-    docker-compose exec -u app ${notty:+-T} php node "$@"
+    docker-compose exec -u app ${notty:+-T} php node "${args[@]}"
 }
 
 m2c_redis() {
@@ -2769,35 +2825,50 @@ m2c_local_down() {
 
 m2c_magento() {
     local notty \
-          service
+          service="php" \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            --debug)
+                service="xdebug"
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
-    if m2c_in_array "--debug" $@
-    then
-        shift
-        service="xdebug"
-    else
-        service="php"
-    fi
-
-    docker-compose exec -u app ${notty:+-T} ${service} php bin/magento $@
+    docker-compose exec -u app ${notty:+-T} ${service} php bin/magento "${args[@]}"
 }
 
 m2c_magerun() {
-    local notty
+    local notty \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
-    docker-compose exec -u app ${notty:+-T} php "n98-magerun$([[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && echo "2")" "$@"
+    docker-compose exec -u app ${notty:+-T} php \
+        "n98-magerun$([[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && echo "2")" "${args[@]}"
 }
 
 m2c_mutagen() {
@@ -2857,7 +2928,7 @@ m2c_pull_exec() {
         m2c_info "$dest_path "
         m2c_info_bold "←\n\n"
 
-        if m2c_bash --notty -c "[[ -d "/var/www/html/${source_path}" ]]" >"${m2c_log}" 2>&1
+        if m2c_cli --notty bash -c "[[ -d "/var/www/html/${source_path}" ]]" >"${m2c_log}" 2>&1
         then
             m2c_dots "Pulling directory from php docker container"
             m2c_loading
@@ -2867,7 +2938,7 @@ m2c_pull_exec() {
             res=$?
             m2c_result ${res}
             return ${res}
-        elif m2c_bash --notty -c "[[ -f "/var/www/html/${source_path}" ]]" >"${m2c_log}" 2>&1
+        elif m2c_cli --notty bash -c "[[ -f "/var/www/html/${source_path}" ]]" >"${m2c_log}" 2>&1
         then
             m2c_dots "Pulling file from php docker container"
             m2c_loading
