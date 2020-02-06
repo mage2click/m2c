@@ -265,6 +265,7 @@ m2c_cli() {
             ;;
             *)
                 args+=( "$1" )
+                shift
             ;;
         esac
     done
@@ -295,6 +296,7 @@ m2c_bash() {
             ;;
             *)
                 args+=( "$1" )
+                shift
             ;;
         esac
     done
@@ -315,6 +317,7 @@ m2c_composer() {
             ;;
             *)
                 args+=( "$1" )
+                shift
             ;;
         esac
     done
@@ -366,6 +369,7 @@ m2c_db_mysql() {
             ;;
             *)
                 args+=( "$1" )
+                shift
             ;;
         esac
     done
@@ -388,6 +392,7 @@ m2c_db_mysqldump() {
             ;;
             *)
                 args+=( "$1" )
+                shift
             ;;
         esac
     done
