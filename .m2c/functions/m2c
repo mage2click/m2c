@@ -354,31 +354,47 @@ m2c_db() {
 }
 
 m2c_db_mysql() {
-    local notty
+    local notty \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+            ;;
+        esac
+    done
 
     docker-compose exec ${notty:+-T} db mysql \
         -h"${M2C_CFG_DOMAIN_NAME}__db" -u"$M2C_CFG_MYSQL_USER" \
-        -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "$@"
+        -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "${args[@]}"
 }
 
 m2c_db_mysqldump() {
-    local notty
+    local notty \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+            ;;
+        esac
+    done
 
     docker-compose exec ${notty:+-T} db mysqldump \
         -h"${M2C_CFG_DOMAIN_NAME}__db" -u"$M2C_CFG_MYSQL_USER" \
-        -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "$@"
+        -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "${args[@]}"
 }
 
 m2c_db_import() {
