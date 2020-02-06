@@ -2928,7 +2928,7 @@ m2c_pull_exec() {
         m2c_info "$dest_path "
         m2c_info_bold "←\n\n"
 
-        if m2c_bash --notty -c "[[ -d "/var/www/html/${source_path}" ]]" >"${m2c_log}" 2>&1
+        if m2c_cli --notty bash -c "[[ -d "/var/www/html/${source_path}" ]]" >"${m2c_log}" 2>&1
         then
             m2c_dots "Pulling directory from php docker container"
             m2c_loading
@@ -2938,7 +2938,7 @@ m2c_pull_exec() {
             res=$?
             m2c_result ${res}
             return ${res}
-        elif m2c_bash --notty -c "[[ -f "/var/www/html/${source_path}" ]]" >"${m2c_log}" 2>&1
+        elif m2c_cli --notty bash -c "[[ -f "/var/www/html/${source_path}" ]]" >"${m2c_log}" 2>&1
         then
             m2c_dots "Pulling file from php docker container"
             m2c_loading
