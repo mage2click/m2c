@@ -2820,35 +2820,50 @@ m2c_local_down() {
 
 m2c_magento() {
     local notty \
-          service
+          service="php" \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            --debug)
+                service="xdebug"
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
-    if m2c_in_array "--debug" $@
-    then
-        shift
-        service="xdebug"
-    else
-        service="php"
-    fi
-
-    docker-compose exec -u app ${notty:+-T} ${service} php bin/magento $@
+    docker-compose exec -u app ${notty:+-T} ${service} php bin/magento "${args[@]}"
 }
 
 m2c_magerun() {
-    local notty
+    local notty \
+          args=()
 
-    if m2c_in_array "--notty" $@
-    then
-        shift
-        notty=1
-    fi
+    while (("$#"))
+    do
+        case "$1" in
+            --notty)
+                notty=1
+                shift
+            ;;
+            *)
+                args+=( "$1" )
+                shift
+            ;;
+        esac
+    done
 
-    docker-compose exec -u app ${notty:+-T} php "n98-magerun$([[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && echo "2")" "$@"
+    docker-compose exec -u app ${notty:+-T} php \
+        "n98-magerun$([[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && echo "2")" "${args[@]}"
 }
 
 m2c_mutagen() {
