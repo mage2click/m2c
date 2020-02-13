@@ -169,7 +169,7 @@ m2c_elasticsearch_configure() {
         m2c_magento --notty config:set catalog/search/elasticsearch${version}_enable_auth 0 && \
         m2c_magento --notty config:set catalog/search/elasticsearch${version}_index_prefix magento2 && \
         m2c_magento --notty config:set catalog/search/elasticsearch${version}_server_hostname \
-            ${M2C_CFG_DOMAIN_NAME}__elasticsearch
+            elasticsearch.${M2C_CFG_DOMAIN_NAME}
     ) >"${m2c_log}" 2>&1
 
     return $?
