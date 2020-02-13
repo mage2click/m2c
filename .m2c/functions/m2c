@@ -133,7 +133,7 @@ m2c_validate_not_empty() {
 
 m2c_rabbitmq_configure() {
     (
-        m2c_magento --notty setup:config:set --no-interaction --amqp-host=${M2C_CFG_DOMAIN_NAME}__rabbitmq \
+        m2c_magento --notty setup:config:set --no-interaction --amqp-host=rabbitmq.${M2C_CFG_DOMAIN_NAME} \
             --amqp-port=5672 --amqp-user=guest --amqp-password=guest --amqp-virtualhost=/ && \
         m2c_magento --notty setup:upgrade --no-interaction
     ) >"${m2c_log}" 2>&1
@@ -169,7 +169,7 @@ m2c_elasticsearch_configure() {
         m2c_magento --notty config:set catalog/search/elasticsearch${version}_enable_auth 0 && \
         m2c_magento --notty config:set catalog/search/elasticsearch${version}_index_prefix magento2 && \
         m2c_magento --notty config:set catalog/search/elasticsearch${version}_server_hostname \
-            ${M2C_CFG_DOMAIN_NAME}__elasticsearch
+            elasticsearch.${M2C_CFG_DOMAIN_NAME}
     ) >"${m2c_log}" 2>&1
 
     return $?
@@ -371,7 +371,7 @@ m2c_db_mysql() {
     done
 
     docker-compose exec ${notty:+-T} db mysql \
-        -h"${M2C_CFG_DOMAIN_NAME}__db" -u"$M2C_CFG_MYSQL_USER" \
+        -h"db.${M2C_CFG_DOMAIN_NAME}" -u"$M2C_CFG_MYSQL_USER" \
         -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "${args[@]}"
 }
 
@@ -394,7 +394,7 @@ m2c_db_mysqldump() {
     done
 
     docker-compose exec ${notty:+-T} db mysqldump \
-        -h"${M2C_CFG_DOMAIN_NAME}__db" -u"$M2C_CFG_MYSQL_USER" \
+        -h"db.${M2C_CFG_DOMAIN_NAME}" -u"$M2C_CFG_MYSQL_USER" \
         -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "${args[@]}"
 }
 
@@ -1757,7 +1757,7 @@ m2c_init() {
         m2c_loading_install
 
         m2c_magento --notty setup:install \
-                --db-host="${M2C_CFG_DOMAIN_NAME}__db" \
+                --db-host="db.${M2C_CFG_DOMAIN_NAME}" \
                 --db-name="${M2C_CFG_MYSQL_DATABASE}" \
                 --db-user="${M2C_CFG_MYSQL_USER}" \
                 --db-password="${M2C_CFG_MYSQL_PASSWORD}" \
@@ -3135,11 +3135,11 @@ m2c_push() {
 m2c_redis_configure() {
     (
         m2c_magento --notty setup:config:set --no-interaction --cache-backend=redis \
-                --cache-backend-redis-server=${M2C_CFG_DOMAIN_NAME}__redis --cache-backend-redis-db=0 && \
+                --cache-backend-redis-server=redis.${M2C_CFG_DOMAIN_NAME} --cache-backend-redis-db=0 && \
         m2c_magento --notty setup:config:set --no-interaction  --page-cache=redis \
-                --page-cache-redis-server=${M2C_CFG_DOMAIN_NAME}__redis --page-cache-redis-db=1 && \
+                --page-cache-redis-server=redis.${M2C_CFG_DOMAIN_NAME} --page-cache-redis-db=1 && \
         m2c_magento --notty setup:config:set --no-interaction --session-save=redis \
-                --session-save-redis-host=${M2C_CFG_DOMAIN_NAME}__redis --session-save-redis-log-level=4 \
+                --session-save-redis-host=redis.${M2C_CFG_DOMAIN_NAME} --session-save-redis-log-level=4 \
                 --session-save-redis-db=2
     ) >"${m2c_log}" 2>&1
 
@@ -3482,16 +3482,16 @@ m2c_varnish_configure() {
         m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/caching_application 2 && \
         m2c_magento --notty config:set --scope=default --scope-code=0 \
-            system/full_page_cache/varnish/access_list ${M2C_CFG_DOMAIN_NAME}__nginx && \
+            system/full_page_cache/varnish/access_list nginx.${M2C_CFG_DOMAIN_NAME} && \
         m2c_magento --notty config:set --scope=default --scope-code=0 \
-            system/full_page_cache/varnish/backend_host ${M2C_CFG_DOMAIN_NAME}__nginx && \
+            system/full_page_cache/varnish/backend_host nginx.${M2C_CFG_DOMAIN_NAME} && \
         m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/varnish/backend_port 8080 && \
         m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/varnish/grace_period 300 && \
-        m2c_magento --notty setup:config:set --http-cache-hosts=${M2C_CFG_DOMAIN_NAME}__varnish:80 && \
-        m2c_magento --notty varnish:vcl:generate --access-list ${M2C_CFG_DOMAIN_NAME}__nginx \
-            --backend-host ${M2C_CFG_DOMAIN_NAME}__nginx \
+        m2c_magento --notty setup:config:set --http-cache-hosts=varnish.${M2C_CFG_DOMAIN_NAME}:80 && \
+        m2c_magento --notty varnish:vcl:generate --access-list nginx.${M2C_CFG_DOMAIN_NAME} \
+            --backend-host nginx.${M2C_CFG_DOMAIN_NAME} \
             --backend-port 8080 --export-version ${version} \
             --output-file ./var/default.vcl
     ) >"${m2c_log}" 2>&1 && \

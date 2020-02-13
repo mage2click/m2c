@@ -4,7 +4,6 @@ services:
 
   php:
     container_name: ${M2C_CFG_DOMAIN_NAME}__php
-    hostname: ${M2C_CFG_DOMAIN_NAME}__php
     image: mage2click/m2c:php-fpm-${M2C_CFG_PHP:-7.3}-alpine
     extra_hosts:
       - ${M2C_CFG_DOMAIN_NAME}:${M2C_TRAEFIK_IP:-0.0.0.0}
@@ -18,7 +17,6 @@ services:
 
   xdebug:
     container_name: ${M2C_CFG_DOMAIN_NAME}__xdebug
-    hostname: ${M2C_CFG_DOMAIN_NAME}__xdebug
     image: mage2click/m2c:php-fpm-${M2C_CFG_PHP:-7.3}-xdebug-alpine
     extra_hosts:
       - ${M2C_CFG_DOMAIN_NAME}:${M2C_TRAEFIK_IP:-0.0.0.0}
@@ -32,7 +30,6 @@ services:
 
   db:
     container_name: ${M2C_CFG_DOMAIN_NAME}__db
-    hostname: ${M2C_CFG_DOMAIN_NAME}__db
     image: mariadb:${M2C_CFG_MARIADB:-10.3}
     environment:
       - MYSQL_ROOT_PASSWORD=${M2C_CFG_MYSQL_ROOT_PASSWORD:-magento}
@@ -43,15 +40,25 @@ services:
       - ./../mysql/custom.cnf:/etc/mysql/conf.d/custom.cnf:ro
       - db_data:/var/lib/mysql
     networks:
-      - default
-      - m2c
+      default:
+        aliases:
+          - db.${M2C_CFG_DOMAIN_NAME}
+      m2c:
+        aliases:
+          - db.${M2C_CFG_DOMAIN_NAME}
 
   redis:
     container_name: ${M2C_CFG_DOMAIN_NAME}__redis
-    hostname: ${M2C_CFG_DOMAIN_NAME}__redis
     image: redis:${M2C_CFG_REDIS:-5.0}-alpine
     volumes:
       - redis_data:/data
+    networks:
+      default:
+        aliases:
+          - redis.${M2C_CFG_DOMAIN_NAME}
+      m2c:
+        aliases:
+          - redis.${M2C_CFG_DOMAIN_NAME}
 
 volumes:
   db_data:
