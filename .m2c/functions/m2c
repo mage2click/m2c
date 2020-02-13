@@ -371,7 +371,7 @@ m2c_db_mysql() {
     done
 
     docker-compose exec ${notty:+-T} db mysql \
-        -h"${M2C_CFG_DOMAIN_NAME}__db" -u"$M2C_CFG_MYSQL_USER" \
+        -h"db.${M2C_CFG_DOMAIN_NAME}" -u"$M2C_CFG_MYSQL_USER" \
         -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "${args[@]}"
 }
 
@@ -394,7 +394,7 @@ m2c_db_mysqldump() {
     done
 
     docker-compose exec ${notty:+-T} db mysqldump \
-        -h"${M2C_CFG_DOMAIN_NAME}__db" -u"$M2C_CFG_MYSQL_USER" \
+        -h"db.${M2C_CFG_DOMAIN_NAME}" -u"$M2C_CFG_MYSQL_USER" \
         -p"$M2C_CFG_MYSQL_PASSWORD" "$M2C_CFG_MYSQL_DATABASE" "${args[@]}"
 }
 
@@ -1757,7 +1757,7 @@ m2c_init() {
         m2c_loading_install
 
         m2c_magento --notty setup:install \
-                --db-host="${M2C_CFG_DOMAIN_NAME}__db" \
+                --db-host="db.${M2C_CFG_DOMAIN_NAME}" \
                 --db-name="${M2C_CFG_MYSQL_DATABASE}" \
                 --db-user="${M2C_CFG_MYSQL_USER}" \
                 --db-password="${M2C_CFG_MYSQL_PASSWORD}" \
