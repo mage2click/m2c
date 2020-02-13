@@ -4,15 +4,20 @@ services:
 
   nginx:
     container_name: ${M2C_CFG_DOMAIN_NAME}__nginx
-    hostname: ${M2C_CFG_DOMAIN_NAME}__nginx
     image: mage2click/m2c:nginx-${M2C_CFG_NGINX:-1.17}-alpine
     depends_on:
       - db
       - php
+    networks:
+      default:
+        aliases:
+          - nginx.${M2C_CFG_DOMAIN_NAME}
+      m2c:
+        aliases:
+          - nginx.${M2C_CFG_DOMAIN_NAME}
 
   varnish:
     container_name: ${M2C_CFG_DOMAIN_NAME}__varnish
-    hostname: ${M2C_CFG_DOMAIN_NAME}__varnish
     image: mage2click/m2c:varnish-${M2C_CFG_VARNISH:-5.2}-alpine
     depends_on:
       - nginx
@@ -21,5 +26,9 @@ services:
       - traefik.port=80
       - traefik.frontend.rule=Host:${M2C_CFG_DOMAIN_NAME}${M2C_CFG_EXTRA_DOMAIN_NAMES}
     networks:
-      - m2c
-      - default
+      default:
+        aliases:
+          - varnish.${M2C_CFG_DOMAIN_NAME}
+      m2c:
+        aliases:
+          - varnish.${M2C_CFG_DOMAIN_NAME}

@@ -4,7 +4,6 @@ services:
 
   phpmyadmin:
     container_name: ${M2C_CFG_DOMAIN_NAME}__phpmyadmin
-    hostname: ${M2C_CFG_DOMAIN_NAME}__phpmyadmin
     image: phpmyadmin/phpmyadmin
     depends_on:
       - db
@@ -20,5 +19,9 @@ services:
       - PMA_USER=${M2C_CFG_MYSQL_USER:-magento}
       - PMA_PASSWORD=${M2C_CFG_MYSQL_PASSWORD:-magento}
     networks:
-      - m2c
-      - default
+      default:
+        aliases:
+          - pma.${M2C_CFG_DOMAIN_NAME}
+      m2c:
+        aliases:
+          - pma.${M2C_CFG_DOMAIN_NAME}

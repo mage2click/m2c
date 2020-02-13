@@ -4,7 +4,6 @@ services:
 
   elasticsearch:
     container_name: ${M2C_CFG_DOMAIN_NAME}__elasticsearch
-    hostname: ${M2C_CFG_DOMAIN_NAME}__elasticsearch
     image: mage2click/m2c:elasticsearch-${M2C_CFG_ELASTICSEARCH:-6.8}-alpine
     user: root
     labels:
@@ -14,8 +13,12 @@ services:
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
-      - m2c
-      - default
+      default:
+        aliases:
+          - elasticsearch.${M2C_CFG_DOMAIN_NAME}
+      m2c:
+        aliases:
+          - elasticsearch.${M2C_CFG_DOMAIN_NAME}
 
 volumes:
   elasticsearch_data:
