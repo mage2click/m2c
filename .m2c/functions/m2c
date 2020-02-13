@@ -133,7 +133,7 @@ m2c_validate_not_empty() {
 
 m2c_rabbitmq_configure() {
     (
-        m2c_magento --notty setup:config:set --no-interaction --amqp-host=${M2C_CFG_DOMAIN_NAME}__rabbitmq \
+        m2c_magento --notty setup:config:set --no-interaction --amqp-host=rabbitmq.${M2C_CFG_DOMAIN_NAME} \
             --amqp-port=5672 --amqp-user=guest --amqp-password=guest --amqp-virtualhost=/ && \
         m2c_magento --notty setup:upgrade --no-interaction
     ) >"${m2c_log}" 2>&1
