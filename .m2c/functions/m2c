@@ -3482,16 +3482,16 @@ m2c_varnish_configure() {
         m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/caching_application 2 && \
         m2c_magento --notty config:set --scope=default --scope-code=0 \
-            system/full_page_cache/varnish/access_list ${M2C_CFG_DOMAIN_NAME}__nginx && \
+            system/full_page_cache/varnish/access_list nginx.${M2C_CFG_DOMAIN_NAME} && \
         m2c_magento --notty config:set --scope=default --scope-code=0 \
-            system/full_page_cache/varnish/backend_host ${M2C_CFG_DOMAIN_NAME}__nginx && \
+            system/full_page_cache/varnish/backend_host nginx.${M2C_CFG_DOMAIN_NAME} && \
         m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/varnish/backend_port 8080 && \
         m2c_magento --notty config:set --scope=default --scope-code=0 \
             system/full_page_cache/varnish/grace_period 300 && \
-        m2c_magento --notty setup:config:set --http-cache-hosts=${M2C_CFG_DOMAIN_NAME}__varnish:80 && \
-        m2c_magento --notty varnish:vcl:generate --access-list ${M2C_CFG_DOMAIN_NAME}__nginx \
-            --backend-host ${M2C_CFG_DOMAIN_NAME}__nginx \
+        m2c_magento --notty setup:config:set --http-cache-hosts=varnish.${M2C_CFG_DOMAIN_NAME}:80 && \
+        m2c_magento --notty varnish:vcl:generate --access-list nginx.${M2C_CFG_DOMAIN_NAME} \
+            --backend-host nginx.${M2C_CFG_DOMAIN_NAME} \
             --backend-port 8080 --export-version ${version} \
             --output-file ./var/default.vcl
     ) >"${m2c_log}" 2>&1 && \
