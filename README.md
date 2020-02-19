@@ -213,12 +213,42 @@ Removes optional service from the project. Available optional services are: `ela
 ```bash
 m2c restart [service [service ...]]
 ```
-Restarts running project Docker services and starts all stopped ones. If services explicitly specified, only those will be restarted.
+Restarts running project Docker services and starts all stopped ones. If services are explicitly specified, only specified will be restarted.
 
 ```bash
 m2c share [region] [--help]
 ```
 Starts sharing session over [ngrok](https://ngrok.com) secure tunnels. Command accepts an optional parameter to specify a region. Ex. `m2c share eu`. Available regions are `us`, `eu`, `ap`, `au`, `sa`, `jp`, and `in`. By default, region is `us`. For proper functioning of this command, required dependencies will be installed. Please, visit [https://github.com/shkoliar/magento-ngrok](https://github.com/shkoliar/magento-ngrok) and [https://github.com/shkoliar/docker-ngrok](https://github.com/shkoliar/docker-ngrok) for more information. Run `m2c share --help` for command usage information. 
+
+```bash
+m2c sign [domain [domain ...]]
+```
+Signs SSL certificate for provided domain names. Only domains with .test TLD are allowed.  
+
+```bash
+m2c start [service [service ...]]
+```
+Starts stopped project services. If services are explicitly specified, only specified will be started.
+
+```bash
+m2c status
+```
+Prints project information and services status.
+
+```bash
+m2c stop [service [service ...]]
+```
+Stops active project services. If services are explicitly specified, only specified will be stopped.
+
+```bash
+m2c sync [command] [--help]
+```
+Controls the synchronization sessions between host and docker container.
+
+```bash
+m2c update
+```
+Updates the project's docker configuration to the latest version.
 
 
 _Adding information about other CLI commands is in progress..._
