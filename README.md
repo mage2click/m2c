@@ -250,6 +250,16 @@ m2c update
 ```
 Updates the project's docker configuration to the latest version.
 
+```bash
+m2c urn
+```
+Generates Uniform Resource Names (URN) for PHPStorm and remaps paths for the host.
+
+```bash
+m2c varnish <tool>
+```
+Run varnish command line tools such as `varnishadm`, `varnishhist`, `varnishstat`, `varnishtop`, `varnishtest`, `varnishlog` etc.
+
 
 _Adding information about other CLI commands is in progress..._
 
