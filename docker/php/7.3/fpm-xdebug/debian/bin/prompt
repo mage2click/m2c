@@ -6,7 +6,7 @@ GREEN="\[\e[1;32m\]"
 
 if [[ "$(whoami)" == "root" ]]
 then
-    PS1="${RED}php [${NORMAL}\w${RED}]# ${NORMAL}"
+    PS1="${RED}php-xdebug [${NORMAL}\w${RED}]# ${NORMAL}"
 else
-    PS1="${GREEN}php [${NORMAL}\w${GREEN}]\$ ${NORMAL}"
+    PS1="${GREEN}php-xdebug [${NORMAL}\w${GREEN}]\$ ${NORMAL}"
 fi
