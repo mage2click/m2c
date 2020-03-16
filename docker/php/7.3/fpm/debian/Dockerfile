@@ -37,6 +37,7 @@ RUN         install-php-extensions \
             curl -sSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash && \
             apt-get update && \
             apt-get install -y --no-install-recommends \
+                build-essential \
                 cron \
                 git \
                 gnupg \
@@ -46,7 +47,9 @@ RUN         install-php-extensions \
                 iproute2 \
                 lsof \
                 nodejs \
+                python \
                 ssh \
+                sudo \
                 wget && \
             \
             \
@@ -66,7 +69,7 @@ RUN         install-php-extensions \
             chmod +x /usr/local/bin/mhsendmail && \
             \
             \
-            npm install -g n grunt-cli yarn && \
+            npm install -g n grunt-cli && \
             \
             \
             rm -rf /tmp/* && \
@@ -75,6 +78,9 @@ RUN         install-php-extensions \
             \
             groupadd -g 1000 app && \
             useradd -g 1000 -u 1000 -d /var/www -s /bin/bash app && \
+            \
+            \
+            echo "app ALL=NOPASSWD: ALL" >> /etc/sudoers && \
             \
             \
             mkdir -p /var/www/html /var/www/.config /var/www/.npm /sock && \
