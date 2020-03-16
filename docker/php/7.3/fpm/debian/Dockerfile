@@ -37,7 +37,6 @@ RUN         install-php-extensions \
             curl -sSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash && \
             apt-get update && \
             apt-get install -y --no-install-recommends \
-                build-essential \
                 cron \
                 git \
                 gnupg \
@@ -47,7 +46,6 @@ RUN         install-php-extensions \
                 iproute2 \
                 lsof \
                 nodejs \
-                python \
                 ssh \
                 sudo \
                 wget && \
