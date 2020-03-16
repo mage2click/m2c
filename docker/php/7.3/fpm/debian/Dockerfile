@@ -47,8 +47,7 @@ RUN         install-php-extensions \
                 lsof \
                 nodejs \
                 ssh \
-                wget \
-                yarn && \
+                wget && \
             \
             \
             curl -sSL https://getcomposer.org/installer | php -- \
@@ -67,7 +66,7 @@ RUN         install-php-extensions \
             chmod +x /usr/local/bin/mhsendmail && \
             \
             \
-            npm install -g n grunt-cli && \
+            npm install -g n grunt-cli yarn && \
             \
             \
             rm -rf /tmp/* && \
