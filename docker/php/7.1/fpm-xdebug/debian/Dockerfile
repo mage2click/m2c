@@ -2,81 +2,65 @@ FROM        php:7.1-fpm
 
 LABEL       maintainer="Mage2click, Dmitry Shkoliar @shkoliar"
 
-ENV         PHP_EXTRA_CONFIGURE_ARGS="--enable-fpm --with-fpm-user=app --with-fpm-group=app --disable-cgi"
-ENV         COMPOSER_ALLOW_SUPERUSER=1
 ENV         UID=1000
 ENV         GID=1000
 
-COPY        common/conf-xdebug/php.ini /usr/local/etc/php/
-COPY        common/conf-xdebug/php-fpm.d/zz-docker.conf /usr/local/etc/php-fpm.d/
-COPY        common/bin/docker-entrypoint-xdebug /php-fpm
+COPY        --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/bin
 
-RUN         apt-get update && apt-get install -y --no-install-recommends \
-                bash \
+COPY        conf/php.ini /usr/local/etc/php/
+COPY        conf/php-fpm.d/zz-docker.conf /usr/local/etc/php-fpm.d/
+COPY        bin/docker-entrypoint /php-fpm
+COPY        bin/prompt /etc/profile.d/prompt.sh
+
+RUN         install-php-extensions \
+                amqp \
+                bcmath \
+                calendar \
+                gd \
+                gettext \
+                igbinary \
+                intl \
+                mcrypt \
+                mysqli \
+                opcache \
+                pdo_mysql \
+                redis \
+                soap \
+                sockets \
+                ssh2 \
+                xdebug \
+                xsl \
+                zip && \
+            \
+            \
+            apt-get update && \
+            apt-get install -y --no-install-recommends \
+                gnupg \
                 gzip \
+                htop \
                 inetutils-ping \
                 iproute2 \
                 lsof \
-                wget \
-                libfreetype6-dev \
-                libjpeg62-turbo-dev \
-                libmcrypt-dev \
-                libpng-dev \
-                librabbitmq-dev \
-                libsodium-dev \
-                libssh2-1-dev \
-                libxslt-dev \
-                libzip-dev \
+                ssh \
+                wget && \
             \
             \
-            && docker-php-ext-configure \
-                gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
-            && docker-php-ext-configure \
-                gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
-            && docker-php-ext-configure \
-                zip --with-libzip \
+            curl -sSL -o /usr/local/bin/mhsendmail https://github.com/mailhog/mhsendmail/releases/download/v0.2.0/mhsendmail_linux_amd64 && \
+            chmod +x /usr/local/bin/mhsendmail && \
             \
             \
-            && docker-php-ext-install -j$(nproc) \
-                bcmath \
-                gd \
-                intl \
-                mcrypt \
-                opcache \
-                pdo_mysql \
-                soap \
-                xsl \
-                zip \
+            rm -rf /tmp/* && \
+            rm -rf /var/lib/apt/lists/* && \
             \
             \
-            && pecl install libsodium \
-            && pecl install xdebug-2.8.0 \
-            && pecl install igbinary-3.0.1 \
-            && pecl install redis-5.1.0 \
-            && pecl install amqp-1.9.4 \
+            groupadd -g 1000 app && \
+            useradd -g 1000 -u 1000 -d /var/www -s /bin/bash app && \
             \
             \
-            && wget https://pecl.php.net/get/ssh2 -O /tmp/ssh2-1.2.tgz \
-            && pear install /tmp/ssh2-1.2.tgz \
+            mkdir -p /var/www/html /var/www/.config /var/www/.npm /sock && \
             \
             \
-            && docker-php-ext-enable \
-                amqp \
-                igbinary \
-                redis \
-                sodium \
-                ssh2 \
-                xdebug \
-            \
-            \
-            && chmod +x /php-fpm \
-            && rm -rf /tmp/* \
-            && rm -rf /var/lib/apt/lists/* \
-            \
-            \
-            && groupadd -g 1000 app \
-            && useradd -g 1000 -u 1000 -d /var/www -s /bin/bash app \
-            && echo 'PS1="\w $ "' > /var/www/.bashrc
+            chmod +x /php-fpm
 
 ENTRYPOINT  /php-fpm
 
