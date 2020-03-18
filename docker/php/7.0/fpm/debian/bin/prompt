@@ -1,0 +1,12 @@
+#!/bin/bash
+
+NORMAL="\[\e[0m\]"
+RED="\[\e[1;31m\]"
+GREEN="\[\e[1;32m\]"
+
+if [[ "$(whoami)" == "root" ]]
+then
+    PS1="${RED}php [${NORMAL}\w${RED}]# ${NORMAL}"
+else
+    PS1="${GREEN}php [${NORMAL}\w${GREEN}]\$ ${NORMAL}"
+fi
