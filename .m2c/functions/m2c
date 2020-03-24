@@ -625,7 +625,7 @@ m2c_global_add() {
 
             if [[ -n ${M2C_GLOBAL_PORTAINER} ]]
             then
-                M2C_GLOBAL_PORTAINER="1.23.1"
+                M2C_GLOBAL_PORTAINER="1.23.2"
                 m2c_global_save_env
                 m2c_global_up portainer
             fi
