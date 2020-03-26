@@ -3132,6 +3132,29 @@ m2c_push() {
     fi
 }
 
+m2c_pwa_exec() {
+    exit 0
+}
+
+m2c_pwa_help() {
+    exit 0
+}
+
+m2c_pwa() {
+    if (("$#"))
+    then
+        m2c_in_array "--help" $@ && m2c_pwa_help
+
+        case "$@" in
+            init|start)
+                m2c_pwa_exec "$1"
+            ;;
+        esac
+    else
+        m2c_pwa_help
+    fi
+}
+
 m2c_redis_configure() {
     (
         m2c_magento --notty setup:config:set --no-interaction --cache-backend=redis \
