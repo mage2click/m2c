@@ -3208,6 +3208,25 @@ m2c_pwa_exec() {
 }
 
 m2c_pwa_help() {
+    echo -e "
+\033[1;33mInformation:\033[0m
+  PWA Studio related commands and wrapper for \`yarn run\` command inside of
+  project directory.
+
+\033[1;33mUsage:\033[0m
+  m2c pwa <command|script> [--help]
+
+\033[1;33mCommands:\033[0m
+  init      Install PWA Studio and Venia Project.
+  start     Run the full PWA Studio developer experience, which includes
+            Venia hot-reloading and concurrent Buildpack/Peregrine rebuilds.
+
+\033[1;33mScripts:\033[0m
+  Script commands from project's package.json, e.g. \`build:dev\` etc.
+
+\033[1;33mFlags:\033[0m
+  --help    Display this information.
+"
     exit 0
 }
 
