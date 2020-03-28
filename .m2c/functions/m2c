@@ -3193,6 +3193,17 @@ m2c_pwa_init() {
     m2c_msg "Run \`m2c pwa start\` command to run the full PWA Studio developer experience, which includes Venia hot-reloading and concurrent Buildpack/Peregrine rebuilds.\n\n"
 }
 
+m2c_pwa_exec() {
+    cd "${m2c_project_dir}${sub_dir:+/${sub_dir}}/pwa-studio"
+
+    if [[ "$@" == "start" ]]
+    then
+        yarn run watch:all
+    else
+        yarn run "$@"
+    fi
+}
+
 m2c_pwa_help() {
     exit 0
 }
@@ -3205,6 +3216,15 @@ m2c_pwa() {
         case "$@" in
             init)
                 m2c_pwa_init
+            ;;
+            *)
+                if [[ ! -d "${m2c_project_dir}${sub_dir:+/${sub_dir}}/pwa-studio" ]]
+                then
+                    m2c_error "Directory \`pwa-studio\` does not exist, PWA Studio not installed?\nTo install, run the \`m2c pwa init\` command.\n"
+                    exit 1
+                fi
+
+                m2c_pwa_exec "$@"
             ;;
         esac
     else
