@@ -3191,6 +3191,9 @@ m2c_pwa_init() {
 
     m2c_msg "PWA Studio and Venia Project successfully installed!\n"
     m2c_msg "Run \`m2c pwa start\` command to run the full PWA Studio developer experience, which includes Venia hot-reloading and concurrent Buildpack/Peregrine rebuilds.\n\n"
+
+    m2c_msg "PWA Studio project path: "
+    m2c_info "${m2c_project_dir}${sub_dir:+/${sub_dir}}/pwa-studio/\n\n"
 }
 
 m2c_pwa_exec() {
