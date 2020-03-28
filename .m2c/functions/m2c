@@ -3132,8 +3132,65 @@ m2c_push() {
     fi
 }
 
-m2c_pwa_exec() {
-    exit 0
+m2c_pwa_init() {
+    if [[ -d "${m2c_project_dir}${sub_dir:+/${sub_dir}}/pwa-studio" ]]
+    then
+        m2c_error "Directory \`pwa-studio\` exists, PWA Studio is already installed?\nTo reinstall, remove \`pwa-studio\` directory with all its contents and run this command again.\n"
+        exit 1
+    fi
+
+    m2c_info_bold "\n[Installing PWA Studio]\n\n"
+
+    m2c_dots "Getting PWA Studio sources"
+    m2c_loading
+    git clone https://github.com/magento-research/pwa-studio.git >"${m2c_log}" 2>&1
+    m2c_result $?
+
+    m2c_dots "Installing required packages"
+    m2c_loading
+    (
+        cd "${m2c_project_dir}${sub_dir:+/${sub_dir}}/pwa-studio" && \
+        yarn install
+    ) >"${m2c_log}" 2>&1
+    m2c_result $?
+
+    m2c_dots "Configuring backend url"
+    m2c_loading
+    sed -i -e "s?^.*MAGENTO_BACKEND_URL=.*\$?MAGENTO_BACKEND_URL=https://${M2C_CFG_DOMAIN_NAME}/?" \
+        "${m2c_project_dir}${sub_dir:+/${sub_dir}}/pwa-studio/packages/venia-concept/.env"
+    m2c_result $?
+
+    m2c_dots "Password required to generate SSL certificate for PWA secure domain"
+    m2c_loading
+    m2c_result 0
+    tput cnorm
+    while ! sudo -p "$(printf "\033[0mPassword:")$(printf "\033[1;31m%s" " ")" true
+    do
+        exit 1
+    done
+    tput civis
+    m2c_erase_prev_lines 1
+
+    m2c_dots "Generating SSL certificate for PWA secure domain"
+    m2c_loading
+    (
+        cd "${m2c_project_dir}${sub_dir:+/${sub_dir}}/pwa-studio" && \
+        yarn buildpack create-custom-origin packages/venia-concept
+    ) >"${m2c_log}" 2>&1
+    m2c_result $?
+
+    m2c_dots "Generating build artifacts"
+    m2c_loading
+    (
+        cd "${m2c_project_dir}${sub_dir:+/${sub_dir}}/pwa-studio" && \
+        yarn run build
+    ) >"${m2c_log}" 2>&1
+    m2c_result $?
+
+    m2c_info_bold "\n[Installation finished]\n\n"
+
+    m2c_msg "PWA Studio and Venia Project successfully installed!\n"
+    m2c_msg "Run \`m2c pwa start\` command to run the full PWA Studio developer experience, which includes Venia hot-reloading and concurrent Buildpack/Peregrine rebuilds.\n\n"
 }
 
 m2c_pwa_help() {
@@ -3146,8 +3203,8 @@ m2c_pwa() {
         m2c_in_array "--help" $@ && m2c_pwa_help
 
         case "$@" in
-            init|start)
-                m2c_pwa_exec "$1"
+            init)
+                m2c_pwa_init
             ;;
         esac
     else
