@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r m2c_version="0.8.5"
+declare -r m2c_version="0.9.0"
 declare -r m2c_os="$(uname -s | awk '{print tolower($0)}')"
 declare -r m2c_global_dir="$(echo ~/.m2c)"
 declare m2c_loading_pid=
@@ -364,7 +364,6 @@ m2c_requirements() {
     [[ "$test" == "1" ]] && echo "Docker-compose command line interface was not found." >"${m2c_log}"
 
     m2c_result ${test} 1
-
 
     [[ ${test} -eq 0 ]] || pass=0
 
