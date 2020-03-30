@@ -1195,6 +1195,8 @@ m2c_help() {
                 specific commands.
   node          Run node specific commands.
   npm           Run npm specific commands.
+  pwa           Run PWA Studio related commands and wrapper for \`yarn run\`
+                command inside of project directory.
   redis         Run redis specific commands.
   remove        Remove optional service from project.
   restart       Restart running docker services and starts all stopped ones.
@@ -1246,8 +1248,10 @@ m2c_help() {
   mutagen       Run mutagen.io sync related commands.
   node          Run node specific commands.
   npm           Run npm specific commands.
-  push          Push specified file or directory to docker container.
   pull          Pull specified file or directory from docker container.
+  push          Push specified file or directory to docker container.
+  pwa           Run PWA Studio related commands and wrapper for \`yarn run\`
+                command inside of project directory.
   redis         Run redis specific commands.
   remove        Remove optional service from project.
   restart       Restart running docker services and starts all stopped ones.
