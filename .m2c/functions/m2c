@@ -3133,6 +3133,14 @@ m2c_push() {
 }
 
 m2c_pwa_init() {
+    m2c_ask_bool "\nPWA Studio requires git cli, nodejs, yarn, and node-gyp. Required tools are installed?"
+
+    if [[ -z ${m2c_res} ]]
+    then
+        m2c_msg "Install the required tools before proceeding.\n"
+        exit 0
+    fi
+
     if [[ -d "${m2c_project_dir}${sub_dir:+/${sub_dir}}/pwa-studio" ]]
     then
         m2c_error "Directory \`pwa-studio\` exists, PWA Studio is already installed?\nTo reinstall, remove \`pwa-studio\` directory with all its contents and run this command again.\n"
