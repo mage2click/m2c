@@ -10,8 +10,10 @@ services:
       - portainer:/data
     labels:
       - traefik.enable=true
-      - traefik.frontend.rule=Host:portainer.m2c.test
-      - traefik.port=9000
+      - traefik.http.routers.portainer-m2c.tls=true
+      - traefik.http.routers.portainer-m2c.entryPoints=https
+      - traefik.http.routers.portainer-m2c.rule=Host(`portainer.m2c.test`)
+      - traefik.http.services.portainer-m2c.loadbalancer.server.port=9000
     restart: ${M2C_GLOBAL_SERVICES_AUTO_START}
 
 volumes:

@@ -4,10 +4,11 @@ services:
 
   mailhog:
     container_name: m2c.test__mailhog
-    hostname: mailhog
     image: mailhog/mailhog:${M2C_GLOBAL_MAILHOG}
     labels:
       - traefik.enable=true
-      - traefik.frontend.rule=Host:mailhog.m2c.test
-      - traefik.port=8025
+      - traefik.http.routers.mailhog-m2c.tls=true
+      - traefik.http.routers.mailhog-m2c.entryPoints=https
+      - traefik.http.routers.mailhog-m2c.rule=Host(`mailhog.m2c.test`)
+      - traefik.http.services.mailhog-m2c.loadbalancer.server.port=8025
     restart: ${M2C_GLOBAL_SERVICES_AUTO_START}

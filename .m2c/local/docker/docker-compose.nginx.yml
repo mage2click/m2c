@@ -10,10 +10,10 @@ services:
       - php
     labels:
       - traefik.enable=true
-      - traefik.http.routers.nginx-${M2C_PROJECT_NAME}.tls=true
-      - traefik.http.routers.nginx-${M2C_PROJECT_NAME}.entryPoints=https
-      - traefik.http.routers.nginx-${M2C_PROJECT_NAME}.rule=Host(`${M2C_CFG_DOMAIN_NAME}${M2C_CFG_EXTRA_DOMAIN_NAMES}`)
-      - traefik.http.services.nginx-${M2C_PROJECT_NAME}.loadbalancer.server.port=8080
+      - traefik.http.routers.nginx-${COMPOSE_PROJECT_NAME}.tls=true
+      - traefik.http.routers.nginx-${COMPOSE_PROJECT_NAME}.entryPoints=https
+      - traefik.http.routers.nginx-${COMPOSE_PROJECT_NAME}.rule=Host(${M2C_CFG_DOMAIN_NAMES})
+      - traefik.http.services.nginx-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=8080
     networks:
       default:
         aliases:

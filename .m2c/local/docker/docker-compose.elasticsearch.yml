@@ -8,10 +8,10 @@ services:
     user: root
     labels:
       - traefik.enable=true
-      - traefik.http.routers.elasticsearch-${M2C_PROJECT_NAME}.tls=true
-      - traefik.http.routers.elasticsearch-${M2C_PROJECT_NAME}.entryPoints=https
-      - traefik.http.routers.elasticsearch-${M2C_PROJECT_NAME}.rule=Host(`elasticsearch.${M2C_CFG_DOMAIN_NAME}`)
-      - traefik.http.services.elasticsearch-${M2C_PROJECT_NAME}.loadbalancer.server.port=9200
+      - traefik.http.routers.elasticsearch-${COMPOSE_PROJECT_NAME}.tls=true
+      - traefik.http.routers.elasticsearch-${COMPOSE_PROJECT_NAME}.entryPoints=https
+      - traefik.http.routers.elasticsearch-${COMPOSE_PROJECT_NAME}.rule=Host(`elasticsearch.${M2C_CFG_DOMAIN_NAME}`)
+      - traefik.http.services.elasticsearch-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=9200
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:

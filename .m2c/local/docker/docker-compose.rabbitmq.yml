@@ -7,10 +7,10 @@ services:
     image: rabbitmq:${M2C_CFG_RABBITMQ:-3.7}-management-alpine
     labels:
       - traefik.enable=true
-      - traefik.http.routers.rabbitmq-${M2C_PROJECT_NAME}.tls=true
-      - traefik.http.routers.rabbitmq-${M2C_PROJECT_NAME}.entryPoints=https
-      - traefik.http.routers.rabbitmq-${M2C_PROJECT_NAME}.rule=Host(`rabbitmq.${M2C_CFG_DOMAIN_NAME}`)
-      - traefik.http.services.rabbitmq-${M2C_PROJECT_NAME}.loadbalancer.server.port=15672
+      - traefik.http.routers.rabbitmq-${COMPOSE_PROJECT_NAME}.tls=true
+      - traefik.http.routers.rabbitmq-${COMPOSE_PROJECT_NAME}.entryPoints=https
+      - traefik.http.routers.rabbitmq-${COMPOSE_PROJECT_NAME}.rule=Host(`rabbitmq.${M2C_CFG_DOMAIN_NAME}`)
+      - traefik.http.services.rabbitmq-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=15672
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
