@@ -1,49 +1,93 @@
-FROM    php:7.2-fpm-alpine
+FROM        alpine:3.9
 
-LABEL   maintainer="Mage2click, Dmitry Shkoliar @shkoliar"
+LABEL       maintainer="Mage2click, Dmitry Shkoliar @shkoliar"
 
-ARG     PHPREDIS_VERSION=${PHPREDIS_VERSION:-4.3.0}
-ARG     AMQP_VERSION=${AMQP_VERSION:-1.9.4}
-ARG     SSH2_VERSION=${SSH2_VERSION:-1.1.2}
+ENV         COMPOSER_ALLOW_SUPERUSER=1
+ENV         UID=1000
+ENV         GID=1000
+ENV         NODE_VERSION=10
 
-ENV     COMPOSER_ALLOW_SUPERUSER=1
+COPY        conf/php.ini /etc/php7/conf.d/
+COPY        conf/php-fpm.d/zz-docker.conf /etc/php7/php-fpm.d/
+COPY        bin/docker-entrypoint /php-fpm
+COPY        bin/prompt /etc/profile.d/prompt.sh
 
-COPY    common/conf/php.ini /usr/local/etc/php/
-COPY    common/conf/*.conf /usr/local/etc/
-COPY    common/bin/docker-host /usr/local/bin/
+RUN         apk update && \
+            apk add --no-cache \
+                php7 \
+                php7-bcmath \
+                php7-calendar \
+                php7-ctype \
+                php7-curl \
+                php7-dom \
+                php7-fileinfo \
+                php7-fpm \
+                php7-gd \
+                php7-gettext \
+                php7-iconv \
+                php7-intl \
+                php7-json \
+                php7-mbstring \
+                php7-mysqli \
+                php7-opcache \
+                php7-openssl \
+                php7-phar \
+                php7-pdo_mysql \
+                php7-simplexml \
+                php7-soap \
+                php7-sockets \
+                php7-sodium \
+                php7-tokenizer \
+                php7-xml \
+                php7-xmlwriter \
+                php7-xsl \
+                php7-zip \
+                php7-pecl-amqp \
+                php7-pecl-igbinary \
+                php7-pecl-mcrypt \
+                php7-pecl-redis \
+                php7-pecl-ssh2 \
+                composer \
+                curl \
+                bash \
+                busybox-suid \
+                git \
+                gnupg \
+                gzip \
+                htop \
+                openssh \
+                lsof \
+                npm && \
+            \
+            \
+            curl -sSL -o /usr/local/bin/n98-magerun2 https://files.magerun.net/n98-magerun2.phar && \
+            chmod +x /usr/local/bin/n98-magerun2 && \
+            \
+            \
+            curl -sSL -o /usr/local/bin/n98-magerun https://files.magerun.net/n98-magerun.phar && \
+            chmod +x /usr/local/bin/n98-magerun && \
+            \
+            \
+            npm install -g n grunt-cli && \
+            \
+            \
+            rm -rf /var/cache/apk/* && \
+            rm -rf /tmp/* && \
+            \
+            \
+            addgroup -g 1000 -S app && \
+            adduser -u 1000 -S app -G app -h /var/www -s /bin/bash && \
+            \
+            \
+            mkdir -p /var/www/html /var/www/.config /var/www/.npm /sock && \
+            \
+            \
+            ln -sf /usr/sbin/php-fpm7 /usr/sbin/php-fpm && \
+            ln -sf /etc/init.d/php-fpm7 /etc/init.d/php-fpm && \
+            \
+            \
+            chmod +x /php-fpm
 
-RUN     apk add --no-cache busybox-suid \
-            icu-dev freetype-dev libzip-dev libpng-dev libxml2-dev libedit-dev readline-dev \
-            gettext-dev libxslt-dev libssh2-dev rabbitmq-c-dev libjpeg-turbo-dev libsodium-dev \
-            libmcrypt-dev composer bash lsof npm supervisor && \
-        docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ && \
-        docker-php-ext-configure zip --with-libzip && \
-        docker-php-ext-install \
-            bcmath gd intl mbstring opcache readline gettext sodium \
-            calendar pdo_mysql mysqli soap xsl zip && \
-        apk add --no-cache --virtual .build-deps ${PHPIZE_DEPS} && \
-        yes '' | pecl install --onlyreqdeps igbinary mcrypt-1.0.2\
-            redis-${PHPREDIS_VERSION} amqp-${AMQP_VERSION} ssh2-${SSH2_VERSION} && \
-        docker-php-ext-enable igbinary mcrypt redis amqp ssh2 && \
-        set -ex && cd /tmp && \
-        curl -O https://files.magerun.net/n98-magerun2.phar && \
-        mv n98-magerun2.phar /usr/local/bin/ && \
-        chmod +x /usr/local/bin/n98-magerun2.phar && \
-        apk del .build-deps && \
-        rm -rf /var/cache/apk/* && \
-        rm -rf /tmp/* && \
-        addgroup -g 1000 -S app && \
-        adduser -u 1000 -S app -G app -h /var/www -s /bin/bash && \
-        echo 'export PS1="\w $ "' > /var/www/.bashrc && \
-        mkdir -p /var/www/.config /var/www/.npm /sock /usr/local/var/log && \
-        touch /usr/local/var/log/php-fpm.log /var/spool/cron/crontabs/app && \
-        chown -R app:app /var/www/html /var/www/.bashrc /var/www/.config \
-            /var/www/.npm /usr/local/etc/php/conf.d /sock /usr/local/var/log/php-fpm.log \
-            /usr/local/bin/n98-magerun2.phar && \
-        chmod +x /usr/local/bin/docker-host && \
-        ln -sf /var/www/html/node_modules/grunt/bin/grunt /usr/bin/grunt && \
-        ln -sf /usr/local/bin/n98-magerun2.phar /usr/local/bin/n98-magerun2
+ENTRYPOINT  /php-fpm
 
-WORKDIR /var/www/html
-
-CMD     docker-host; supervisord -c /usr/local/etc/supervisor.conf
+WORKDIR     /var/www/html

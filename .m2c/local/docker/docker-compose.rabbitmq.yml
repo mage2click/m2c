@@ -4,7 +4,6 @@ services:
 
   rabbitmq:
     container_name: ${M2C_CFG_DOMAIN_NAME}__rabbitmq
-    hostname: ${M2C_CFG_DOMAIN_NAME}__rabbitmq
     image: rabbitmq:${M2C_CFG_RABBITMQ:-3.7}-management-alpine
     labels:
       - traefik.enable=true
@@ -15,8 +14,12 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
-      - m2c
-      - default
+      default:
+        aliases:
+          - rabbitmq.${M2C_CFG_DOMAIN_NAME}
+      m2c:
+        aliases:
+          - rabbitmq.${M2C_CFG_DOMAIN_NAME}
 
 volumes:
   rabbitmq_data:

@@ -1,0 +1,18 @@
+version: "3.5"
+
+services:
+
+  portainer:
+    container_name: m2c.test__portainer
+    image: portainer/portainer:${M2C_GLOBAL_PORTAINER}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer:/data
+    labels:
+      - traefik.enable=true
+      - traefik.frontend.rule=Host:portainer.m2c.test
+      - traefik.port=9000
+    restart: ${M2C_GLOBAL_SERVICES_AUTO_START}
+
+volumes:
+  portainer:

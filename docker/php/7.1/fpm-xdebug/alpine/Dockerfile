@@ -1,41 +1,142 @@
-FROM    php:7.1-fpm-alpine
+FROM        php:7.1-fpm-alpine
 
-LABEL   maintainer="Mage2click, Dmitry Shkoliar @shkoliar"
+LABEL       maintainer="Mage2click, Dmitry Shkoliar @shkoliar"
 
-ARG     XDEBUG_VERSION=${XDEBUG_VERSION:-2.7.2}
-ARG     PHPREDIS_VERSION=${PHPREDIS_VERSION:-4.3.0}
-ARG     AMQP_VERSION=${AMQP_VERSION:-1.9.4}
-ARG     SSH2_VERSION=${SSH2_VERSION:-1.1.2}
+ENV         UID=1000
+ENV         GID=1000
 
-COPY    common/conf-xdebug/php.ini /usr/local/etc/php/
-COPY    common/conf-xdebug/*.conf /usr/local/etc/
-COPY    common/bin/docker-host /usr/local/bin/
+COPY        conf/php.ini /usr/local/etc/php/
+COPY        conf/php-fpm.d/zz-docker.conf /usr/local/etc/php-fpm.d/
+COPY        bin/docker-entrypoint /php-fpm
+COPY        bin/prompt /etc/profile.d/prompt.sh
 
-RUN     apk add --no-cache busybox-suid \
-            icu-dev freetype-dev libzip-dev libpng-dev libxml2-dev libedit-dev readline-dev \
-            gettext-dev libxslt-dev libssh2-dev rabbitmq-c-dev libjpeg-turbo-dev libsodium-dev \
-            libmcrypt-dev lsof supervisor && \
-        docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ && \
-        docker-php-ext-configure zip --with-libzip && \
-        docker-php-ext-install \
-            bcmath gd intl mbstring opcache readline gettext \
-            calendar pdo_mysql mysqli soap xsl zip && \
-        apk add --no-cache --virtual .build-deps ${PHPIZE_DEPS} && \
-        yes '' | pecl install --onlyreqdeps igbinary libsodium mcrypt-1.0.0 \
-            xdebug-${XDEBUG_VERSION} redis-${PHPREDIS_VERSION} \
-            amqp-${AMQP_VERSION} ssh2-${SSH2_VERSION} && \
-        docker-php-ext-enable xdebug igbinary sodium mcrypt redis amqp ssh2 && \
-        apk del .build-deps && \
-        rm -rf /var/cache/apk/* && \
-        rm -rf /tmp/* && \
-        addgroup -g 1000 -S app && \
-        adduser -u 1000 -S app -G app -h /var/www -s /bin/bash && \
-        mkdir -p /var/www/.config /sock /usr/local/var/log && \
-        touch /usr/local/var/log/php-fpm.log && \
-        chown -R app:app /var/www/html /var/www/.config /usr/local/etc/php/conf.d \
-            /sock /usr/local/var/log/php-fpm.log && \
-        chmod +x /usr/local/bin/docker-host
+RUN         apk update && \
+            apk add --no-cache \
+                curl \
+                bash \
+                busybox-suid \
+                gnupg \
+                gzip \
+                openssh \
+                lsof \
+                icu-dev \
+                freetype-dev \
+                libzip-dev \
+                libpng-dev \
+                libxml2-dev \
+                libedit-dev \
+                readline-dev \
+                gettext-dev \
+                libxslt-dev \
+                libssh2-dev \
+                rabbitmq-c-dev \
+                libjpeg-turbo-dev \
+                libsodium-dev \
+                libmcrypt-dev && \
+            \
+            \
+            docker-php-ext-configure gd \
+                --with-freetype-dir=/usr/include/ \
+                --with-jpeg-dir=/usr/include/ && \
+            docker-php-ext-configure zip \
+                --with-libzip && \
+            docker-php-ext-install \
+                bcmath \
+                calendar \
+                dom \
+                gd \
+                gettext \
+                iconv \
+                intl \
+                fileinfo \
+                json \
+                mbstring \
+                opcache \
+                pdo_mysql \
+                simplexml \
+                soap \
+                sockets \
+                tokenizer \
+                xml \
+                xmlwriter \
+                xsl \
+                zip && \
+            \
+            \
+            apk add --no-cache --virtual \
+                .build-deps ${PHPIZE_DEPS} && \
+            \
+            \
+            pecl config-set php_ini \
+                /usr/local/etc/php/php.ini && \
+            yes '' | pecl install --onlyreqdeps \
+                amqp-1.9.4 \
+                igbinary \
+                libsodium \
+                mcrypt-1.0.0 \
+                redis-4.3.0 \
+                ssh2-1.1.2 \
+                xdebug-2.7.2 && \
+            \
+            \
+            docker-php-ext-enable \
+                amqp \
+                igbinary \
+                mcrypt \
+                redis \
+                sodium \
+                ssh2 \
+                xdebug && \
+            \
+            \
+            apk del \
+                icu-dev \
+                freetype-dev \
+                libzip-dev \
+                libpng-dev \
+                libxml2-dev \
+                libedit-dev \
+                readline-dev \
+                gettext-dev \
+                libxslt-dev \
+                libssh2-dev \
+                rabbitmq-c-dev \
+                libjpeg-turbo-dev \
+                libsodium-dev \
+                libmcrypt-dev \
+                .build-deps && \
+            \
+            \
+            apk add --no-cache \
+                icu \
+                freetype \
+                libzip \
+                libpng \
+                libxml2 \
+                libedit \
+                readline \
+                gettext \
+                libxslt \
+                libssh2 \
+                rabbitmq-c \
+                libjpeg-turbo \
+                libsodium \
+                libmcrypt \
+            \
+            \
+            rm -rf /var/cache/apk/* && \
+            rm -rf /tmp/* && \
+            \
+            \
+            addgroup -g 1000 -S app && \
+            adduser -u 1000 -S app -G app -h /var/www -s /bin/bash && \
+            \
+            \
+            mkdir -p /var/www/html /var/www/.config /var/www/.npm /sock && \
+            \
+            \
+            chmod +x /php-fpm
 
-WORKDIR /var/www/html
+ENTRYPOINT  /php-fpm
 
-CMD     docker-host; supervisord -c /usr/local/etc/supervisor.conf
+WORKDIR     /var/www/html

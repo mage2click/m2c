@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
+set -e
+
 HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 VERSIONS=("2.0.2" "2.1.2" "2.2.2" "2.3.5" "2.4.6" \
           "5.0.2" "5.1.2" "5.2.2" "5.3.3" "5.4.3" "5.5.3" "5.6.16" \
-          "6.0.1" "6.1.4" "6.2.4" "oss-6.3.2" "oss-6.4.3" "oss-6.5.4" "oss-6.6.2" "oss-6.7.2" "oss-6.8.3")
+          "6.0.1" "6.1.4" "6.2.4" "oss-6.3.2" "oss-6.4.3" "oss-6.5.4" "oss-6.6.2" "oss-6.7.2" "oss-6.8.6")
 
 for i in "${!VERSIONS[@]}"
 do
@@ -20,9 +22,6 @@ do
 
     docker build --build-arg ELASTICSEARCH_VERSION="${VERSIONS[$i]}" --build-arg ELASTICSEARCH_URL="${url}" \
             -t "mage2click/m2c:elasticsearch-${version}-alpine" "${HOME}/alpine/"
-
-    docker tag "mage2click/m2c:elasticsearch-${version}-alpine" \
-        "mage2click/m2c:elasticsearch-${version}-alpine"
 done
 
 rm -rf "${HOME}/.docker"

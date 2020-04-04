@@ -2,7 +2,11 @@ FROM        alpine
 
 LABEL       maintainer="Mage2click, Dmitry Shkoliar @shkoliar"
 
-ARG         ELASTICSEARCH_VERSION=${ELASTICSEARCH_VERSION:-6.8.1}
+ENV         PATH=/usr/share/elasticsearch/bin:${PATH} \
+            ES_TMPDIR=/usr/share/elasticsearch/tmp \
+            JAVA_HOME=/usr/lib/jvm/java-1.8-openjdk/jre
+
+ARG         ELASTICSEARCH_VERSION=${ELASTICSEARCH_VERSION:-6.8.5}
 ARG         ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-'https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${ELASTICSEARCH_VERSION}.tar.gz'}
 
 COPY        docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
@@ -24,16 +28,15 @@ RUN         apk add --no-cache \
             chown -R elasticsearch:elasticsearch /usr/share/elasticsearch \
                 /usr/local/bin/docker-entrypoint.sh && \
             chmod +x /usr/local/bin/docker-entrypoint.sh && \
+            cd /usr/share/elasticsearch && \
+            bin/"$([[ "${ELASTICSEARCH_VERSION:0:1}" != "2" ]] && echo "elasticsearch-")"plugin install analysis-phonetic && \
+            bin/"$([[ "${ELASTICSEARCH_VERSION:0:1}" != "2" ]] && echo "elasticsearch-")"plugin install analysis-icu && \
             apk del --purge .build-deps && \
             rm -rf /tmp/* /var/cache/apk/*
 
 COPY        config/elasticsearch.yml config/log4j2.properties /usr/share/elasticsearch/config/
 
 WORKDIR     /usr/share/elasticsearch
-
-ENV         PATH=/usr/share/elasticsearch/bin:${PATH} \
-            ES_TMPDIR=/usr/share/elasticsearch/tmp \
-            JAVA_HOME=/usr/lib/jvm/java-1.8-openjdk/jre
 
 EXPOSE      9200 9300
 

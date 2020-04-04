@@ -1,0 +1,48 @@
+#!/bin/bash
+
+: ${UID:=1000}
+: ${GID:=1000}
+
+[[ "$GID" != "1000" ]] && \
+    groupmod -g $GID app
+[[ "$GID" != "1000" || "$UID" != "1000" ]] && \
+    usermod -u $UID -g $GID -d /var/www -s /bin/bash app
+
+[[ ! -d /sock ]] && \
+    mkdir -p /sock
+[[ ! -d /var/spool/cron/crontabs ]] && \
+    mkdir -p /var/spool/cron/crontabs
+[[ ! -f /var/spool/cron/crontabs/app ]] && \
+    touch /var/spool/cron/crontabs/app
+
+chown -R app:app /var/www /sock /var/log \
+    /var/spool/cron/crontabs/app
+
+[[ -f /usr/local/bin/n98-magerun ]] && \
+    chown -R app:app /usr/local/bin/n98-magerun
+
+[[ -f /usr/local/bin/n98-magerun2 ]] && \
+    chown -R app:app /usr/local/bin/n98-magerun2
+
+ping -q -c1 "host.docker.internal" > /dev/null 2>&1
+if [[ $? -ne 0 ]]
+then
+    echo -e "$(ip route | awk 'NR==1 {print $3}')\thost.docker.internal" >> /etc/hosts
+fi
+
+if [[ -f /usr/share/ca-certificates/m2c/rootCA.crt && -f /etc/ca-certificates.conf ]] && \
+    ! grep -q "m2c/rootCA.crt" /etc/ca-certificates.conf
+then
+    echo "m2c/rootCA.crt" >> /etc/ca-certificates.conf
+    update-ca-certificates
+fi
+
+if [[ "$(node -v)" != "v$NODE_VERSION"* ]]
+then
+    n install ${NODE_VERSION}
+    rm -rf /usr/local/n/versions/node
+fi
+
+su - app
+
+cron -f & docker-php-entrypoint php-fpm

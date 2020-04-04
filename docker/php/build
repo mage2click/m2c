@@ -1,34 +1,73 @@
 #!/usr/bin/env bash
 
+VERSIONS=("5.6" "7.0" "7.1" "7.2" "7.3" "7.4")
+
+while (("$#")); do
+    case "$1" in
+        --version|--version=*)
+            if [[ "$1" == "--version" ]]
+            then
+                shift
+                VERSION="$1"
+            else
+                VERSION="${version#*=}"
+            fi
+        ;;
+        --xdebug)
+            XDEBUG=1
+        ;;
+        --alpine)
+            ALPINE=1
+        ;;
+    esac
+    shift
+done
+
+VERSION=${VERSION:-7.3}
+XDEBUG=${XDEBUG:-}
+ALPINE=${ALPINE:-}
+
 HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-VERSIONS=("5.6" "7.0" "7.1" "7.2")
+if [[ -z ${ALPINE} ]]
+then
+    if [[ -z ${XDEBUG} ]]
+    then
+        docker build -f "${HOME}/$VERSION/fpm/debian/Dockerfile" \
+            -t "mage2click/m2c:php-fpm-$VERSION" \
+            "${HOME}/$VERSION/fpm/debian"
 
-for i in "${!VERSIONS[@]}"
-do
-    docker build -f "${HOME}/${VERSIONS[$i]}/fpm/alpine/Dockerfile" \
-        -t "mage2click-m2c-php-fpm-${VERSIONS[$i]}-alpine" \
-        "${HOME}"
-    docker tag "mage2click-m2c-php-fpm-${VERSIONS[$i]}-alpine" \
-        "mage2click/m2c:php-fpm-${VERSIONS[$i]}-alpine"
+        echo
+        echo "docker push \"mage2click/m2c:php-fpm-$VERSION\""
+        echo "docker rmi -f \"mage2click/m2c:php-fpm-$VERSION\""
+    else
+        docker build -f "${HOME}/$VERSION/fpm-xdebug/debian/Dockerfile" \
+            -t "mage2click/m2c:php-fpm-$VERSION-xdebug" \
+            "${HOME}/$VERSION/fpm-xdebug/debian"
 
-    docker build -f "${HOME}/${VERSIONS[$i]}/fpm-xdebug/alpine/Dockerfile" \
-        -t "mage2click-m2c-php-fpm-${VERSIONS[$i]}-xdebug-alpine" \
-        "${HOME}"
-    docker tag "mage2click-m2c-php-fpm-${VERSIONS[$i]}-xdebug-alpine" \
-        "mage2click/m2c:php-fpm-${VERSIONS[$i]}-xdebug-alpine"
-done
+        echo
+        echo "docker push \"mage2click/m2c:php-fpm-$VERSION-xdebug\""
+        echo "docker rmi -f \"mage2click/m2c:php-fpm-$VERSION-xdebug\""
+    fi
+else
+    if [[ -z ${XDEBUG} ]]
+    then
+        docker build -f "${HOME}/$VERSION/fpm/alpine/Dockerfile" \
+            -t "mage2click/m2c:php-fpm-$VERSION-alpine" \
+            "${HOME}/$VERSION/fpm/alpine"
+
+        echo
+        echo "docker push \"mage2click/m2c:php-fpm-$VERSION-alpine\""
+        echo "docker rmi -f \"mage2click/m2c:php-fpm-$VERSION-alpine\""
+    else
+        docker build -f "${HOME}/$VERSION/fpm-xdebug/alpine/Dockerfile" \
+            -t "mage2click/m2c:php-fpm-$VERSION-xdebug-alpine" \
+            "${HOME}/$VERSION/fpm-xdebug/alpine"
+
+        echo
+        echo "docker push \"mage2click/m2c:php-fpm-$VERSION-xdebug-alpine\""
+        echo "docker rmi -f \"mage2click/m2c:php-fpm-$VERSION-xdebug-alpine\""
+    fi
+fi
 
 rm -rf "${HOME}/.docker"
-
-# Due to docker error "denied: requested access to the resource is denied",
-# echoing commands to run them manually instead of running directly
-echo
-
-for i in "${!VERSIONS[@]}"
-do
-    echo "docker push \"mage2click/m2c:php-fpm-${VERSIONS[$i]}-alpine\""
-    echo "docker rmi -f \"mage2click/m2c:php-fpm-${VERSIONS[$i]}-alpine\""
-    echo "docker push \"mage2click/m2c:php-fpm-${VERSIONS[$i]}-xdebug-alpine\""
-    echo "docker rmi -f \"mage2click/m2c:php-fpm-${VERSIONS[$i]}-xdebug-alpine\""
-done

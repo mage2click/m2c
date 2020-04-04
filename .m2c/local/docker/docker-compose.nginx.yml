@@ -4,7 +4,6 @@ services:
 
   nginx:
     container_name: ${M2C_CFG_DOMAIN_NAME}__nginx
-    hostname: ${M2C_CFG_DOMAIN_NAME}__nginx
     image: mage2click/m2c:nginx-${M2C_CFG_NGINX:-1.17}-alpine
     depends_on:
       - db
@@ -13,8 +12,12 @@ services:
       - traefik.enable=true
       - traefik.http.routers.nginx-${M2C_PROJECT_NAME}.tls=true
       - traefik.http.routers.nginx-${M2C_PROJECT_NAME}.entryPoints=https
-      - traefik.http.routers.nginx-${M2C_PROJECT_NAME}.rule=Host(`${M2C_CFG_DOMAIN_NAME}`)
+      - traefik.http.routers.nginx-${M2C_PROJECT_NAME}.rule=Host(`${M2C_CFG_DOMAIN_NAME}${M2C_CFG_EXTRA_DOMAIN_NAMES}`)
       - traefik.http.services.nginx-${M2C_PROJECT_NAME}.loadbalancer.server.port=8080
     networks:
-      - m2c
-      - default
+      default:
+        aliases:
+          - nginx.${M2C_CFG_DOMAIN_NAME}
+      m2c:
+        aliases:
+          - nginx.${M2C_CFG_DOMAIN_NAME}

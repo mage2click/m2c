@@ -8,7 +8,7 @@ exit 0
 
 __ARCHIVED__' >> ./m2c
 
-tar cf ./m2c.tar .m2c && gzip ./m2c.tar
+tar --format ustar -czf ./m2c.tar.gz .m2c
 cat ./m2c.tar.gz >> ./m2c
 
-rm -rf m2c.tar m2c.tar.gz
+rm -rf m2c.tar.gz

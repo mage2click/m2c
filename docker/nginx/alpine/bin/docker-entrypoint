@@ -1,0 +1,24 @@
+#!/bin/sh
+
+: ${UID:=1000}
+: ${GID:=1000}
+
+if [ "$GID" != "1000" ]
+then
+    groupmod -g $GID app
+fi
+
+if [ "$GID" != "1000" ] || [ "$UID" != "1000" ]
+then
+    usermod -u $UID -g $GID -d /var/www -s /bin/ash app
+fi
+
+[ ! -d /sock ] && mkdir -p /sock
+[ ! -f /var/run/nginx.pid ] && touch /var/run/nginx.pid
+
+chown -R app:app /var/cache/nginx /var/run/nginx.pid \
+    /etc/nginx/nginx.conf /etc/nginx/conf.d /sock
+
+su - app
+
+nginx -g "daemon off;"

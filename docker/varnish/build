@@ -2,7 +2,7 @@
 
 HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-VERSIONS=("4.1" "5.2")
+VERSIONS=("4.1" "5.2" "6.2")
 
 for i in "${!VERSIONS[@]}"
 do

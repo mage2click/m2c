@@ -1,41 +1,81 @@
-FROM    php:7.2-fpm-alpine
+FROM        alpine:3.9
 
-LABEL   maintainer="Mage2click, Dmitry Shkoliar @shkoliar"
+LABEL       maintainer="Mage2click, Dmitry Shkoliar @shkoliar"
 
-ARG     XDEBUG_VERSION=${XDEBUG_VERSION:-2.7.2}
-ARG     PHPREDIS_VERSION=${PHPREDIS_VERSION:-4.3.0}
-ARG     AMQP_VERSION=${AMQP_VERSION:-1.9.4}
-ARG     SSH2_VERSION=${SSH2_VERSION:-1.1.2}
+ENV         UID=1000
+ENV         GID=1000
 
-COPY    common/conf-xdebug/php.ini /usr/local/etc/php/
-COPY    common/conf-xdebug/*.conf /usr/local/etc/
-COPY    common/bin/docker-host /usr/local/bin/
+COPY        conf/php.ini /etc/php7/conf.d/
+COPY        conf/php-fpm.d/zz-docker.conf /etc/php7/php-fpm.d/
+COPY        bin/docker-entrypoint /php-fpm
+COPY        bin/prompt /etc/profile.d/prompt.sh
 
-RUN     apk add --no-cache busybox-suid \
-            icu-dev freetype-dev libzip-dev libpng-dev libxml2-dev libedit-dev readline-dev \
-            gettext-dev libxslt-dev libssh2-dev rabbitmq-c-dev libjpeg-turbo-dev libsodium-dev \
-            libmcrypt-dev lsof supervisor && \
-        docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ && \
-        docker-php-ext-configure zip --with-libzip && \
-        docker-php-ext-install \
-            bcmath gd intl mbstring opcache readline gettext sodium \
-            calendar pdo_mysql mysqli soap xsl zip && \
-        apk add --no-cache --virtual .build-deps ${PHPIZE_DEPS} && \
-        yes '' | pecl install --onlyreqdeps igbinary mcrypt-1.0.2\
-            xdebug-${XDEBUG_VERSION} redis-${PHPREDIS_VERSION} \
-            amqp-${AMQP_VERSION} ssh2-${SSH2_VERSION} && \
-        docker-php-ext-enable xdebug igbinary mcrypt redis amqp ssh2 && \
-        apk del .build-deps && \
-        rm -rf /var/cache/apk/* && \
-        rm -rf /tmp/* && \
-        addgroup -g 1000 -S app && \
-        adduser -u 1000 -S app -G app -h /var/www -s /bin/sh && \
-        mkdir -p /var/www/.config /sock /usr/local/var/log && \
-        touch /usr/local/var/log/php-fpm.log && \
-        chown -R app:app /var/www/html /var/www/.config /usr/local/etc/php/conf.d \
-            /sock /usr/local/var/log/php-fpm.log && \
-        chmod +x /usr/local/bin/docker-host
+RUN         apk update && \
+            apk add --no-cache \
+                php7 \
+                php7-bcmath \
+                php7-calendar \
+                php7-ctype \
+                php7-curl \
+                php7-dom \
+                php7-fileinfo \
+                php7-fpm \
+                php7-gd \
+                php7-gettext \
+                php7-iconv \
+                php7-intl \
+                php7-json \
+                php7-mbstring \
+                php7-mysqli \
+                php7-opcache \
+                php7-openssl \
+                php7-phar \
+                php7-pdo_mysql \
+                php7-simplexml \
+                php7-soap \
+                php7-sockets \
+                php7-sodium \
+                php7-tokenizer \
+                php7-xml \
+                php7-xmlwriter \
+                php7-xsl \
+                php7-zip \
+                php7-pecl-amqp \
+                php7-pecl-igbinary \
+                php7-pecl-mcrypt \
+                php7-pecl-redis \
+                php7-pecl-ssh2 \
+                php7-pecl-xdebug \
+                curl \
+                bash \
+                busybox-suid \
+                gnupg \
+                gzip \
+                htop \
+                openssh \
+                lsof && \
+            \
+            \
+            sed -i -e 's/^;zend_extension/\zend_extension/g' /etc/php7/conf.d/xdebug.ini && \
+            \
+            \
+            rm -rf /var/cache/apk/* && \
+            rm -rf /tmp/* && \
+            \
+            \
+            addgroup -g 1000 -S app && \
+            adduser -u 1000 -S app -G app -h /var/www -s /bin/bash && \
+            \
+            \
+            mkdir -p /var/www/html /var/www/.config /var/www/.npm /sock && \
+            \
+            \
+            ln -sf /usr/sbin/php-fpm7 /usr/sbin/php-fpm && \
+            ln -sf /etc/init.d/php-fpm7 /etc/init.d/php-fpm && \
+            \
+            \
+            chmod +x /php-fpm
 
-WORKDIR /var/www/html
+ENTRYPOINT  /php-fpm
 
-CMD     docker-host; supervisord -c /usr/local/etc/supervisor.conf
+WORKDIR     /var/www/html

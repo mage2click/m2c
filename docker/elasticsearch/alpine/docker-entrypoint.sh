@@ -16,7 +16,7 @@ do
     fi
 done < <(env)
 
-export ES_JAVA_OPTS="-Des.cgroups.hierarchy.override=/ -Xms64m -Xmx64m $ES_JAVA_OPTS"
+export ES_JAVA_OPTS="-Des.cgroups.hierarchy.override=/ -Xms64m -Xmx512m $ES_JAVA_OPTS"
 
 if [[ "${1:0:1}" = "-" ]]
 then
