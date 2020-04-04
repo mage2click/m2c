@@ -8,15 +8,16 @@ services:
     ports:
       - "127.0.0.1:33060:22/tcp"
     labels:
-      - traefik.passHostHeader=true
       - traefik.enable=true
-      - traefik.frontend.rule=Host:m2c.test
-      - traefik.port=8080
+      - traefik.http.routers.mage2click-m2c.tls=true
+      - traefik.http.routers.mage2click-m2c.entryPoints=https
+      - traefik.http.routers.mage2click-m2c.rule=Host(`m2c.test`)
+      - traefik.http.services.mage2click-m2c.loadbalancer.server.port=8080
     restart: ${M2C_GLOBAL_SERVICES_AUTO_START}
 
   traefik:
     container_name: m2c.test__traefik
-    image: traefik:1.7-alpine
+    image: traefik:2.2
     command:
       - --api
       - --docker
@@ -28,13 +29,17 @@ services:
       - "127.0.0.1:443:443"
     volumes:
       - ~/.m2c/traefik/traefik.toml:/etc/traefik/traefik.toml:ro
+      - ~/.m2c/traefik/dynamic.toml:/etc/traefik/dynamic.toml:ro
       - ~/.m2c/ssl/certs/m2c.crt:/etc/ssl/certs/m2c.crt:ro
       - ~/.m2c/ssl/private/m2c.key:/etc/ssl/private/m2c.key:ro
       - /var/run/docker.sock:/var/run/docker.sock
     labels:
       - traefik.enable=true
-      - traefik.frontend.rule=Host:traefik.m2c.test
-      - traefik.port=8080
+      - traefik.http.routers.traefik-m2c.tls=true
+      - traefik.http.routers.traefik-m2c.entryPoints=https
+      - traefik.http.routers.traefik-m2c.service=api@internal
+      - traefik.http.routers.traefik-m2c.rule=Host(`traefik.m2c.test`)
+      - traefik.http.services.api.loadbalancer.server.port=8080
     restart: ${M2C_GLOBAL_SERVICES_AUTO_START}
 
   dnsmasq:
@@ -44,8 +49,10 @@ services:
       - "127.0.0.1:53:53/udp"
     labels:
       - traefik.enable=true
-      - traefik.frontend.rule=Host:dnsmasq.m2c.test
-      - traefik.port=8080
+      - traefik.http.routers.dnsmasq-m2c.tls=true
+      - traefik.http.routers.dnsmasq-m2c.entryPoints=https
+      - traefik.http.routers.dnsmasq-m2c.rule=Host(`dnsmasq.m2c.test`)
+      - traefik.http.services.dnsmasq-m2c.loadbalancer.server.port=8080
     restart: ${M2C_GLOBAL_SERVICES_AUTO_START}
 
 networks:

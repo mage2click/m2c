@@ -9,8 +9,10 @@ services:
       - db
     labels:
       - traefik.enable=true
-      - traefik.port=80
-      - traefik.frontend.rule=Host:pma.${M2C_CFG_DOMAIN_NAME}
+      - traefik.http.routers.phpmyadmin-${COMPOSE_PROJECT_NAME}.tls=true
+      - traefik.http.routers.phpmyadmin-${COMPOSE_PROJECT_NAME}.entryPoints=https
+      - traefik.http.routers.phpmyadmin-${COMPOSE_PROJECT_NAME}.rule=Host(`pma.${M2C_CFG_DOMAIN_NAME}`)
+      - traefik.http.services.phpmyadmin-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=80
     environment:
       - MYSQL_ROOT_PASSWORD=${M2C_CFG_MYSQL_ROOT_PASSWORD:-magento}
       - MYSQL_USER=${M2C_CFG_MYSQL_USER:-magento}
