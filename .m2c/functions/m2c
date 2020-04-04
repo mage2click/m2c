@@ -43,22 +43,16 @@ m2c_extra_env() {
         export M2C_CFG_GID="$(id -g)"
     fi
 
+    if [[ -z ${M2C_CFG_DOMAIN_NAMES} ]]
+    then
+        export M2C_CFG_DOMAIN_NAMES="\`${M2C_CFG_DOMAIN_NAME}\`"
+    fi
+
     export DOCKER_CLIENT_TIMEOUT=600
     export COMPOSE_FILE=".m2c/docker/docker-compose.yml:.m2c/docker/docker-compose.$([[ -n ${M2C_CFG_VARNISH} ]] && echo "varnish" || echo "nginx").yml${M2C_CFG_PHPMYADMIN:+:.m2c/docker/docker-compose.phpmyadmin.yml}${M2C_CFG_ELASTICSEARCH:+:.m2c/docker/docker-compose.elasticsearch.yml}${M2C_CFG_RABBITMQ:+:.m2c/docker/docker-compose.rabbitmq.yml}:.m2c/docker/docker-compose.${m2c_os}.yml"
     export COMPOSE_HTTP_TIMEOUT=600
     export COMPOSE_PATH_SEPARATOR=":"
     export COMPOSE_PROJECT_NAME="${M2C_CFG_DOMAIN_NAME/.test/}"
-
-    # start of compatibility with pre 0.7.4 versions
-    export M2C_PROJECT_PATH="${M2C_CFG_PROJECT_PATH}"
-    export M2C_TRAEFIK_IP="${M2C_CFG_TRAEFIK_IP}"
-
-    if [[ "$m2c_os" != "darwin" ]]
-    then
-        export M2C_UID="${M2C_CFG_GID}"
-        export M2C_GID="${M2C_CFG_GID}"
-    fi
-    # end of compatibility with pre 0.7.4 versions
 }
 
 m2c_save_project_env() {
@@ -1345,6 +1339,7 @@ m2c_init() {
                             fi
 
                             M2C_CFG_DOMAIN_NAME="$value"
+                            M2C_CFG_DOMAIN_NAMES="\`$value\`"
                         ;;
                         --magento-admin-url|--magento-admin-url=*)
                             if [[ "$param" == "--magento-admin-url" ]]
@@ -1540,6 +1535,7 @@ m2c_init() {
                          m2c_validate_domain
 
             M2C_CFG_DOMAIN_NAME="$m2c_res"
+            M2C_CFG_DOMAIN_NAMES="\`$m2c_res\`"
 
             m2c_info_bold "\n[Configure sources path]\n\n"
 
@@ -2301,9 +2297,9 @@ m2c_local_add_domain() {
         exit 1
     fi
 
-    if [[ "$M2C_CFG_EXTRA_DOMAIN_NAMES" != *",$domain"* ]]
+    if [[ "$M2C_CFG_DOMAIN_NAMES" != *"\`$domain\`"* ]]
     then
-        M2C_CFG_EXTRA_DOMAIN_NAMES="$M2C_CFG_EXTRA_DOMAIN_NAMES,$domain"
+        M2C_CFG_DOMAIN_NAMES="$M2C_CFG_DOMAIN_NAMES,\`$domain\`"
 
         m2c_sign $domain
 
@@ -2463,9 +2459,9 @@ m2c_local_remove_domain() {
         exit 1
     fi
 
-    if [[ "$M2C_CFG_EXTRA_DOMAIN_NAMES" == *",$domain"* ]]
+    if [[ "$M2C_CFG_DOMAIN_NAMES" == *"\`$domain\`"* ]]
     then
-        M2C_CFG_EXTRA_DOMAIN_NAMES=${M2C_CFG_EXTRA_DOMAIN_NAMES//,$domain/}
+        M2C_CFG_DOMAIN_NAMES=${M2C_CFG_DOMAIN_NAMES//,\`$domain\`/}
 
         m2c_save_project_env
 
