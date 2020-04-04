@@ -6,8 +6,6 @@
     address = ":80"
   [entryPoints.https]
     address = ":443"
-  [entryPoints.mysql]
-    address = ":3306"
 
 [providers]
   [providers.docker]

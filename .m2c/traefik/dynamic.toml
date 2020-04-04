@@ -3,15 +3,16 @@
     rule = "HostRegexp(`{any:.*}`)"
     entrypoints = ["http"]
     middlewares = ["https-redirect"]
-    service = "dummy"
+    service = "https-redirect"
+    priority = 1
 
 [http.middlewares]
   [http.middlewares.https-redirect.redirectScheme]
     scheme = "https"
 
 [http.services]
-  [http.services.dummy.LoadBalancer]
-     [[http.services.dummy.LoadBalancer.servers]]
+  [http.services.https-redirect.LoadBalancer]
+     [[http.services.https-redirect.LoadBalancer.servers]]
         url = "localhost"
 
 [[tls.certificates]]
