@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r m2c_version="0.9.0"
+declare -r m2c_version="0.10.0"
 declare -r m2c_os="$(uname -s | awk '{print tolower($0)}')"
 declare -r m2c_global_dir="$(echo ~/.m2c)"
 declare m2c_loading_pid=
@@ -18,7 +18,7 @@ m2c_logo() {
                                 Mage2click
                               Magento Docker
                           environment and toolset
-                                  v$m2c_version
+                                 v$m2c_version
 \033[0m"
 }
 
