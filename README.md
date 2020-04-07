@@ -201,6 +201,11 @@ m2c npm
 NPM command-line tool interface. Runs `npm` specific commands at projects Docker container. Run `m2c npm --help` for command usage information.
 
 ```bash
+m2c pwa <command|script> [--help]
+```
+PWA Studio related commands and wrapper for `yarn run` command inside of project directory. Run `m2c pwa --help` for command usage information.
+
+```bash
 m2c redis [options] [cmd [arg [arg ...]]]
 ```
 Redis command-line tool interface. Runs `redis-cli` specific commands at projects Redis Docker container. Run `m2c redis --help` for command usage information.
