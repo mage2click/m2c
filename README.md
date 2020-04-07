@@ -1,6 +1,6 @@
 <h1 align="center">Mage2click - Magento Docker Toolset</h1> 
 
-<p align="center"><img src="assets/images/install.png" width="600" align="center" alt="Mage2click Docker Magento environment and toolset" /></p>
+<p align="center"><img src="assets/images/install.png" width="600" align="center" alt="Mage2click Magento Docker environment and toolset" /></p>
 
 <p align="center">
   <a href="https://github.com/magento/magento2" target="_blank"><img src="https://img.shields.io/badge/magento-2.X-brightgreen.svg?logo=magento&longCache=true&style=for-the-badge&logoColor=white" alt="Supported Magento Versions" /></a>
@@ -9,7 +9,7 @@
   <a href="https://twitter.com/intent/follow?screen_name=mage2click" target="_blank"><img src="https://img.shields.io/twitter/follow/mage2click?color=brightgreen&label=mage2click&logo=twitter&logoColor=white&style=for-the-badge" /></a>
 </p>
 
-Mage2click toolset is a system-wide command-line tool for creating and managing simultaneously running Docker Magento projects with insanely easy installation and configuration. It includes plenty of configurable services and useful commands for developing and project orchestration right out of the box. On macOS systems, mutagen.io tool will be bundled in the toolset for high-performance files sync between host and Docker containers.
+Mage2click toolset is a system-wide command-line tool for creating and managing simultaneously running Magento Docker projects with insanely easy installation and configuration. It includes plenty of configurable services and useful commands for developing and project orchestration right out of the box. On macOS systems, mutagen.io tool will be bundled in the toolset for high-performance files sync between host and Docker containers.
 
 ## Table of contents
 
@@ -54,7 +54,7 @@ curl -sL get.m2c.run | bash
 After toolset is installed, you will have the next tools available locally:
 
 **Traefik** - `https://traefik.m2c.test`
-> Traefik is an open-source reverse proxy and load balancer for HTTP and TCP-based applications that is easy, dynamic, automatic, fast, full-featured, production proven, provides metrics, and integrates with every major cluster technology. <a href="https://traefik.io" target="_blank">https://traefik.io</a>
+> Traefik is the leading open source reverse proxy and load balancer for HTTP and TCP-based applications that is easy, dynamic, automatic, fast, full-featured, production proven, provides metrics, and integrates with every major cluster technology. <a href="https://containo.us/traefik" target="_blank">https://containo.us/traefik</a>
 >
 **Portainer** - `https://portainer.m2c.test`
 > Portainer is a lightweight management toolset that allows you to easily build, manage and maintain Docker environments. Created by experts, Portainer is an opinionated toolset that captures years of experience to allow you to reliably and quickly create, operate and trouble-shoot your Docker environments. <a href="https://portainer.io" target="_blank">https://portainer.io</a>
@@ -80,7 +80,7 @@ m2c global autostart off
 
 Most of services are available with version on your choice.
 
-All Docker Magento projects initialized with: 
+All Magento Docker projects initialized with: 
 
 - Nginx
 - PHP-FPM
@@ -113,7 +113,7 @@ To initialize project, open the desired directory with terminal and run
 m2c init
 ```
 
-This command will launch project initialization in interactive mode. Simply follow the steps to configure the desired Docker Magento development environment.
+This command will launch project initialization in interactive mode. Simply follow the steps to configure the desired Magento Docker development environment.
 
 ### Commandline project initialization mode
 
