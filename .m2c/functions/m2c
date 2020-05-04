@@ -2048,7 +2048,7 @@ m2c_init_help() {
                                     when --elasticsearch option is present.
   --rabbitmq-version <3.7>          Set RabbitMQ version. Applicable only when
                                     --rabbitmq option is present.
-  --magento-version <2.3.4>         Set Magento version to install. Applicable
+  --magento-version <2.3.5>         Set Magento version to install. Applicable
                                     only for clean installs.
   --magento-admin-url <admin>       Set Magento admin url path. Applicable only
                                     for clean installs.
