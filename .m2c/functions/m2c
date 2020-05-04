@@ -1659,7 +1659,7 @@ m2c_init() {
         fi
     fi
 
-    local url file_name cached_path temp_path
+    local url version_name file_name cached_path temp_path
 
     mkdir -p "${m2c_project_dir}/.m2c/mutagen" "${m2c_project_dir}/.m2c/docker" \
          "${m2c_project_dir}/.m2c/mysql"
@@ -1670,9 +1670,16 @@ m2c_init() {
 
     if [[ -z ${m2c_magento_exists} ]]
     then
-        file_name="magento$([[ "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && \
-                echo "2")$([[ -n ${m2c_magento_sample_data} && "${M2C_CFG_MAGENTO:0:1}" == "2" ]] && \
-                echo "-with-samples")-$M2C_CFG_MAGENTO.tar.gz"
+        version_name="${M2C_CFG_MAGENTO}"
+        if [[ "${version_name}" == "2.3.5" ]]
+        then
+            version_name="$version_name-p1"
+        fi
+
+        file_name="magento$([[ "${version_name:0:1}" == "2" ]] && \
+                echo "2")$([[ -n ${m2c_magento_sample_data} && "${version_name:0:1}" == "2" ]] && \
+                echo "-with-samples")-${version_name}.tar.gz"
+
         temp_path="${m2c_global_dir}/cache/temp-${file_name}"
         cached_path="${m2c_global_dir}/cache/${file_name}"
 
