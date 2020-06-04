@@ -558,7 +558,7 @@ m2c_install() {
                 then
                     m2c_info_bold "\n[Installing Mutagen for docker sync performance]\n\n"
                     mkdir -p "${m2c_global_dir}/mutagen" >"${m2c_log}" 2>&1
-                elif
+                else
                     m2c_info_bold "\n[Updating Mutagen to a newer version]\n\n"
                 fi
 
