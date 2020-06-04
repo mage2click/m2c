@@ -48,7 +48,9 @@ RUN         install-php-extensions \
                 nodejs \
                 ssh \
                 sudo \
-                wget && \
+                unzip \
+                wget \
+                zip && \
             \
             \
             curl -sSL https://getcomposer.org/installer | php -- \

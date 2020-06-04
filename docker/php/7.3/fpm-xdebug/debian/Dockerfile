@@ -42,7 +42,9 @@ RUN         install-php-extensions \
                 iproute2 \
                 lsof \
                 ssh \
-                wget && \
+                unzip \
+                wget \
+                zip && \
             \
             \
             curl -sSL -o /usr/local/bin/mhsendmail https://github.com/mailhog/mhsendmail/releases/download/v0.2.0/mhsendmail_linux_amd64 && \
