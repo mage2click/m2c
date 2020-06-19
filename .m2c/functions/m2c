@@ -3455,12 +3455,7 @@ m2c_sign() {
             -subj "/O=Mage2click/OU=IT/CN=${m2c_domains[0]}" >"${m2c_log}" 2>&1
         m2c_result $?
 
-        if [[ "$m2c_os" == "darwin" ]]
-        then
-            pass="m2c"
-        else
-            pass="m2c0"
-        fi
+        pass="m2c0"
 
         m2c_dots "Signing SSL certificate"
         m2c_loading

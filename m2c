@@ -481,12 +481,7 @@ m2c_install() {
     then
         m2c_info_bold "\n[Installing CA certificate]\n\n"
 
-        if [[ "$m2c_os" == "darwin" ]]
-        then
-            pass="m2c"
-        else
-            pass="m2c0"
-        fi
+        pass="m2c0"
 
         m2c_dots "Generating private key for CA certificate"
         m2c_loading
