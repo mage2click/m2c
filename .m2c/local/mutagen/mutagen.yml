@@ -1,5 +1,6 @@
 sync:
   defaults:
+    flushOnCreate: true
     mode: two-way-resolved
     ignore:
       vcs: true

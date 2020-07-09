@@ -547,18 +547,18 @@ m2c_install() {
             fi
 
             if [[ ! -f "${m2c_global_dir}/mutagen/mutagen" || \
-                "$("${m2c_global_dir}/mutagen/mutagen" version)" != "0.11.4" ]]
+                "$("${m2c_global_dir}/mutagen/mutagen" version)" != "0.11.5" ]]
             then
                 if [[ ! -f "${m2c_global_dir}/mutagen/mutagen" ]]
                 then
-                    m2c_info_bold "\n[Installing Mutagen for docker sync performance]\n\n"
+                    m2c_info_bold "\n[Installing Mutagen]\n\n"
                     mkdir -p "${m2c_global_dir}/mutagen" >"${m2c_log}" 2>&1
                 else
-                    m2c_info_bold "\n[Updating Mutagen to a newer version]\n\n"
+                    m2c_info_bold "\n[Updating Mutagen]\n\n"
                 fi
 
                 curl -L \
-                    "https://github.com/mutagen-io/mutagen/releases/download/v0.11.4/mutagen_darwin_amd64_v0.11.4.tar.gz" | \
+                    "https://github.com/mutagen-io/mutagen/releases/download/v0.11.5/mutagen_darwin_amd64_v0.11.5.tar.gz" | \
                     tar xzf - -o -C "${m2c_global_dir}/mutagen/"
                 chmod 0755 "${m2c_global_dir}/mutagen/mutagen"
             fi

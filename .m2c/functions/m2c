@@ -3554,7 +3554,7 @@ m2c_sync_error() {
 m2c_sync_exec() {
     local m2c_project_yml="${m2c_project_dir}/.m2c/mutagen/mutagen.yml"
     m2c_sync_yml_expand #TODO: check new mutagen versions, temporary fix for https://github.com/mutagen-io/mutagen/issues/128
-    m2c_mutagen project $@ "${m2c_project_yml}"
+    m2c_mutagen project $@ --project-file "${m2c_project_yml}"
     m2c_sync_yml_restore #TODO: check new mutagen versions, temporary fix for https://github.com/mutagen-io/mutagen/issues/128
 }
 
