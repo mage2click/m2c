@@ -445,21 +445,21 @@ m2c_requirements() {
 }
 
 m2c_install() {
-    local archive test
+    local m2c_archive m2c_test
 
     m2c_info_bold "\n[Installing commands]\n\n"
 
     m2c_dots "Locating archive"
     m2c_loading
-    archive=$(awk '/^__ARCHIVED__/ {print NR + 1; exit 0; }' "${0}")
-    test=$?
-    m2c_result ${test}
+    m2c_archive=$(awk '/^__ARCHIVED__/ {print NR + 1; exit 0; }' "${0}")
+    m2c_test=$?
+    m2c_result ${m2c_test}
 
     m2c_dots "Extracting data"
     m2c_loading 2
-    tail -n+${archive} "${0}" | tar -xzp -C ~ && >"${m2c_log}" 2>&1
-    test=$?
-    if [[ "$test" == "0" ]]
+    tail -n+${m2c_archive} "${0}" | tar -xzp -C ~ && >"${m2c_log}" 2>&1
+    m2c_test=$?
+    if [[ "$m2c_test" == "0" ]]
     then
         sudo ln -sf "${m2c_global_dir}/bin/m2c" /usr/local/bin/m2c
 
@@ -475,7 +475,7 @@ m2c_install() {
             yes | cp -rf "${m2c_global_dir}/docker/.env" "${m2c_global_dir}/" >/dev/null 2>&1
         fi
     fi
-    m2c_result ${test}
+    m2c_result ${m2c_test}
 
     if [[ ! -f "${m2c_global_dir}/ssl/certs/rootCA.crt" ]] || [[ ! -f "${m2c_global_dir}/ssl/private/rootCA.key" ]]
     then
@@ -487,8 +487,8 @@ m2c_install() {
         m2c_loading
         mkdir -p "${m2c_global_dir}/ssl"/{certs,crl,new,private,serial} >"${m2c_log}" 2>&1 && \
         openssl genrsa -aes256 -passout pass:${pass} -out "${m2c_global_dir}/ssl/private/rootCA.key" 4096 >"${m2c_log}" 2>&1
-        test=$?
-        m2c_result ${test}
+        m2c_test=$?
+        m2c_result ${m2c_test}
 
         m2c_dots "Signing CA certificate"
         m2c_loading
@@ -497,8 +497,8 @@ m2c_install() {
             -config "${m2c_global_dir}/ssl/config/rootca.conf" \
             -key "${m2c_global_dir}/ssl/private/rootCA.key" \
             -out "${m2c_global_dir}/ssl/certs/rootCA.crt" >"${m2c_log}" 2>&1
-        test=$?
-        m2c_result ${test}
+        m2c_test=$?
+        m2c_result ${m2c_test}
 
         m2c_dots "Trusting root CA certificate"
         m2c_loading
@@ -507,7 +507,7 @@ m2c_install() {
                 sudo security delete-certificate -c 'm2c.local' >/dev/null 2>&1
                 sudo security add-trusted-cert -d -r trustRoot \
                         -k /Library/Keychains/System.keychain "${m2c_global_dir}/ssl/certs/rootCA.crt" >"${m2c_log}" 2>&1
-                test=$?
+                m2c_test=$?
             ;;
             linux)
                 if [[ -d /usr/local/share/ca-certificates ]]
@@ -515,21 +515,21 @@ m2c_install() {
                     yes | sudo cp -rf "${m2c_global_dir}/ssl/certs/rootCA.crt" \
                         /usr/local/share/ca-certificates/m2c-root-ca.crt >"${m2c_log}" 2>&1 && \
                     sudo update-ca-certificates >"${m2c_log}" 2>&1
-                    test=$?
+                    m2c_test=$?
                 elif [[ -d /etc/pki/ca-trust/source/anchors ]]
                 then
                     yes | sudo cp -rf "${m2c_global_dir}/ssl/certs/rootCA.crt" \
                         /etc/pki/ca-trust/source/anchors/m2c-root-ca.crt >"${m2c_log}" 2>&1 && \
                     sudo update-ca-trust >"${m2c_log}" 2>&1 && \
                     sudo update-ca-trust enable >"${m2c_log}" 2>&1
-                    test=$?
+                    m2c_test=$?
                 else
                     echo "Currently, we are not supporting yet trusting of the root CA certificate on your OS." >"${m2c_log}"
-                    test=1
+                    m2c_test=1
                 fi
             ;;
         esac
-        m2c_result ${test}
+        m2c_result ${m2c_test}
     fi
 
     case ${m2c_os} in
