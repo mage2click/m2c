@@ -1673,7 +1673,7 @@ m2c_init() {
         version_name="${M2C_CFG_MAGENTO}"
         if [[ "${version_name}" == "2.3.5" ]]
         then
-            version_name="$version_name-p1"
+            version_name="$version_name-p2"
         fi
 
         file_name="magento$([[ "${version_name:0:1}" == "2" ]] && \
