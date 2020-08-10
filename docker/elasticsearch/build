@@ -6,7 +6,8 @@ HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 VERSIONS=("2.0.2" "2.1.2" "2.2.2" "2.3.5" "2.4.6" \
           "5.0.2" "5.1.2" "5.2.2" "5.3.3" "5.4.3" "5.5.3" "5.6.16" \
-          "6.0.1" "6.1.4" "6.2.4" "oss-6.3.2" "oss-6.4.3" "oss-6.5.4" "oss-6.6.2" "oss-6.7.2" "oss-6.8.6")
+          "6.0.1" "6.1.4" "6.2.4" "oss-6.3.2" "oss-6.4.3" "oss-6.5.4" "oss-6.6.2" "oss-6.7.2" "oss-6.8.11" \
+          "oss-7.0.1" "oss-7.1.1" "oss-7.2.1" "oss-7.3.2" "oss-7.4.2" "oss-7.5.2" "oss-7.6.2" "oss-7.7.1" "oss-7.8.1")
 
 for i in "${!VERSIONS[@]}"
 do
@@ -16,8 +17,11 @@ do
     if (( i < 5 ))
     then
         url="https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/${VERSIONS[$i]}/elasticsearch-${VERSIONS[$i]}.tar.gz"
-    else
+    elif (( i < 21 ))
+    then
         url="https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${VERSIONS[$i]}.tar.gz"
+    else
+        url="https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${VERSIONS[$i]}-linux-x86_64.tar.gz"
     fi
 
     docker build --build-arg ELASTICSEARCH_VERSION="${VERSIONS[$i]}" --build-arg ELASTICSEARCH_URL="${url}" \
