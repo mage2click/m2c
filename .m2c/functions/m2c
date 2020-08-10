@@ -1271,7 +1271,7 @@ m2c_help() {
 m2c_init() {
     local m2c_nginx_versions=("1.17" "1.16" "1.15" "1.14" "1.13" "1.12")
     local m2c_php_versions=("7.3" "7.2" "7.1" "7.0" "5.6" "7.4")
-    local m2c_mariadb_versions=("10.3" "10.2" "10.1" "10.0")
+    local m2c_mariadb_versions=("10.4" "10.3" "10.2" "10.1" "10.0")
     local m2c_redis_versions=("5.0" "4.0" "3.2")
     local m2c_magento_versions=("2.3.5" "2.3.4" "2.3.3" "2.3.2" "2.3.1" "2.3.0" \
             "2.2.9" "2.2.8" "2.2.7" "2.2.6" "2.2.5" "2.2.4" "2.2.3" "2.2.2" "2.2.1" "2.2.0" \
