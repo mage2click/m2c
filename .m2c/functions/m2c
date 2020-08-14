@@ -1271,7 +1271,7 @@ m2c_help() {
 
 m2c_init() {
     local m2c_nginx_versions=("1.17" "1.16" "1.15" "1.14" "1.13" "1.12")
-    local m2c_php_versions=("7.3" "7.2" "7.1" "7.0" "5.6" "7.4")
+    local m2c_php_versions=("7.4" "7.3" "7.2" "7.1" "7.0" "5.6")
     local m2c_mariadb_versions=("10.4" "10.3" "10.2" "10.1" "10.0")
     local m2c_redis_versions=("5.0" "4.0" "3.2")
     local m2c_magento_versions=("2.3.5" "2.3.4" "2.3.3" "2.3.2" "2.3.1" "2.3.0" \
@@ -2047,7 +2047,7 @@ m2c_init_help() {
   --domain <magento.test>           Set domain name with .test tld to use for
                                     the project.
   --nginx-version <1.17>            Set Nginx version.
-  --php-version <7.3>               Set PHP version.
+  --php-version <7.4>               Set PHP version.
   --mariadb-version <10.3>          Set MariaDB version.
   --redis-version <5.0>             Set Redis version.
   --varnish-version <5.2>           Set Varnish version, applicable only when
