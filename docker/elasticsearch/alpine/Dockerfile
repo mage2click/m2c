@@ -6,8 +6,8 @@ ENV         PATH=/usr/share/elasticsearch/bin:${PATH} \
             ES_TMPDIR=/usr/share/elasticsearch/tmp \
             JAVA_HOME=/usr/lib/jvm/java-1.8-openjdk/jre
 
-ARG         ELASTICSEARCH_VERSION=${ELASTICSEARCH_VERSION:-6.8.5}
-ARG         ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-'https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${ELASTICSEARCH_VERSION}.tar.gz'}
+ARG         ELASTICSEARCH_VERSION=${ELASTICSEARCH_VERSION:-7.8.1}
+ARG         ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-'https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${ELASTICSEARCH_VERSION}-linux-x86_64.tar.gz'}
 
 COPY        docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
