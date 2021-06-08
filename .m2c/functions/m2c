@@ -6,8 +6,8 @@ then
     exit 1
 fi
 
-declare -r m2c_varnish_versions=("5.2" "4.1" "6.2")
-declare -r m2c_elasticsearch_versions=("7.8" "7.7" "7.6" "7.5" "7.4" "7.3" "7.2" "7.1" "7.0"
+declare -r m2c_varnish_versions=("5.2" "4.1" "6.2" "6.6")
+declare -r m2c_elasticsearch_versions=("7.12" "7.11" "7.10" "7.9" "7.8" "7.7" "7.6" "7.5" "7.4" "7.3" "7.2" "7.1" "7.0" \
                                        "6.8" "6.7" "6.6" "6.5" "6.4" "6.3" "6.2" "6.1" "6.0" \
                                        "5.6" "5.5" "5.4" "5.3" "5.2" "5.1" "5.0" \
                                        "2.4" "2.3" "2.2" "2.1" "2.0")
@@ -1274,7 +1274,8 @@ m2c_init() {
     local m2c_php_versions=("7.4" "7.3" "7.2" "7.1" "7.0" "5.6")
     local m2c_mariadb_versions=("10.4" "10.3" "10.2" "10.1" "10.0")
     local m2c_redis_versions=("5.0" "4.0" "3.2")
-    local m2c_magento_versions=("2.3.5" "2.3.4" "2.3.3" "2.3.2" "2.3.1" "2.3.0" \
+    local m2c_magento_versions=("2.4.2" "2.4.1" "2.4.0" \
+            "2.3.5" "2.3.4" "2.3.3" "2.3.2" "2.3.1" "2.3.0" \
             "2.2.9" "2.2.8" "2.2.7" "2.2.6" "2.2.5" "2.2.4" "2.2.3" "2.2.2" "2.2.1" "2.2.0" \
             "2.1.18" "2.1.17" "2.1.16" "2.1.15" "2.1.14" "2.1.13" "2.1.12" "2.1.11" "2.1.10" \
             "2.1.9" "2.1.8" "2.1.7" "2.1.6" "2.1.5" "2.1.4" "2.1.3" "2.1.2" "2.1.1" "2.1.0" \
@@ -1769,6 +1770,11 @@ m2c_init() {
                 --db-name="${M2C_CFG_MYSQL_DATABASE}" \
                 --db-user="${M2C_CFG_MYSQL_USER}" \
                 --db-password="${M2C_CFG_MYSQL_PASSWORD}" \
+                --elasticsearch-host="elasticsearch.${M2C_CFG_DOMAIN_NAME}" \
+                --elasticsearch-port="9200" \
+                --elasticsearch-enable-auth="0" \
+                --elasticsearch-index-prefix="${M2C_CFG_DOMAIN_NAME}" \
+                --elasticsearch-timeout="15" \
                 --base-url="https://${M2C_CFG_DOMAIN_NAME}/" \
                 --admin-firstname="${M2C_CFG_ADMIN_FIRSTNAME}" \
                 --admin-lastname="${M2C_CFG_ADMIN_LASTNAME}" \
@@ -2050,9 +2056,9 @@ m2c_init_help() {
   --php-version <7.4>               Set PHP version.
   --mariadb-version <10.3>          Set MariaDB version.
   --redis-version <5.0>             Set Redis version.
-  --varnish-version <5.2>           Set Varnish version, applicable only when
+  --varnish-version <6.6>           Set Varnish version, applicable only when
                                     --varnish option is present.
-  --elasticsearch-version <6.8>     Set Elasticsearch version. Applicable only
+  --elasticsearch-version <7.12>     Set Elasticsearch version. Applicable only
                                     when --elasticsearch option is present.
   --rabbitmq-version <3.7>          Set RabbitMQ version. Applicable only when
                                     --rabbitmq option is present.
